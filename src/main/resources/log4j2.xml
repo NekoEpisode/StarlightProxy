@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN">
+    <Properties>
+        <Property name="LOG_PATH">logs</Property>
+        <!-- 主日志格式: [HH:mm:ss INFO]: 消息 -->
+        <Property name="LOG_PATTERN">[%d{HH:mm:ss} %-5level]: %msg%n</Property>
+        <!-- 插件日志格式: [HH:mm:ss INFO] [插件名]: 消息 -->
+        <Property name="PLUGIN_PATTERN">[%d{HH:mm:ss} %-5level] [%logger{1}]: %msg%n</Property>
+    </Properties>
+
+    <Appenders>
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="${LOG_PATTERN}" />
+        </Console>
+
+        <Console name="PluginConsole" target="SYSTEM_OUT">
+            <PatternLayout pattern="${PLUGIN_PATTERN}" />
+        </Console>
+
+        <RollingFile name="FileLogger"
+                     fileName="${LOG_PATH}/app.log"
+                     filePattern="${LOG_PATH}/archive/app-%d{yyyy-MM-dd}-%i.log.gz">
+            <PatternLayout pattern="${LOG_PATTERN}" />
+            <Policies>
+                <TimeBasedTriggeringPolicy />
+                <SizeBasedTriggeringPolicy size="10MB"/>
+            </Policies>
+            <DefaultRolloverStrategy max="30"/>
+        </RollingFile>
+
+        <RollingFile name="PluginFileLogger"
+                     fileName="${LOG_PATH}/plugins.log"
+                     filePattern="${LOG_PATH}/archive/plugins-%d{yyyy-MM-dd}-%i.log.gz">
+            <PatternLayout pattern="${PLUGIN_PATTERN}" />
+            <Policies>
+                <TimeBasedTriggeringPolicy />
+                <SizeBasedTriggeringPolicy size="10MB"/>
+            </Policies>
+            <DefaultRolloverStrategy max="30"/>
+        </RollingFile>
+    </Appenders>
+
+    <Loggers>
+        <!-- 主包日志 - 只显示重要信息 -->
+        <Logger name="net.slidermc.sliderproxy" level="debug" additivity="false">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="FileLogger"/>
+        </Logger>
+
+        <!-- 插件日志 -->
+        <Logger name="net.slidermc.sliderproxy.api.plugin.Plugin" level="info" additivity="false">
+            <AppenderRef ref="PluginConsole"/>
+            <AppenderRef ref="PluginFileLogger"/>
+        </Logger>
+
+        <!-- Netty 日志 -->
+        <Logger name="io.netty" level="warn" additivity="false">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="FileLogger"/>
+        </Logger>
+
+        <!-- Root 日志（只记录警告和错误） -->
+        <Root level="warn">
+            <AppenderRef ref="FileLogger"/>
+        </Root>
+    </Loggers>
+</Configuration>
