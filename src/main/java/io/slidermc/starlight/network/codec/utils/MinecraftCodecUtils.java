@@ -46,12 +46,12 @@ public class MinecraftCodecUtils {
 
     public static void writeString(ByteBuf byteBuf, String value) {
         byte[] bytes = value.getBytes(StandardCharsets.UTF_8);
-        byteBuf.writeInt(bytes.length);
+        writeVarInt(byteBuf, bytes.length);
         byteBuf.writeBytes(bytes);
     }
 
     public static String readString(ByteBuf byteBuf) {
-        int length = byteBuf.readInt();
+        int length = readVarInt(byteBuf);
         byte[] bytes = new byte[length];
         byteBuf.readBytes(bytes);
         return new String(bytes, StandardCharsets.UTF_8);

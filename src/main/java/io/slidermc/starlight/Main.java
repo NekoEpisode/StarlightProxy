@@ -25,6 +25,7 @@ public class Main {
         printASCIIArt();
 
         RegistryPacketUtils registryPacketUtils = new RegistryPacketUtils(new PacketRegistry(), translateManager);
+        registryPacketUtils.loadMappings();
 
         log.info(translateManager.translate("starlight.logging.info.packet.registering"));
 
@@ -52,6 +53,7 @@ public class Main {
     private static void registerPackets(RegistryPacketUtils registryPacketUtils) {
         registerClientboundPackets(registryPacketUtils);
         registerServerboundPackets(registryPacketUtils);
+        registerPacketListeners(registryPacketUtils);
     }
 
     private static void registerClientboundPackets(RegistryPacketUtils registryPacketUtils) {
@@ -60,5 +62,9 @@ public class Main {
 
     private static void registerServerboundPackets(RegistryPacketUtils registryPacketUtils) {
         registryPacketUtils.getPacketRegistry().registerPacket(ProtocolVersion.UNKNOWN_OR_PLACEHOLDER.getProtocolVersionCode(), ProtocolState.HANDSHAKE, ProtocolDirection.SERVERBOUND, 0x00, ServerboundHandshakePacket::new); // 特殊处理
+    }
+
+    private static void registerPacketListeners(RegistryPacketUtils registryPacketUtils) {
+        registryPacketUtils.getPacketRegistry().registerListener(ServerboundHandshakePacket.class, new ServerboundHandshakePacket.Listener());
     }
 }
