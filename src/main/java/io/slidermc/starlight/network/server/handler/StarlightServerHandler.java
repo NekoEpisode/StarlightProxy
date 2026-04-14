@@ -2,11 +2,18 @@ package io.slidermc.starlight.network.server.handler;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.slidermc.starlight.network.packet.IMinecraftPacket;
+import io.slidermc.starlight.network.packet.PacketRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class StarlightServerHandler extends ChannelInboundHandlerAdapter {
     private static final Logger log = LoggerFactory.getLogger(StarlightServerHandler.class);
+    private final PacketRegistry packetRegistry;
+
+    public StarlightServerHandler(PacketRegistry packetRegistry) {
+        this.packetRegistry = packetRegistry;
+    }
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
@@ -20,7 +27,10 @@ public class StarlightServerHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        // TODO: 待完成
-        super.channelRead(ctx, msg);
+        if (msg instanceof IMinecraftPacket packet) {
+            packetRegistry.dispatch(packet, ctx);
+        } else {
+            super.channelRead(ctx, msg);
+        }
     }
 }

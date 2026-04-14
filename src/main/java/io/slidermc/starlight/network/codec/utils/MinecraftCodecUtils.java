@@ -2,6 +2,8 @@ package io.slidermc.starlight.network.codec.utils;
 
 import io.netty.buffer.ByteBuf;
 
+import java.nio.charset.StandardCharsets;
+
 public class MinecraftCodecUtils {
     /**
      * Reads a variable-length encoded integer from the provided ByteBuf.
@@ -40,5 +42,18 @@ public class MinecraftCodecUtils {
             value >>>= 7;
         }
         byteBuf.writeByte(value);
+    }
+
+    public static void writeString(ByteBuf byteBuf, String value) {
+        byte[] bytes = value.getBytes(StandardCharsets.UTF_8);
+        byteBuf.writeInt(bytes.length);
+        byteBuf.writeBytes(bytes);
+    }
+
+    public static String readString(ByteBuf byteBuf) {
+        int length = byteBuf.readInt();
+        byte[] bytes = new byte[length];
+        byteBuf.readBytes(bytes);
+        return new String(bytes, StandardCharsets.UTF_8);
     }
 }

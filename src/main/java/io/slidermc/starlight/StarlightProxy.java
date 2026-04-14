@@ -60,8 +60,12 @@ public class StarlightProxy {
                             socketChannel.pipeline().addLast(new MinecraftPacketDecoder(
                                     registryPacketUtils.getPacketRegistry()
                             ));
-                            socketChannel.pipeline().addLast(new MinecraftPacketEncoder());
-                            socketChannel.pipeline().addLast(new StarlightServerHandler());
+                            socketChannel.pipeline().addLast(new MinecraftPacketEncoder(
+                                    registryPacketUtils.getPacketRegistry()
+                            ));
+                            socketChannel.pipeline().addLast(new StarlightServerHandler(
+                                    registryPacketUtils.getPacketRegistry()
+                            ));
                         }
                     });
 
