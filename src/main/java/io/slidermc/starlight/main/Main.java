@@ -1,4 +1,4 @@
-package io.slidermc.sliderproxy.main;
+package io.slidermc.starlight.main;
 
 public class Main {
     static void main() {
