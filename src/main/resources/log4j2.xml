@@ -42,13 +42,13 @@
 
     <Loggers>
         <!-- 主包日志 -->
-        <Logger name="io.slidermc.sliderproxy" level="debug" additivity="false">
+        <Logger name="io.slidermc.starlight" level="debug" additivity="false">
             <AppenderRef ref="Console"/>
             <AppenderRef ref="FileLogger"/>
         </Logger>
 
         <!-- 插件日志，尚未实现插件 -->
-        <Logger name="io.slidermc.sliderproxy.api.plugin.Plugin" level="info" additivity="false">
+        <Logger name="io.slidermc.starlight.api.plugin.Plugin" level="info" additivity="false">
             <AppenderRef ref="PluginConsole"/>
             <AppenderRef ref="PluginFileLogger"/>
         </Logger>

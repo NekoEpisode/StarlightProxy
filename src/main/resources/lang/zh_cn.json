@@ -1,0 +1,30 @@
+{
+  "metadata": {
+    "name": "简体中文"
+  },
+  "translations": {
+    "starlight.logging.error.resource.invalid_uri": "资源URL的URI语法无效: {}",
+    "starlight.logging.error.resource.list_files_failed": "列举目录文件失败: {}",
+    "starlight.logging.error.resource.read_failed": "读取资源文件失败: {}",
+
+    "starlight.logging.info.starting": "正在启动Starlight代理服务器！<3",
+
+    "starlight.logging.info.server.starting": "正在启动Netty服务器，监听 {}:{}",
+
+    "starlight.logging.info.done": "Starlight加载完成！(用时{}ms)",
+    "starlight.logging.info.join_with_address": "使用地址 localhost:{} 来加入游戏！或使用你的公网IP加入游戏！",
+
+    "starlight.logging.info.packet.registering": "正在注册数据包...",
+    "starlight.logging.info.packet.loading": "正在加载数据包映射...",
+    "starlight.logging.info.packet.loaded_version": "已加载协议版本 {} 的数据包映射",
+    "starlight.logging.info.packet.load_complete": "数据包映射加载完成，耗时 {}ms",
+    "starlight.logging.warn.packet.skip_non_numeric": "跳过非数字命名的映射文件: {}",
+    "starlight.logging.warn.packet.load_not_found": "加载数据包映射失败，资源文件不存在: {}",
+    "starlight.logging.warn.packet.unknown_state": "映射JSON中存在未知的协议状态: {}",
+    "starlight.logging.warn.packet.unknown_direction": "映射JSON中存在未知的协议方向: {}",
+    "starlight.logging.warn.packet.no_mapping": "找不到键 {} 对应的映射",
+    "starlight.logging.error.packet.load_failed": "从 {} 加载数据包映射失败",
+    "starlight.logging.error.packet.parse_failed": "解析数据包映射JSON失败",
+    "starlight.logging.error.netty_server_start_failed": "Netty服务器启动失败"
+  }
+}

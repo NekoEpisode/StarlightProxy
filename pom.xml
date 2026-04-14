@@ -86,6 +86,13 @@
             <version>${log4j2.version}</version>
         </dependency>
 
+        <!-- JSON解析 -->
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <version>2.13.2</version>
+        </dependency>
+
         <!-- 单元测试 -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
