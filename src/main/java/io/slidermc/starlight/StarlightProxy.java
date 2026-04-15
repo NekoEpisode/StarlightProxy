@@ -10,8 +10,9 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.slidermc.starlight.api.player.PlayerManager;
 import io.slidermc.starlight.api.translate.TranslateManager;
 import io.slidermc.starlight.config.StarlightConfig;
-import io.slidermc.starlight.network.codec.MinecraftPacketDecoder;
-import io.slidermc.starlight.network.codec.MinecraftPacketEncoder;
+import io.slidermc.starlight.manager.ServerManager;
+import io.slidermc.starlight.network.codec.ServerPacketDecoder;
+import io.slidermc.starlight.network.codec.ServerPacketEncoder;
 import io.slidermc.starlight.network.packet.RegistryPacketUtils;
 import io.slidermc.starlight.network.server.handler.StarlightServerHandler;
 import org.slf4j.Logger;
@@ -25,16 +26,19 @@ public class StarlightProxy {
 
     private final TranslateManager translateManager;
     private final PlayerManager playerManager;
+    private final ServerManager serverManager;
     private final RegistryPacketUtils registryPacketUtils;
     private final StarlightConfig config;
 
     public StarlightProxy(InetSocketAddress address, TranslateManager translateManager,
-                          RegistryPacketUtils registryPacketUtils, StarlightConfig config) {
+                          RegistryPacketUtils registryPacketUtils, StarlightConfig config,
+                          ServerManager serverManager) {
         this.address = address;
         this.translateManager = translateManager;
         this.registryPacketUtils = registryPacketUtils;
         this.config = config;
         this.playerManager = new PlayerManager();
+        this.serverManager = serverManager;
     }
 
     void start() {
@@ -65,10 +69,10 @@ public class StarlightProxy {
                     .childHandler(new ChannelInitializer<SocketChannel>() {
                         @Override
                         protected void initChannel(SocketChannel socketChannel) throws Exception {
-                            socketChannel.pipeline().addLast(new MinecraftPacketDecoder(
+                            socketChannel.pipeline().addLast(new ServerPacketDecoder(
                                     registryPacketUtils.getPacketRegistry()
                             ));
-                            socketChannel.pipeline().addLast(new MinecraftPacketEncoder(
+                            socketChannel.pipeline().addLast(new ServerPacketEncoder(
                                     registryPacketUtils.getPacketRegistry()
                             ));
                             socketChannel.pipeline().addLast(new StarlightServerHandler(
@@ -105,5 +109,9 @@ public class StarlightProxy {
 
     public PlayerManager getPlayerManager() {
         return playerManager;
+    }
+
+    public ServerManager getServerManager() {
+        return serverManager;
     }
 }

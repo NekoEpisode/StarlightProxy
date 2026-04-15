@@ -4,10 +4,11 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.slidermc.starlight.StarlightProxy;
 import io.slidermc.starlight.api.player.ProxiedPlayer;
-import io.slidermc.starlight.config.StarlightConfig;
 import io.slidermc.starlight.network.context.AttributeKeys;
+import io.slidermc.starlight.network.context.ConnectionContext;
 import io.slidermc.starlight.network.packet.IMinecraftPacket;
 import io.slidermc.starlight.network.packet.PacketRegistry;
+import io.slidermc.starlight.network.packet.RawPacket;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,13 +33,26 @@ public class StarlightServerHandler extends ChannelInboundHandlerAdapter {
         ProxiedPlayer player = ctx.channel().attr(AttributeKeys.CONNECTION_CONTEXT).get().getPlayer();
         if (player != null) {
             proxy.getPlayerManager().removePlayer(player.getGameProfile().uuid());
+            io.netty.channel.Channel downstream = player.getConnectionContext().getDownstreamChannel();
+            if (downstream != null) {
+                downstream.close();
+            }
             log.info("Player {} exited", player.getGameProfile().username());
         }
     }
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        if (msg instanceof IMinecraftPacket packet) {
+        if (msg instanceof RawPacket rawPacket) {
+            // 透明转发：直接写到下游服务器 channel（经由 ClientPacketEncoder）
+            ConnectionContext context = ctx.channel().attr(AttributeKeys.CONNECTION_CONTEXT).get();
+            io.netty.channel.Channel downstream = context != null ? context.getDownstreamChannel() : null;
+            if (downstream != null && downstream.isActive()) {
+                downstream.writeAndFlush(rawPacket);
+            } else {
+                log.warn("Received RawPacket from player but no active downstream channel, dropping");
+            }
+        } else if (msg instanceof IMinecraftPacket packet) {
             packetRegistry.dispatch(packet, ctx, proxy);
         } else {
             super.channelRead(ctx, msg);

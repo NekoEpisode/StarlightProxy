@@ -15,6 +15,10 @@ proxy:
   allow-transfer: false # 是否允许Transfer连接
 
 servers:
+  # 地址格式支持以下三种：
+  #   hostname          — 先查询 _minecraft._tcp.hostname SRV 记录，若无则使用端口 25565
+  #   hostname:port     — 直接使用给定主机名和端口（不查询 SRV）
+  #   1.2.3.4:port      — 直接使用给定 IP 和端口
   lobby:
     address: "127.0.0.1:25566"
   example2:

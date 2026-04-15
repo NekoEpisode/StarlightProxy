@@ -1,8 +1,12 @@
 package io.slidermc.starlight;
 
+import io.slidermc.starlight.api.server.ProxiedServer;
 import io.slidermc.starlight.api.translate.TranslateManager;
 import io.slidermc.starlight.config.StarlightConfig;
+import io.slidermc.starlight.manager.ServerManager;
 import io.slidermc.starlight.network.packet.PacketRegistry;
+import io.slidermc.starlight.network.packet.packets.clientbound.configuration.ClientboundDisconnectConfigurationPacket;
+import io.slidermc.starlight.utils.AddressResolver;
 import io.slidermc.starlight.network.packet.RegistryPacketUtils;
 import io.slidermc.starlight.network.packet.packets.clientbound.login.ClientboundDisconnectLoginPacket;
 import io.slidermc.starlight.network.packet.packets.clientbound.login.ClientboundLoginSuccessPacket;
@@ -23,6 +27,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.file.Path;
+import java.util.Map;
 
 public class Main {
     private static final Logger log = LoggerFactory.getLogger(Main.class);
@@ -49,6 +54,42 @@ public class Main {
 
         printASCIIArt();
 
+        String defaultServer = config.getDefaultServer();
+        if (defaultServer == null) {
+            log.error("配置文件中缺少default-server设置项，请先设置！");
+            System.exit(1);
+            return;
+        }
+        if (!config.getServers().containsKey(defaultServer)) {
+            log.error("未找到此default-server: {}", defaultServer);
+            System.exit(1);
+            return;
+        }
+        // ---- 加载默认服务器 ------------------------------------------------
+        StarlightConfig.ServerEntry defaultEntry = config.getServers().get(defaultServer);
+        InetSocketAddress defaultAddr;
+        try {
+            log.debug("加载默认服务器: {} ({})", defaultServer, defaultEntry.address());
+            defaultAddr = AddressResolver.resolve(defaultEntry.address());
+        } catch (IllegalArgumentException e) {
+            log.error("默认服务器 {} 地址解析失败: {}", defaultServer, e.getMessage());
+            System.exit(1);
+            return;
+        }
+        ServerManager serverManager = new ServerManager(new ProxiedServer(defaultAddr, defaultServer));
+
+        // ---- 加载其余服务器 ------------------------------------------------
+        for (Map.Entry<String, StarlightConfig.ServerEntry> entry : config.getServers().entrySet()) {
+            if (entry.getKey().equals(defaultServer)) continue;
+            log.debug("加载服务器: {} ({})", entry.getKey(), entry.getValue().address());
+            try {
+                InetSocketAddress addr = AddressResolver.resolve(entry.getValue().address());
+                serverManager.addServer(new ProxiedServer(addr, entry.getKey()));
+            } catch (IllegalArgumentException e) {
+                log.warn("服务器 {} 地址解析失败，跳过: {}", entry.getKey(), e.getMessage());
+            }
+        }
+
         RegistryPacketUtils registryPacketUtils = new RegistryPacketUtils(new PacketRegistry(), translateManager);
         registryPacketUtils.loadMappings();
 
@@ -60,7 +101,8 @@ public class Main {
                 new InetSocketAddress(config.getHost(), config.getPort()),
                 translateManager,
                 registryPacketUtils,
-                config
+                config,
+                serverManager
         );
         proxy.start();
     }
@@ -96,6 +138,9 @@ public class Main {
 
         registryPacketUtils.registerByAutoMapping(Key.key("minecraft:login_finished"), ClientboundLoginSuccessPacket::new);
         r.registerListener(ClientboundLoginSuccessPacket.class, new ClientboundLoginSuccessPacket.Listener());
+
+        registryPacketUtils.registerByAutoMapping(Key.key("minecraft:disconnect"), ClientboundDisconnectConfigurationPacket::new);
+        r.registerListener(ClientboundDisconnectConfigurationPacket.class, new ClientboundDisconnectConfigurationPacket.Listener());
     }
 
     private static void registerServerboundPackets(RegistryPacketUtils registryPacketUtils) {

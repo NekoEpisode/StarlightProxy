@@ -41,7 +41,7 @@ public class MinecraftCodecUtils {
      * @param value The integer value to encode and write.
      */
     public static void writeVarInt(ByteBuf byteBuf, int value) {
-        while ((value & 0b10000000) != 0) {
+        while ((value & 0xFFFFFF80) != 0) {
             byteBuf.writeByte((value & 0b01111111) | 0b10000000);
             value >>>= 7;
         }

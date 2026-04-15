@@ -1,5 +1,6 @@
 package io.slidermc.starlight.network.context;
 
+import io.netty.channel.Channel;
 import io.slidermc.starlight.api.player.ProxiedPlayer;
 import io.slidermc.starlight.network.protocolenum.ProtocolState;
 
@@ -8,6 +9,8 @@ public class ConnectionContext {
     private ProtocolState inboundState;
     private ProtocolState outboundState;
     private ProxiedPlayer player;
+    /** The downstream server channel paired with this player connection. Set externally when the player is connected to a backend server. */
+    private Channel downstreamChannel;
 
     public ConnectionContext() {
         this.inboundState = ProtocolState.HANDSHAKE;
@@ -45,5 +48,13 @@ public class ConnectionContext {
 
     public void setPlayer(ProxiedPlayer player) {
         this.player = player;
+    }
+
+    public Channel getDownstreamChannel() {
+        return downstreamChannel;
+    }
+
+    public void setDownstreamChannel(Channel downstreamChannel) {
+        this.downstreamChannel = downstreamChannel;
     }
 }

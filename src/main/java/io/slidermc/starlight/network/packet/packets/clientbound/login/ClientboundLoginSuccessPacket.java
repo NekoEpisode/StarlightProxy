@@ -4,12 +4,19 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.slidermc.starlight.StarlightProxy;
 import io.slidermc.starlight.api.profile.GameProfile;
+import io.slidermc.starlight.network.client.StarlightMinecraftClient;
 import io.slidermc.starlight.network.codec.utils.MinecraftCodecUtils;
+import io.slidermc.starlight.network.context.AttributeKeys;
 import io.slidermc.starlight.network.packet.IMinecraftPacket;
 import io.slidermc.starlight.network.packet.listener.IPacketListener;
+import io.slidermc.starlight.network.packet.packets.serverbound.login.ServerboundLoginAckPacket;
+import io.slidermc.starlight.network.protocolenum.ProtocolState;
 import io.slidermc.starlight.network.protocolenum.ProtocolVersion;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ClientboundLoginSuccessPacket implements IMinecraftPacket {
+    private static final Logger log = LoggerFactory.getLogger(ClientboundLoginSuccessPacket.class);
     private GameProfile gameProfile;
 
     public ClientboundLoginSuccessPacket() {}
@@ -39,7 +46,14 @@ public class ClientboundLoginSuccessPacket implements IMinecraftPacket {
     public static class Listener implements IPacketListener<ClientboundLoginSuccessPacket> {
         @Override
         public void handle(ClientboundLoginSuccessPacket packet, ChannelHandlerContext ctx, StarlightProxy proxy) {
-            // TODO: 待实现
+            log.debug("收到下游LoginSuccess");
+            ctx.channel().writeAndFlush(new ServerboundLoginAckPacket()).addListener(_ -> {
+                StarlightMinecraftClient client = ctx.channel().attr(AttributeKeys.DOWNSTREAM_CONNECTION_CONTEXT).get().getClient();
+                client.setOutboundState(ProtocolState.CONFIGURATION);
+                client.setInboundState(ProtocolState.CONFIGURATION);
+                log.debug("下游切换到CONFIGURATION");
+                client.callLoginComplete();
+            });
         }
     }
 }

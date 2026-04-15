@@ -8,21 +8,30 @@ import io.slidermc.starlight.network.context.AttributeKeys;
 import io.slidermc.starlight.network.context.ConnectionContext;
 import io.slidermc.starlight.network.packet.IMinecraftPacket;
 import io.slidermc.starlight.network.packet.PacketRegistry;
+import io.slidermc.starlight.network.packet.RawPacket;
 import io.slidermc.starlight.network.protocolenum.ProtocolDirection;
 import io.slidermc.starlight.network.protocolenum.ProtocolVersion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class MinecraftPacketEncoder extends MessageToByteEncoder<IMinecraftPacket> {
-    private static final Logger log = LoggerFactory.getLogger(MinecraftPacketEncoder.class);
+public class ServerPacketEncoder extends MessageToByteEncoder<IMinecraftPacket> {
+    private static final Logger log = LoggerFactory.getLogger(ServerPacketEncoder.class);
     private final PacketRegistry packetRegistry;
 
-    public MinecraftPacketEncoder(PacketRegistry packetRegistry) {
+    public ServerPacketEncoder(PacketRegistry packetRegistry) {
         this.packetRegistry = packetRegistry;
     }
 
     @Override
     protected void encode(ChannelHandlerContext ctx, IMinecraftPacket packet, ByteBuf out) throws Exception {
+        // RawPacket: write content bytes directly, no registry lookup needed
+        if (packet instanceof RawPacket rawPacket) {
+            byte[] content = rawPacket.getContent();
+            MinecraftCodecUtils.writeVarInt(out, content.length);
+            out.writeBytes(content);
+            return;
+        }
+
         ConnectionContext context = ctx.channel().attr(AttributeKeys.CONNECTION_CONTEXT).get();
         if (context == null) {
             log.error("ConnectionContext is null while encoding, dropping packet: {}", packet.getClass().getName());
