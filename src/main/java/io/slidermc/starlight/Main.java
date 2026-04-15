@@ -9,6 +9,9 @@ import io.slidermc.starlight.network.packet.packets.clientbound.configuration.Cl
 import io.slidermc.starlight.network.packet.packets.clientbound.configuration.ClientboundFinishConfigurationPacket;
 import io.slidermc.starlight.network.packet.packets.clientbound.configuration.ClientboundPluginMessageConfigurationPacket;
 import io.slidermc.starlight.network.packet.packets.clientbound.play.ClientboundDisconnectPlayPacket;
+import io.slidermc.starlight.network.packet.packets.clientbound.play.ClientboundStartConfigurationPacket;
+import io.slidermc.starlight.network.packet.packets.serverbound.play.ServerboundChatCommandPacket;
+import io.slidermc.starlight.network.packet.packets.serverbound.play.ServerboundConfigurationAckPacket;
 import io.slidermc.starlight.network.packet.packets.serverbound.configuration.ServerboundFinishConfigurationAckPacket;
 import io.slidermc.starlight.utils.AddressResolver;
 import io.slidermc.starlight.network.packet.RegistryPacketUtils;
@@ -154,6 +157,9 @@ public class Main {
 
         registryPacketUtils.registerByAutoMapping(Key.key("minecraft:disconnect"), ProtocolState.PLAY, ProtocolDirection.CLIENTBOUND, ClientboundDisconnectPlayPacket::new);
         r.registerListener(ClientboundDisconnectPlayPacket.class, "default", new ClientboundDisconnectPlayPacket.Listener());
+
+        registryPacketUtils.registerByAutoMapping(Key.key("minecraft:start_configuration"), ProtocolState.PLAY, ProtocolDirection.CLIENTBOUND, ClientboundStartConfigurationPacket::new);
+        r.registerListener(ClientboundStartConfigurationPacket.class, "default", new ClientboundStartConfigurationPacket.Listener());
     }
 
     private static void registerServerboundPackets(RegistryPacketUtils registryPacketUtils) {
@@ -177,5 +183,11 @@ public class Main {
 
         registryPacketUtils.registerByAutoMapping(Key.key("minecraft:finish_configuration"), ProtocolState.CONFIGURATION, ProtocolDirection.SERVERBOUND, ServerboundFinishConfigurationAckPacket::new);
         r.registerListener(ServerboundFinishConfigurationAckPacket.class, "default", new ServerboundFinishConfigurationAckPacket.Listener());
+
+        registryPacketUtils.registerByAutoMapping(Key.key("minecraft:configuration_acknowledged"), ProtocolState.PLAY, ProtocolDirection.SERVERBOUND, ServerboundConfigurationAckPacket::new);
+        r.registerListener(ServerboundConfigurationAckPacket.class, "default", new ServerboundConfigurationAckPacket.Listener());
+
+        registryPacketUtils.registerByAutoMapping(Key.key("minecraft:chat_command"), ProtocolState.PLAY, ProtocolDirection.SERVERBOUND, ServerboundChatCommandPacket::new);
+        r.registerListener(ServerboundChatCommandPacket.class, "default", new ServerboundChatCommandPacket.Listener());
     }
 }

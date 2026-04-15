@@ -83,7 +83,7 @@ public class ServerboundLoginStartPacket implements IMinecraftPacket {
                 });
             } else {
                 log.debug("玩家 {} 以离线模式登录", packet.getUsername());
-                ProxiedPlayer player = new ProxiedPlayer(new GameProfile(packet.username, packet.uuid, List.of()), ctx.channel());
+                ProxiedPlayer player = new ProxiedPlayer(new GameProfile(packet.username, packet.uuid, List.of()), ctx.channel(), proxy);
                 log.debug("已创建ProxiedPlayer对象: {}", player);
                 player.getConnectionContext().setPlayer(player);
                 proxy.getPlayerManager().addPlayer(player);
