@@ -52,7 +52,7 @@ public class ServerboundStatusRequestPacket implements IMinecraftPacket {
                     versionProtocol,
                     proxy.getConfig().getMaxPlayers(),
                     samplePlayers.size(),
-                    List.of(),
+                    samplePlayers,
                     MiniMessageUtils.MINI_MESSAGE.deserialize(proxy.getConfig().getMotd()),
                     null,
                     false

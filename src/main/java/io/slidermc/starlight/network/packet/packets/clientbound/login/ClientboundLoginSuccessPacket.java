@@ -12,6 +12,12 @@ import io.slidermc.starlight.network.protocolenum.ProtocolVersion;
 public class ClientboundLoginSuccessPacket implements IMinecraftPacket {
     private GameProfile gameProfile;
 
+    public ClientboundLoginSuccessPacket() {}
+
+    public ClientboundLoginSuccessPacket(GameProfile gameProfile) {
+        this.gameProfile = gameProfile;
+    }
+
     @Override
     public void encode(ByteBuf byteBuf, ProtocolVersion protocolVersion) {
         MinecraftCodecUtils.writeGameProfile(byteBuf, gameProfile);

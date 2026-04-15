@@ -10,6 +10,7 @@ import io.slidermc.starlight.network.packet.IMinecraftPacket;
 import io.slidermc.starlight.network.packet.listener.IPacketListener;
 import io.slidermc.starlight.network.packet.packets.clientbound.login.ClientboundDisconnectLoginPacket;
 import io.slidermc.starlight.network.packet.packets.clientbound.login.ClientboundLoginSuccessPacket;
+import io.slidermc.starlight.network.protocolenum.ProtocolState;
 import io.slidermc.starlight.network.protocolenum.ProtocolVersion;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -74,7 +75,10 @@ public class ServerboundLoginStartPacket implements IMinecraftPacket {
                 log.debug("已创建ProxiedPlayer对象: {}", player);
                 player.getConnectionContext().setPlayer(player);
                 proxy.getPlayerManager().addPlayer(player);
-                ctx.channel().writeAndFlush(new ClientboundLoginSuccessPacket());
+                ctx.channel().writeAndFlush(new ClientboundLoginSuccessPacket(player.getGameProfile())).addListener(_ -> {
+                    player.getConnectionContext().setOutboundState(ProtocolState.CONFIGURATION);
+                    log.debug("上游Outbound切换到CONFIGURATION");
+                });
             }
         }
     }

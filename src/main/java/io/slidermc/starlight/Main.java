@@ -9,6 +9,7 @@ import io.slidermc.starlight.network.packet.packets.clientbound.login.Clientboun
 import io.slidermc.starlight.network.packet.packets.clientbound.status.ClientboundPongResponsePacket;
 import io.slidermc.starlight.network.packet.packets.clientbound.status.ClientboundStatusResponsePacket;
 import io.slidermc.starlight.network.packet.packets.serverbound.handshake.ServerboundHandshakePacket;
+import io.slidermc.starlight.network.packet.packets.serverbound.login.ServerboundLoginAckPacket;
 import io.slidermc.starlight.network.packet.packets.serverbound.login.ServerboundLoginStartPacket;
 import io.slidermc.starlight.network.packet.packets.serverbound.status.ServerboundPingRequestPacket;
 import io.slidermc.starlight.network.packet.packets.serverbound.status.ServerboundStatusRequestPacket;
@@ -112,5 +113,8 @@ public class Main {
 
         registryPacketUtils.registerByAutoMapping(Key.key("minecraft:hello"), ServerboundLoginStartPacket::new);
         r.registerListener(ServerboundLoginStartPacket.class, new ServerboundLoginStartPacket.Listener());
+
+        registryPacketUtils.registerByAutoMapping(Key.key("minecraft:login_acknowledged"), ServerboundLoginAckPacket::new);
+        r.registerListener(ServerboundLoginAckPacket.class, new ServerboundLoginAckPacket.Listener());
     }
 }
