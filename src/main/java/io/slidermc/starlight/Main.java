@@ -132,28 +132,28 @@ public class Main {
         int av = ProtocolVersion.ALL_VERSION.getProtocolVersionCode();
 
         r.registerPacket(av, ProtocolState.STATUS, ProtocolDirection.CLIENTBOUND, 0x00, ClientboundStatusResponsePacket::new);
-        r.registerListener(ClientboundStatusResponsePacket.class, new ClientboundStatusResponsePacket.Listener());
+        r.registerListener(ClientboundStatusResponsePacket.class, "default", new ClientboundStatusResponsePacket.Listener());
 
         r.registerPacket(av, ProtocolState.STATUS, ProtocolDirection.CLIENTBOUND, 0x01, ClientboundPongResponsePacket::new);
-        r.registerListener(ClientboundPongResponsePacket.class, new ClientboundPongResponsePacket.Listener());
+        r.registerListener(ClientboundPongResponsePacket.class, "default", new ClientboundPongResponsePacket.Listener());
 
         r.registerPacket(av, ProtocolState.LOGIN, ProtocolDirection.CLIENTBOUND, 0x00, ClientboundDisconnectLoginPacket::new);
-        r.registerListener(ClientboundDisconnectLoginPacket.class, new ClientboundDisconnectLoginPacket.Listener());
+        r.registerListener(ClientboundDisconnectLoginPacket.class, "default", new ClientboundDisconnectLoginPacket.Listener());
 
         registryPacketUtils.registerByAutoMapping(Key.key("minecraft:login_finished"), ProtocolState.LOGIN, ProtocolDirection.CLIENTBOUND, ClientboundLoginSuccessPacket::new);
-        r.registerListener(ClientboundLoginSuccessPacket.class, new ClientboundLoginSuccessPacket.Listener());
+        r.registerListener(ClientboundLoginSuccessPacket.class, "default", new ClientboundLoginSuccessPacket.Listener());
 
         registryPacketUtils.registerByAutoMapping(Key.key("minecraft:disconnect"), ProtocolState.CONFIGURATION, ProtocolDirection.CLIENTBOUND, ClientboundDisconnectConfigurationPacket::new);
-        r.registerListener(ClientboundDisconnectConfigurationPacket.class, new ClientboundDisconnectConfigurationPacket.Listener());
+        r.registerListener(ClientboundDisconnectConfigurationPacket.class, "default", new ClientboundDisconnectConfigurationPacket.Listener());
 
         registryPacketUtils.registerByAutoMapping(Key.key("minecraft:finish_configuration"), ProtocolState.CONFIGURATION, ProtocolDirection.CLIENTBOUND, ClientboundFinishConfigurationPacket::new);
-        r.registerListener(ClientboundFinishConfigurationPacket.class, new ClientboundFinishConfigurationPacket.Listener());
+        r.registerListener(ClientboundFinishConfigurationPacket.class, "default", new ClientboundFinishConfigurationPacket.Listener());
 
         registryPacketUtils.registerByAutoMapping(Key.key("minecraft:custom_payload"), ProtocolState.CONFIGURATION, ProtocolDirection.CLIENTBOUND, ClientboundPluginMessageConfigurationPacket::new);
-        r.registerListener(ClientboundPluginMessageConfigurationPacket.class, new ClientboundPluginMessageConfigurationPacket.Listener());
+        r.registerListener(ClientboundPluginMessageConfigurationPacket.class, "default", new ClientboundPluginMessageConfigurationPacket.Listener());
 
         registryPacketUtils.registerByAutoMapping(Key.key("minecraft:disconnect"), ProtocolState.PLAY, ProtocolDirection.CLIENTBOUND, ClientboundDisconnectPlayPacket::new);
-        r.registerListener(ClientboundDisconnectPlayPacket.class, new ClientboundDisconnectPlayPacket.Listener());
+        r.registerListener(ClientboundDisconnectPlayPacket.class, "default", new ClientboundDisconnectPlayPacket.Listener());
     }
 
     private static void registerServerboundPackets(RegistryPacketUtils registryPacketUtils) {
@@ -161,21 +161,21 @@ public class Main {
         int av = ProtocolVersion.ALL_VERSION.getProtocolVersionCode();
 
         r.registerPacket(av, ProtocolState.HANDSHAKE, ProtocolDirection.SERVERBOUND, 0x00, ServerboundHandshakePacket::new);
-        r.registerListener(ServerboundHandshakePacket.class, new ServerboundHandshakePacket.Listener());
+        r.registerListener(ServerboundHandshakePacket.class, "default", new ServerboundHandshakePacket.Listener());
 
         r.registerPacket(av, ProtocolState.STATUS, ProtocolDirection.SERVERBOUND, 0x00, ServerboundStatusRequestPacket::new);
-        r.registerListener(ServerboundStatusRequestPacket.class, new ServerboundStatusRequestPacket.Listener());
+        r.registerListener(ServerboundStatusRequestPacket.class, "default", new ServerboundStatusRequestPacket.Listener());
 
         r.registerPacket(av, ProtocolState.STATUS, ProtocolDirection.SERVERBOUND, 0x01, ServerboundPingRequestPacket::new);
-        r.registerListener(ServerboundPingRequestPacket.class, new ServerboundPingRequestPacket.Listener());
+        r.registerListener(ServerboundPingRequestPacket.class, "default", new ServerboundPingRequestPacket.Listener());
 
         r.registerPacket(av, ProtocolState.LOGIN, ProtocolDirection.SERVERBOUND, 0x00, ServerboundLoginStartPacket::new);
-        r.registerListener(ServerboundLoginStartPacket.class, new ServerboundLoginStartPacket.Listener());
+        r.registerListener(ServerboundLoginStartPacket.class, "default", new ServerboundLoginStartPacket.Listener());
 
         registryPacketUtils.registerByAutoMapping(Key.key("minecraft:login_acknowledged"), ProtocolState.LOGIN, ProtocolDirection.SERVERBOUND, ServerboundLoginAckPacket::new);
-        r.registerListener(ServerboundLoginAckPacket.class, new ServerboundLoginAckPacket.Listener());
+        r.registerListener(ServerboundLoginAckPacket.class, "default", new ServerboundLoginAckPacket.Listener());
 
         registryPacketUtils.registerByAutoMapping(Key.key("minecraft:finish_configuration"), ProtocolState.CONFIGURATION, ProtocolDirection.SERVERBOUND, ServerboundFinishConfigurationAckPacket::new);
-        r.registerListener(ServerboundFinishConfigurationAckPacket.class, new ServerboundFinishConfigurationAckPacket.Listener());
+        r.registerListener(ServerboundFinishConfigurationAckPacket.class, "default", new ServerboundFinishConfigurationAckPacket.Listener());
     }
 }

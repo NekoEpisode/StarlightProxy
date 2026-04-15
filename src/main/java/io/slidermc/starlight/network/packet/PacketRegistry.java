@@ -2,7 +2,6 @@ package io.slidermc.starlight.network.packet;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.slidermc.starlight.StarlightProxy;
-import io.slidermc.starlight.config.StarlightConfig;
 import io.slidermc.starlight.network.packet.listener.IPacketListener;
 import io.slidermc.starlight.network.protocolenum.ProtocolDirection;
 import io.slidermc.starlight.network.protocolenum.ProtocolState;
@@ -29,7 +28,7 @@ public class PacketRegistry {
 
     private final Map<Integer, Map<ProtocolState, Map<ProtocolDirection, Map<Integer, Supplier<? extends IMinecraftPacket>>>>> packetFactoryMap = new ConcurrentHashMap<>(); // protocolVersion(state(direction(packetId(packetSupplier))))
     private final Map<Integer, Map<ProtocolState, Map<ProtocolDirection, Map<Class<? extends IMinecraftPacket>, Integer>>>> reverseMap = new ConcurrentHashMap<>(); // protocolVersion(state(direction(packetClass(packetId))))
-    private final Map<String, IPacketListener<?>> listenerMap = new ConcurrentHashMap<>(); // packetClassName → listener
+    private final Map<String, Map<String, IPacketListener<?>>> listenerMap = new ConcurrentHashMap<>(); // packetClassName → (listenerId → listener)
 
     public void registerPacket(int protocolVersion, ProtocolState state, ProtocolDirection direction, int packetId, Supplier<? extends IMinecraftPacket> factory) {
         packetFactoryMap
@@ -148,19 +147,43 @@ public class PacketRegistry {
     // Listener 注册 / 注销 / 分发
     // -------------------------------------------------------------------------
 
-    public <T extends IMinecraftPacket> void registerListener(Class<T> packetClass, IPacketListener<T> listener) {
-        listenerMap.put(packetClass.getName(), listener);
+    /**
+     * 注册一个 Listener，同一个包可注册多个 Listener，以 {@code id} 区分。
+     * 若同一 packetClass + id 已存在，则覆盖。
+     */
+    public <T extends IMinecraftPacket> void registerListener(Class<T> packetClass, String id, IPacketListener<T> listener) {
+        listenerMap
+                .computeIfAbsent(packetClass.getName(), k -> new ConcurrentHashMap<>())
+                .put(id, listener);
     }
 
-    public <T extends IMinecraftPacket> void unregisterListener(Class<T> packetClass) {
+    /**
+     * 注销指定 id 的 Listener。
+     */
+    public <T extends IMinecraftPacket> void unregisterListener(Class<T> packetClass, String id) {
+        Map<String, IPacketListener<?>> listeners = listenerMap.get(packetClass.getName());
+        if (listeners != null) {
+            listeners.remove(id);
+            if (listeners.isEmpty()) {
+                listenerMap.remove(packetClass.getName());
+            }
+        }
+    }
+
+    /**
+     * 注销某个包的所有 Listener。
+     */
+    public <T extends IMinecraftPacket> void unregisterAllListeners(Class<T> packetClass) {
         listenerMap.remove(packetClass.getName());
     }
 
     @SuppressWarnings("unchecked")
     public void dispatch(IMinecraftPacket packet, ChannelHandlerContext ctx, StarlightProxy proxy) {
-        IPacketListener<?> listener = listenerMap.get(packet.getClass().getName());
-        if (listener != null) {
+        Map<String, IPacketListener<?>> listeners = listenerMap.get(packet.getClass().getName());
+        if (listeners == null || listeners.isEmpty()) return;
+        for (IPacketListener<?> listener : listeners.values()) {
             ((IPacketListener<IMinecraftPacket>) listener).handle(packet, ctx, proxy);
         }
     }
 }
+
