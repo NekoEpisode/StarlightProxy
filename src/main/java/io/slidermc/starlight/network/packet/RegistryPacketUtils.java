@@ -5,6 +5,7 @@ import com.google.gson.JsonParser;
 import io.slidermc.starlight.api.translate.TranslateManager;
 import io.slidermc.starlight.network.protocolenum.ProtocolDirection;
 import io.slidermc.starlight.network.protocolenum.ProtocolState;
+import io.slidermc.starlight.network.protocolenum.ProtocolVersion;
 import io.slidermc.starlight.utils.ResourceUtil;
 import net.kyori.adventure.key.Key;
 import org.slf4j.Logger;
@@ -102,30 +103,48 @@ public class RegistryPacketUtils {
     }
 
     /**
-     * 根据 Key 从 mapping 中查找所有匹配条目，并向 packetRegistry 注册对应的包工厂。
+     * 根据 Key + <b>指定的</b> state/direction 过滤 mapping 条目，并向 packetRegistry 注册包工厂。
+     *
+     * <p>相比不带过滤的旧版本，此方法只注册与给定 state 和 direction 完全匹配的条目，
+     * 避免同一 Key 在多个阶段出现时（例如 {@code minecraft:disconnect} 同时存在于
+     * CONFIGURATION 和 PLAY）将错误的 factory 注册到不相关的阶段。
+     *
+     * @param key       包的注册名，例如 {@code Key.key("minecraft:disconnect")}
+     * @param state     只注册该 ProtocolState 下的条目
+     * @param direction 只注册该 ProtocolDirection 下的条目
+     * @param supplier  包工厂
      */
-    public void registerByAutoMapping(Key key, Supplier<? extends IMinecraftPacket> supplier) {
+    public void registerByAutoMapping(Key key, ProtocolState state, ProtocolDirection direction, Supplier<? extends IMinecraftPacket> supplier) {
         List<PacketIdWithProtocolVersion> entries = mapping.get(key);
         if (entries == null || entries.isEmpty()) {
             log.warn(t("starlight.logging.warn.packet.no_mapping"), key);
             return;
         }
+        boolean matched = false;
         for (PacketIdWithProtocolVersion entry : entries) {
-            packetRegistry.registerPacket(entry.protocolVersion(), entry.state(), entry.direction(), entry.packetId(), supplier);
+            if (entry.state() == state && entry.direction() == direction) {
+                packetRegistry.registerPacket(entry.protocolVersion(), entry.state(), entry.direction(), entry.packetId(), supplier);
+                matched = true;
+            }
+        }
+        if (!matched) {
+            log.warn(t("starlight.logging.warn.packet.no_mapping"), key + " [" + state + "/" + direction + "]");
         }
     }
 
     /**
-     * 根据 Key 从 mapping 中查找所有匹配条目，并从 packetRegistry 中注销。
+     * 根据 Key + 指定的 state/direction 过滤 mapping 条目，并从 packetRegistry 中注销。
      */
-    public void unregisterByAutoMapping(Key key) {
+    public void unregisterByAutoMapping(Key key, ProtocolState state, ProtocolDirection direction) {
         List<PacketIdWithProtocolVersion> entries = mapping.get(key);
         if (entries == null || entries.isEmpty()) {
             log.warn(t("starlight.logging.warn.packet.no_mapping"), key);
             return;
         }
         for (PacketIdWithProtocolVersion entry : entries) {
-            packetRegistry.unregisterPacket(entry.protocolVersion(), entry.state(), entry.direction(), entry.packetId());
+            if (entry.state() == state && entry.direction() == direction) {
+                packetRegistry.unregisterPacket(entry.protocolVersion(), entry.state(), entry.direction(), entry.packetId());
+            }
         }
     }
 
@@ -139,10 +158,18 @@ public class RegistryPacketUtils {
 
     /**
      * 根据 Key + 版本/状态/方向，检查 packetRegistry 中是否存在对应包。
+     *
+     * <p>查找遵循两步 fallback 策略：
+     * <ol>
+     *   <li>先按指定的 protocolVersion 精确匹配 mapping 条目；</li>
+     *   <li>找不到时，若 protocolVersion 不是 ALL_VERSION，再按 ALL_VERSION 查找。</li>
+     * </ol>
+     * 因此即使传入 {@code UNKNOWN}（-2），也能命中注册为 ALL_VERSION 的包。
      */
     public boolean hasPacket(Key key, int protocolVersion, ProtocolState state, ProtocolDirection direction) {
         List<PacketIdWithProtocolVersion> entries = mapping.get(key);
         if (entries == null) return false;
+        // 1. 精确版本匹配
         for (PacketIdWithProtocolVersion entry : entries) {
             if (entry.protocolVersion() == protocolVersion
                     && entry.state() == state
@@ -150,17 +177,31 @@ public class RegistryPacketUtils {
                 return packetRegistry.hasPacket(protocolVersion, state, direction, entry.packetId());
             }
         }
+        // 2. Fallback 到 ALL_VERSION
+        int allVersion = ProtocolVersion.ALL_VERSION.getProtocolVersionCode();
+        if (protocolVersion != allVersion) {
+            for (PacketIdWithProtocolVersion entry : entries) {
+                if (entry.protocolVersion() == allVersion
+                        && entry.state() == state
+                        && entry.direction() == direction) {
+                    return packetRegistry.hasPacket(allVersion, state, direction, entry.packetId());
+                }
+            }
+        }
         return false;
     }
 
     /**
      * 从 mapping 中查找与指定版本/状态/方向匹配的 packetId。
+     *
+     * <p>先按 protocolVersion 精确匹配；找不到且不是 ALL_VERSION 时，再 fallback 到 ALL_VERSION。
      */
     private int resolvePacketId(Key key, int protocolVersion, ProtocolState state, ProtocolDirection direction) {
         List<PacketIdWithProtocolVersion> entries = mapping.get(key);
         if (entries == null || entries.isEmpty()) {
             throw new IllegalArgumentException("No mapping found for key: " + key);
         }
+        // 1. 精确版本匹配
         for (PacketIdWithProtocolVersion entry : entries) {
             if (entry.protocolVersion() == protocolVersion
                     && entry.state() == state
@@ -168,11 +209,23 @@ public class RegistryPacketUtils {
                 return entry.packetId();
             }
         }
+        // 2. Fallback 到 ALL_VERSION
+        int allVersion = ProtocolVersion.ALL_VERSION.getProtocolVersionCode();
+        if (protocolVersion != allVersion) {
+            for (PacketIdWithProtocolVersion entry : entries) {
+                if (entry.protocolVersion() == allVersion
+                        && entry.state() == state
+                        && entry.direction() == direction) {
+                    return entry.packetId();
+                }
+            }
+        }
         throw new IllegalArgumentException(
                 "No mapping found for key: " + key
                 + ", protocolVersion=" + protocolVersion
                 + ", state=" + state
                 + ", direction=" + direction
+                + " (also not found under ALL_VERSION)"
         );
     }
 

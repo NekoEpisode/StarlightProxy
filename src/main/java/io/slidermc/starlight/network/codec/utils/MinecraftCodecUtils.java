@@ -2,6 +2,7 @@ package io.slidermc.starlight.network.codec.utils;
 
 import io.netty.buffer.ByteBuf;
 import io.slidermc.starlight.api.profile.GameProfile;
+import net.kyori.adventure.key.Key;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -106,5 +107,26 @@ public class MinecraftCodecUtils {
         }
 
         return new GameProfile(username, uuid, properties);
+    }
+
+    public static void writeByteArray(ByteBuf byteBuf, byte[] array) {
+        writeVarInt(byteBuf, array.length);
+        byteBuf.writeBytes(array);
+    }
+
+    public static byte[] readByteArray(ByteBuf byteBuf) {
+        int length = readVarInt(byteBuf);
+        byte[] bytes = new byte[length];
+        byteBuf.readBytes(bytes);
+        return bytes;
+    }
+
+    public static void writeKey(ByteBuf byteBuf, Key key) {
+        writeString(byteBuf, key.namespace() + ":" + key.value());
+    }
+
+    public static Key readKey(ByteBuf byteBuf) {
+        String key = readString(byteBuf);
+        return Key.key(key);
     }
 }

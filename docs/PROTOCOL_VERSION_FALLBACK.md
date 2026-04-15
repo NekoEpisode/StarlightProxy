@@ -24,7 +24,7 @@ ALL_VERSION(-1)
 
 ---
 
-## 查找优先级（PacketRegistry.createPacket）
+## 查找优先级（PacketRegistry.createPacket / RegistryPacketUtils）
 
 ```
 1. 先按「具体版本」查找（例如 775）
@@ -34,12 +34,18 @@ ALL_VERSION(-1)
 3. 抛出 IllegalArgumentException
 ```
 
-具体实现：
+> **注意**：`UNKNOWN`（-2）与任何其他未注册的版本号行为完全相同 ——
+> 先查 -2，找不到后自动 fallback 到 ALL_VERSION（-1）。
+> 因此无需为 UNKNOWN 特殊处理。
+
+具体实现（`PacketRegistry` 与 `RegistryPacketUtils` 均遵循此逻辑）：
 
 ```java
-Supplier<? extends IMinecraftPacket> factory = lookupFactory(protocolVersion, state, direction, packetId);
-if (factory == null && protocolVersion != ALL_VERSION) {
-    factory = lookupFactory(ALL_VERSION, state, direction, packetId);
+// 1. 精确匹配
+result = lookup(protocolVersion, ...);
+// 2. Fallback
+if (result == null && protocolVersion != ALL_VERSION) {
+    result = lookup(ALL_VERSION, ...);
 }
 ```
 

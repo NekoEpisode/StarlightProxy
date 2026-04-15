@@ -6,6 +6,8 @@ import io.slidermc.starlight.StarlightProxy;
 import io.slidermc.starlight.api.player.ProxiedPlayer;
 import io.slidermc.starlight.api.profile.GameProfile;
 import io.slidermc.starlight.network.codec.utils.MinecraftCodecUtils;
+import io.slidermc.starlight.network.context.AttributeKeys;
+import io.slidermc.starlight.network.context.ConnectionContext;
 import io.slidermc.starlight.network.packet.IMinecraftPacket;
 import io.slidermc.starlight.network.packet.listener.IPacketListener;
 import io.slidermc.starlight.network.packet.packets.clientbound.login.ClientboundDisconnectLoginPacket;
@@ -64,11 +66,21 @@ public class ServerboundLoginStartPacket implements IMinecraftPacket {
     public static class Listener implements IPacketListener<ServerboundLoginStartPacket> {
         @Override
         public void handle(ServerboundLoginStartPacket packet, ChannelHandlerContext ctx, StarlightProxy proxy) {
+            ConnectionContext context = ctx.channel().attr(AttributeKeys.CONNECTION_CONTEXT).get();
+            if (context.getHandshakeInformation().getProtocolVersion() == ProtocolVersion.UNKNOWN) {
+                log.debug("不支持的版本，踢出");
+                ctx.channel().writeAndFlush(new ClientboundDisconnectLoginPacket(Component.text("Unsupported protocol version: " + context.getHandshakeInformation().getOriginalProtocolVersion()).color(NamedTextColor.RED))).addListener(_ -> {
+                    ctx.channel().close();
+                });
+                return;
+            }
+
             if (proxy.getConfig().isOnlineMode()) {
                 // TODO: 实现正版验证
                 log.error("Online mode is not implemented yet");
-                ctx.channel().writeAndFlush(new ClientboundDisconnectLoginPacket(Component.text("Online mode is not implemented yet").color(NamedTextColor.RED)));
-                ctx.channel().close();
+                ctx.channel().writeAndFlush(new ClientboundDisconnectLoginPacket(Component.text("Online mode is not implemented yet").color(NamedTextColor.RED))).addListener(_ -> {
+                    ctx.channel().close();
+                });
             } else {
                 log.debug("玩家 {} 以离线模式登录", packet.getUsername());
                 ProxiedPlayer player = new ProxiedPlayer(new GameProfile(packet.username, packet.uuid, List.of()), ctx.channel());

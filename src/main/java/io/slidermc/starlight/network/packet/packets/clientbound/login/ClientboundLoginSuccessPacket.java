@@ -47,11 +47,10 @@ public class ClientboundLoginSuccessPacket implements IMinecraftPacket {
         @Override
         public void handle(ClientboundLoginSuccessPacket packet, ChannelHandlerContext ctx, StarlightProxy proxy) {
             log.debug("收到下游LoginSuccess");
+            StarlightMinecraftClient client = ctx.channel().attr(AttributeKeys.DOWNSTREAM_CONNECTION_CONTEXT).get().getClient();
+            client.setInboundState(ProtocolState.CONFIGURATION);
             ctx.channel().writeAndFlush(new ServerboundLoginAckPacket()).addListener(_ -> {
-                StarlightMinecraftClient client = ctx.channel().attr(AttributeKeys.DOWNSTREAM_CONNECTION_CONTEXT).get().getClient();
                 client.setOutboundState(ProtocolState.CONFIGURATION);
-                client.setInboundState(ProtocolState.CONFIGURATION);
-                log.debug("下游切换到CONFIGURATION");
                 client.callLoginComplete();
             });
         }
