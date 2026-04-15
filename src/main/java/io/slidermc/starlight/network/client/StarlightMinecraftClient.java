@@ -44,6 +44,8 @@ public class StarlightMinecraftClient {
     private ProtocolState inboundState;
     /** The upstream player channel paired with this downstream connection. Set externally after login completes. */
     private volatile Channel playerChannel;
+    /** True when this client is being used for a server switch; suppresses upstream player disconnect on login failure. */
+    private volatile boolean switching = false;
 
     public StarlightMinecraftClient(InetSocketAddress address, PacketRegistry packetRegistry, StarlightProxy proxy) {
         this.address = address;
@@ -192,5 +194,13 @@ public class StarlightMinecraftClient {
 
     public void setPlayerChannel(Channel playerChannel) {
         this.playerChannel = playerChannel;
+    }
+
+    public boolean isSwitching() {
+        return switching;
+    }
+
+    public void setSwitching(boolean switching) {
+        this.switching = switching;
     }
 }

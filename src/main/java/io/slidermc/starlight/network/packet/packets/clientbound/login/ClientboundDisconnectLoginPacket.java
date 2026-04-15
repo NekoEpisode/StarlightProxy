@@ -48,10 +48,10 @@ public class ClientboundDisconnectLoginPacket implements IMinecraftPacket {
         @Override
         public void handle(ClientboundDisconnectLoginPacket packet, ChannelHandlerContext ctx, StarlightProxy proxy) {
             StarlightMinecraftClient client = ctx.channel().attr(AttributeKeys.DOWNSTREAM_CONNECTION_CONTEXT).get().getClient();
-            // 转发断开包给玩家并关闭上游 channel
-            DisconnectUtils.forwardAndClose(client, packet.getReason());
-            // 完成 loginFuture（异常），触发 ServerboundLoginAckPacket.Listener 的 whenComplete 清理逻辑
-            // 同时关闭下游 channel
+            if (!client.isSwitching()) {
+                // Initial login: forward the disconnect reason to the player and close their connection.
+                DisconnectUtils.forwardAndClose(client, packet.getReason());
+            }
             client.callLoginCompleteExceptionally(new RuntimeException("Downstream disconnected during login"));
             client.disconnect();
         }

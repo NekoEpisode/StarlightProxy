@@ -24,13 +24,13 @@ public class ClientboundPluginMessageConfigurationPacket implements IMinecraftPa
     @Override
     public void encode(ByteBuf byteBuf, ProtocolVersion protocolVersion) {
         MinecraftCodecUtils.writeKey(byteBuf, key);
-        byteBuf.writeBytes(data);   // data 就是剩余原始字节，直接写，不加长度前缀
+        byteBuf.writeBytes(data);
     }
 
     @Override
     public void decode(ByteBuf byteBuf, ProtocolVersion protocolVersion) {
         this.key = MinecraftCodecUtils.readKey(byteBuf);
-        this.data = new byte[byteBuf.readableBytes()];  // 读取剩余所有字节，不读长度前缀
+        this.data = new byte[byteBuf.readableBytes()];
         byteBuf.readBytes(this.data);
     }
 

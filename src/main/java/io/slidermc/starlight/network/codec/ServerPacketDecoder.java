@@ -55,7 +55,9 @@ public class ServerPacketDecoder extends ByteToMessageDecoder {
                 return;
             }
             IMinecraftPacket packet = packetRegistry.createPacket(ProtocolVersion.ALL_VERSION.getProtocolVersionCode(), ProtocolState.HANDSHAKE, ProtocolDirection.SERVERBOUND, packetId);
-            packet.decode(byteBuf, ProtocolVersion.ALL_VERSION);
+            int payloadLength = length - (byteBuf.readerIndex() - contentStart);
+            ByteBuf slice = byteBuf.readSlice(payloadLength);
+            packet.decode(slice, ProtocolVersion.ALL_VERSION);
             list.add(packet);
         } else {
             // 如果已经经过Handshake，那ConnectionContext里的ProtocolVersion应该不为null了
@@ -88,7 +90,9 @@ public class ServerPacketDecoder extends ByteToMessageDecoder {
                     ProtocolDirection.SERVERBOUND,
                     packetId
             );
-            packet.decode(byteBuf, protocolVersion);
+            int payloadLength = length - (byteBuf.readerIndex() - contentStart);
+            ByteBuf slice = byteBuf.readSlice(payloadLength);
+            packet.decode(slice, protocolVersion);
             list.add(packet);
         }
     }

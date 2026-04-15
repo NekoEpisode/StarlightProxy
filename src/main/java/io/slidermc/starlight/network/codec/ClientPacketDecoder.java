@@ -82,7 +82,9 @@ public class ClientPacketDecoder extends ByteToMessageDecoder {
                 ProtocolDirection.CLIENTBOUND,
                 packetId
         );
-        packet.decode(byteBuf, protocolVersion);
+        int payloadLength = length - (byteBuf.readerIndex() - contentStart);
+        ByteBuf slice = byteBuf.readSlice(payloadLength);
+        packet.decode(slice, protocolVersion);
         list.add(packet);
     }
 }
