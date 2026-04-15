@@ -1,8 +1,12 @@
 package io.slidermc.starlight.network.codec.utils;
 
 import io.netty.buffer.ByteBuf;
+import io.slidermc.starlight.api.profile.GameProfile;
 
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 
 public class MinecraftCodecUtils {
     /**
@@ -55,5 +59,52 @@ public class MinecraftCodecUtils {
         byte[] bytes = new byte[length];
         byteBuf.readBytes(bytes);
         return new String(bytes, StandardCharsets.UTF_8);
+    }
+
+    public static void writeUUID(ByteBuf byteBuf, java.util.UUID uuid) {
+        byteBuf.writeLong(uuid.getMostSignificantBits());
+        byteBuf.writeLong(uuid.getLeastSignificantBits());
+    }
+
+    public static java.util.UUID readUUID(ByteBuf byteBuf) {
+        return new java.util.UUID(byteBuf.readLong(), byteBuf.readLong());
+    }
+
+    public static void writeGameProfile(ByteBuf byteBuf, GameProfile gameProfile) {
+        writeUUID(byteBuf, gameProfile.uuid());
+        writeString(byteBuf, gameProfile.username());
+
+        writeVarInt(byteBuf, gameProfile.properties().size());
+        for (GameProfile.Property prop : gameProfile.properties()) {
+            writeString(byteBuf, prop.name());
+            writeString(byteBuf, prop.value());
+            if (prop.signature() != null) {
+                byteBuf.writeBoolean(true);
+                writeString(byteBuf, prop.signature());
+            } else {
+                byteBuf.writeBoolean(false);
+            }
+        }
+    }
+
+    public static GameProfile readGameProfile(ByteBuf byteBuf) {
+        UUID uuid = readUUID(byteBuf);
+        String username = readString(byteBuf);
+
+        int length = readVarInt(byteBuf);
+        List<GameProfile.Property> properties = new ArrayList<>(length);
+        for (int i = 0; i < length; i++) {
+            String name = readString(byteBuf);
+            String value = readString(byteBuf);
+            String signature = null;
+            boolean hasSign = byteBuf.readBoolean();
+            if (hasSign) {
+                signature = readString(byteBuf);
+            }
+            GameProfile.Property property = new GameProfile.Property(name, value, signature);
+            properties.add(property);
+        }
+
+        return new GameProfile(username, uuid, properties);
     }
 }

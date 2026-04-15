@@ -2,6 +2,7 @@ package io.slidermc.starlight.network.packet.packets.serverbound.handshake;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
+import io.slidermc.starlight.StarlightProxy;
 import io.slidermc.starlight.network.codec.utils.MinecraftCodecUtils;
 import io.slidermc.starlight.network.context.AttributeKeys;
 import io.slidermc.starlight.network.context.ConnectionContext;
@@ -79,8 +80,9 @@ public class ServerboundHandshakePacket implements IMinecraftPacket {
 
     public static class Listener implements IPacketListener<ServerboundHandshakePacket> {
         @Override
-        public void handle(ServerboundHandshakePacket packet, ChannelHandlerContext ctx) {
+        public void handle(ServerboundHandshakePacket packet, ChannelHandlerContext ctx, StarlightProxy proxy) {
             ConnectionContext context = ctx.channel().attr(AttributeKeys.CONNECTION_CONTEXT).get();
+            context.getHandshakeInformation().setOriginalProtocolVersion(packet.protocolVersion);
             context.getHandshakeInformation().setProtocolVersion(ProtocolVersion.getByProtocolVersionCode(packet.protocolVersion));
             log.debug("已设置协议版本号: {}", context.getHandshakeInformation().getProtocolVersion().name());
             context.getHandshakeInformation().setNextState(NextState.getById(packet.nextState));

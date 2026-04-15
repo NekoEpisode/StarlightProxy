@@ -5,6 +5,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
+import io.slidermc.starlight.StarlightProxy;
 import io.slidermc.starlight.network.codec.utils.MinecraftCodecUtils;
 import io.slidermc.starlight.network.packet.IMinecraftPacket;
 import io.slidermc.starlight.network.packet.listener.IPacketListener;
@@ -137,7 +138,7 @@ public class ClientboundStatusResponsePacket implements IMinecraftPacket {
 
     public static class Listener implements IPacketListener<ClientboundStatusResponsePacket> {
         @Override
-        public void handle(ClientboundStatusResponsePacket packet, ChannelHandlerContext ctx) {
+        public void handle(ClientboundStatusResponsePacket packet, ChannelHandlerContext ctx, StarlightProxy proxy) {
             // TODO: 待实现
         }
     }

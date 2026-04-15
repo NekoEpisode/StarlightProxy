@@ -2,6 +2,7 @@ package io.slidermc.starlight.network.packet.packets.serverbound.status;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
+import io.slidermc.starlight.StarlightProxy;
 import io.slidermc.starlight.network.packet.IMinecraftPacket;
 import io.slidermc.starlight.network.packet.listener.IPacketListener;
 import io.slidermc.starlight.network.packet.packets.clientbound.status.ClientboundPongResponsePacket;
@@ -39,7 +40,7 @@ public class ServerboundPingRequestPacket implements IMinecraftPacket {
 
     public static class Listener implements IPacketListener<ServerboundPingRequestPacket> {
         @Override
-        public void handle(ServerboundPingRequestPacket packet, ChannelHandlerContext ctx) {
+        public void handle(ServerboundPingRequestPacket packet, ChannelHandlerContext ctx, StarlightProxy proxy) {
             log.debug("收到PingRequest");
             ctx.channel().writeAndFlush(new ClientboundPongResponsePacket(packet.getPayload()));
         }

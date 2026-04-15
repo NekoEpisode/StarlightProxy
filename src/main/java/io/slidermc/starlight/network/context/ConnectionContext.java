@@ -1,11 +1,13 @@
 package io.slidermc.starlight.network.context;
 
+import io.slidermc.starlight.api.player.ProxiedPlayer;
 import io.slidermc.starlight.network.protocolenum.ProtocolState;
 
 public class ConnectionContext {
     private HandshakeInformation handshakeInformation;
     private ProtocolState inboundState;
     private ProtocolState outboundState;
+    private ProxiedPlayer player;
 
     public ConnectionContext() {
         this.inboundState = ProtocolState.HANDSHAKE;
@@ -35,5 +37,13 @@ public class ConnectionContext {
 
     public void setHandshakeInformation(HandshakeInformation handshakeInformation) {
         this.handshakeInformation = handshakeInformation;
+    }
+
+    public ProxiedPlayer getPlayer() {
+        return player;
+    }
+
+    public void setPlayer(ProxiedPlayer player) {
+        this.player = player;
     }
 }

@@ -4,14 +4,18 @@ import io.slidermc.starlight.api.translate.TranslateManager;
 import io.slidermc.starlight.config.StarlightConfig;
 import io.slidermc.starlight.network.packet.PacketRegistry;
 import io.slidermc.starlight.network.packet.RegistryPacketUtils;
+import io.slidermc.starlight.network.packet.packets.clientbound.login.ClientboundDisconnectLoginPacket;
+import io.slidermc.starlight.network.packet.packets.clientbound.login.ClientboundLoginSuccessPacket;
 import io.slidermc.starlight.network.packet.packets.clientbound.status.ClientboundPongResponsePacket;
 import io.slidermc.starlight.network.packet.packets.clientbound.status.ClientboundStatusResponsePacket;
 import io.slidermc.starlight.network.packet.packets.serverbound.handshake.ServerboundHandshakePacket;
+import io.slidermc.starlight.network.packet.packets.serverbound.login.ServerboundLoginStartPacket;
 import io.slidermc.starlight.network.packet.packets.serverbound.status.ServerboundPingRequestPacket;
 import io.slidermc.starlight.network.packet.packets.serverbound.status.ServerboundStatusRequestPacket;
 import io.slidermc.starlight.network.protocolenum.ProtocolDirection;
 import io.slidermc.starlight.network.protocolenum.ProtocolState;
 import io.slidermc.starlight.network.protocolenum.ProtocolVersion;
+import net.kyori.adventure.key.Key;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -85,6 +89,12 @@ public class Main {
 
         r.registerPacket(av, ProtocolState.STATUS, ProtocolDirection.CLIENTBOUND, 0x01, ClientboundPongResponsePacket::new);
         r.registerListener(ClientboundPongResponsePacket.class, new ClientboundPongResponsePacket.Listener());
+
+        registryPacketUtils.registerByAutoMapping(Key.key("minecraft:login_disconnect"), ClientboundDisconnectLoginPacket::new);
+        r.registerListener(ClientboundDisconnectLoginPacket.class, new ClientboundDisconnectLoginPacket.Listener());
+
+        registryPacketUtils.registerByAutoMapping(Key.key("minecraft:login_finished"), ClientboundLoginSuccessPacket::new);
+        r.registerListener(ClientboundLoginSuccessPacket.class, new ClientboundLoginSuccessPacket.Listener());
     }
 
     private static void registerServerboundPackets(RegistryPacketUtils registryPacketUtils) {
@@ -99,5 +109,8 @@ public class Main {
 
         r.registerPacket(av, ProtocolState.STATUS, ProtocolDirection.SERVERBOUND, 0x01, ServerboundPingRequestPacket::new);
         r.registerListener(ServerboundPingRequestPacket.class, new ServerboundPingRequestPacket.Listener());
+
+        registryPacketUtils.registerByAutoMapping(Key.key("minecraft:hello"), ServerboundLoginStartPacket::new);
+        r.registerListener(ServerboundLoginStartPacket.class, new ServerboundLoginStartPacket.Listener());
     }
 }

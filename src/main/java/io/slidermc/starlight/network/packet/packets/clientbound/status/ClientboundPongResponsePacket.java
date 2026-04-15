@@ -2,6 +2,7 @@ package io.slidermc.starlight.network.packet.packets.clientbound.status;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
+import io.slidermc.starlight.StarlightProxy;
 import io.slidermc.starlight.network.packet.IMinecraftPacket;
 import io.slidermc.starlight.network.packet.listener.IPacketListener;
 import io.slidermc.starlight.network.protocolenum.ProtocolVersion;
@@ -35,7 +36,7 @@ public class ClientboundPongResponsePacket implements IMinecraftPacket {
 
     public static class Listener implements IPacketListener<ClientboundPongResponsePacket> {
         @Override
-        public void handle(ClientboundPongResponsePacket packet, ChannelHandlerContext ctx) {
+        public void handle(ClientboundPongResponsePacket packet, ChannelHandlerContext ctx, StarlightProxy proxy) {
             // TODO: 待实现
         }
     }

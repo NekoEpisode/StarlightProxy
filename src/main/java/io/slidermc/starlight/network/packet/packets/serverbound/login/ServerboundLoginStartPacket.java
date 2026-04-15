@@ -1,0 +1,81 @@
+package io.slidermc.starlight.network.packet.packets.serverbound.login;
+
+import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelHandlerContext;
+import io.slidermc.starlight.StarlightProxy;
+import io.slidermc.starlight.api.player.ProxiedPlayer;
+import io.slidermc.starlight.api.profile.GameProfile;
+import io.slidermc.starlight.network.codec.utils.MinecraftCodecUtils;
+import io.slidermc.starlight.network.packet.IMinecraftPacket;
+import io.slidermc.starlight.network.packet.listener.IPacketListener;
+import io.slidermc.starlight.network.packet.packets.clientbound.login.ClientboundDisconnectLoginPacket;
+import io.slidermc.starlight.network.packet.packets.clientbound.login.ClientboundLoginSuccessPacket;
+import io.slidermc.starlight.network.protocolenum.ProtocolVersion;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.List;
+import java.util.UUID;
+
+public class ServerboundLoginStartPacket implements IMinecraftPacket {
+    private static final Logger log = LoggerFactory.getLogger(ServerboundLoginStartPacket.class);
+
+    private String username;
+    private UUID uuid;
+
+    public ServerboundLoginStartPacket() {}
+
+    public ServerboundLoginStartPacket(String username, UUID uuid) {
+        this.username = username;
+        this.uuid = uuid;
+    }
+
+    @Override
+    public void encode(ByteBuf byteBuf, ProtocolVersion protocolVersion) {
+        MinecraftCodecUtils.writeString(byteBuf, this.username);
+        MinecraftCodecUtils.writeUUID(byteBuf, this.uuid);
+    }
+
+    @Override
+    public void decode(ByteBuf byteBuf, ProtocolVersion protocolVersion) {
+        this.username = MinecraftCodecUtils.readString(byteBuf);
+        this.uuid = MinecraftCodecUtils.readUUID(byteBuf);
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public UUID getUuid() {
+        return uuid;
+    }
+
+    public void setUuid(UUID uuid) {
+        this.uuid = uuid;
+    }
+
+    public static class Listener implements IPacketListener<ServerboundLoginStartPacket> {
+        @Override
+        public void handle(ServerboundLoginStartPacket packet, ChannelHandlerContext ctx, StarlightProxy proxy) {
+            if (proxy.getConfig().isOnlineMode()) {
+                // TODO: 实现正版验证
+                log.error("Online mode is not implemented yet");
+                ctx.channel().writeAndFlush(new ClientboundDisconnectLoginPacket(Component.text("Online mode is not implemented yet").color(NamedTextColor.RED)));
+                ctx.channel().close();
+            } else {
+                log.debug("玩家 {} 以离线模式登录", packet.getUsername());
+                ProxiedPlayer player = new ProxiedPlayer(new GameProfile(packet.username, packet.uuid, List.of()), ctx.channel());
+                log.debug("已创建ProxiedPlayer对象: {}", player);
+                player.getConnectionContext().setPlayer(player);
+                proxy.getPlayerManager().addPlayer(player);
+                ctx.channel().writeAndFlush(new ClientboundLoginSuccessPacket());
+            }
+        }
+    }
+}

@@ -1,6 +1,8 @@
 package io.slidermc.starlight.network.packet;
 
 import io.netty.channel.ChannelHandlerContext;
+import io.slidermc.starlight.StarlightProxy;
+import io.slidermc.starlight.config.StarlightConfig;
 import io.slidermc.starlight.network.packet.listener.IPacketListener;
 import io.slidermc.starlight.network.protocolenum.ProtocolDirection;
 import io.slidermc.starlight.network.protocolenum.ProtocolState;
@@ -155,10 +157,10 @@ public class PacketRegistry {
     }
 
     @SuppressWarnings("unchecked")
-    public void dispatch(IMinecraftPacket packet, ChannelHandlerContext ctx) {
+    public void dispatch(IMinecraftPacket packet, ChannelHandlerContext ctx, StarlightProxy proxy) {
         IPacketListener<?> listener = listenerMap.get(packet.getClass().getName());
         if (listener != null) {
-            ((IPacketListener<IMinecraftPacket>) listener).handle(packet, ctx);
+            ((IPacketListener<IMinecraftPacket>) listener).handle(packet, ctx, proxy);
         }
     }
 }

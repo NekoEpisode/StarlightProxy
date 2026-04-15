@@ -7,6 +7,7 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.slidermc.starlight.api.player.PlayerManager;
 import io.slidermc.starlight.api.translate.TranslateManager;
 import io.slidermc.starlight.config.StarlightConfig;
 import io.slidermc.starlight.network.codec.MinecraftPacketDecoder;
@@ -23,6 +24,7 @@ public class StarlightProxy {
     private final InetSocketAddress address;
 
     private final TranslateManager translateManager;
+    private final PlayerManager playerManager;
     private final RegistryPacketUtils registryPacketUtils;
     private final StarlightConfig config;
 
@@ -32,6 +34,7 @@ public class StarlightProxy {
         this.translateManager = translateManager;
         this.registryPacketUtils = registryPacketUtils;
         this.config = config;
+        this.playerManager = new PlayerManager();
     }
 
     void start() {
@@ -52,6 +55,7 @@ public class StarlightProxy {
     }
 
     private void startServer() throws Exception {
+        StarlightProxy proxy = this;
         EventLoopGroup bossGroup = new NioEventLoopGroup(1);
         EventLoopGroup workerGroup = new NioEventLoopGroup(4);
         try {
@@ -68,7 +72,8 @@ public class StarlightProxy {
                                     registryPacketUtils.getPacketRegistry()
                             ));
                             socketChannel.pipeline().addLast(new StarlightServerHandler(
-                                    registryPacketUtils.getPacketRegistry()
+                                    registryPacketUtils.getPacketRegistry(),
+                                    proxy
                             ));
                         }
                     });
@@ -96,5 +101,9 @@ public class StarlightProxy {
 
     public TranslateManager getTranslateManager() {
         return translateManager;
+    }
+
+    public PlayerManager getPlayerManager() {
+        return playerManager;
     }
 }
