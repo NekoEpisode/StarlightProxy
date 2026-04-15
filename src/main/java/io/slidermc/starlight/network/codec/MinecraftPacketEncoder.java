@@ -29,7 +29,7 @@ public class MinecraftPacketEncoder extends MessageToByteEncoder<IMinecraftPacke
             return;
         }
 
-        ProtocolVersion protocolVersion = context.getProtocolVersion();
+        ProtocolVersion protocolVersion = context.getHandshakeInformation().getProtocolVersion();
         if (protocolVersion == null) {
             log.error("ProtocolVersion is null while encoding (still in HANDSHAKE?), dropping packet: {}", packet.getClass().getName());
             return;

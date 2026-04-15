@@ -8,6 +8,7 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.slidermc.starlight.api.translate.TranslateManager;
+import io.slidermc.starlight.config.StarlightConfig;
 import io.slidermc.starlight.network.codec.MinecraftPacketDecoder;
 import io.slidermc.starlight.network.codec.MinecraftPacketEncoder;
 import io.slidermc.starlight.network.packet.RegistryPacketUtils;
@@ -23,11 +24,14 @@ public class StarlightProxy {
 
     private final TranslateManager translateManager;
     private final RegistryPacketUtils registryPacketUtils;
+    private final StarlightConfig config;
 
-    public StarlightProxy(InetSocketAddress address, TranslateManager translateManager, RegistryPacketUtils registryPacketUtils) {
+    public StarlightProxy(InetSocketAddress address, TranslateManager translateManager,
+                          RegistryPacketUtils registryPacketUtils, StarlightConfig config) {
         this.address = address;
         this.translateManager = translateManager;
         this.registryPacketUtils = registryPacketUtils;
+        this.config = config;
     }
 
     void start() {
@@ -80,6 +84,10 @@ public class StarlightProxy {
 
     public InetSocketAddress getAddress() {
         return address;
+    }
+
+    public StarlightConfig getConfig() {
+        return config;
     }
 
     public RegistryPacketUtils getRegistryPacketUtils() {

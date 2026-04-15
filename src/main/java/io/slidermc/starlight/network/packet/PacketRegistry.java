@@ -15,8 +15,16 @@ import java.util.function.Supplier;
  * factories, which are responsible for creating instances of {@link IMinecraftPacket}.
  * The registry supports multiple protocol versions, allowing different packet
  * implementations to be used based on the protocol version.
+ *
+ * <p>Packet lookup follows a two-step fallback strategy: the specific protocol version
+ * is checked first; if no match is found, the lookup falls back to {@code ALL_VERSION}
+ * ({@value ALL_VERSION}). See {@code docs/PROTOCOL_VERSION_FALLBACK.md} for details.
  */
 public class PacketRegistry {
+    /** Sentinel value matching {@code ProtocolVersion.ALL_VERSION}. Packets registered under
+     *  this version act as a fallback for any protocol version that has no specific registration. */
+    private static final int ALL_VERSION = -1;
+
     private final Map<Integer, Map<ProtocolState, Map<ProtocolDirection, Map<Integer, Supplier<? extends IMinecraftPacket>>>>> packetFactoryMap = new ConcurrentHashMap<>(); // protocolVersion(state(direction(packetId(packetSupplier))))
     private final Map<Integer, Map<ProtocolState, Map<ProtocolDirection, Map<Class<? extends IMinecraftPacket>, Integer>>>> reverseMap = new ConcurrentHashMap<>(); // protocolVersion(state(direction(packetClass(packetId))))
     private final Map<String, IPacketListener<?>> listenerMap = new ConcurrentHashMap<>(); // packetClassName → listener
@@ -67,57 +75,71 @@ public class PacketRegistry {
 
     /**
      * 根据包实例反查 packetId，用于 Encoder。
+     * 先按具体版本查，找不到再 fallback 到 ALL_VERSION（-1）。
      */
     public int getPacketId(int protocolVersion, ProtocolState state, ProtocolDirection direction, IMinecraftPacket packet) {
-        Map<Class<? extends IMinecraftPacket>, Integer> classMap =
-                reverseMap.getOrDefault(protocolVersion, Map.of())
-                          .getOrDefault(state, Map.of())
-                          .getOrDefault(direction, Map.of());
-        Integer id = classMap.get(packet.getClass());
+        Integer id = lookupPacketId(protocolVersion, state, direction, packet.getClass());
+        if (id == null && protocolVersion != ALL_VERSION) {
+            id = lookupPacketId(ALL_VERSION, state, direction, packet.getClass());
+        }
         if (id == null) {
             throw new IllegalArgumentException(
                     "No packetId registered for class: " + packet.getClass().getName()
                     + ", protocolVersion=" + protocolVersion
                     + ", state=" + state
                     + ", direction=" + direction
+                    + " (also not found under ALL_VERSION)"
             );
         }
         return id;
     }
 
+    private Integer lookupPacketId(int protocolVersion, ProtocolState state, ProtocolDirection direction, Class<? extends IMinecraftPacket> clazz) {
+        return reverseMap.getOrDefault(protocolVersion, Map.of())
+                         .getOrDefault(state, Map.of())
+                         .getOrDefault(direction, Map.of())
+                         .get(clazz);
+    }
+
     public IMinecraftPacket createPacket(int protocolVersion, ProtocolState state, ProtocolDirection direction, int packetId) {
-        Map<ProtocolState, Map<ProtocolDirection, Map<Integer, Supplier<? extends IMinecraftPacket>>>> versionMap = packetFactoryMap.get(protocolVersion);
-        if (versionMap == null) {
-            throw new IllegalArgumentException("Unknown protocol version: " + protocolVersion);
+        // 1. 先按具体版本查
+        Supplier<? extends IMinecraftPacket> factory = lookupFactory(protocolVersion, state, direction, packetId);
+
+        // 2. 找不到则 fallback 到 ALL_VERSION（-1），避免对每个版本重复注册版本无关的包
+        if (factory == null && protocolVersion != ALL_VERSION) {
+            factory = lookupFactory(ALL_VERSION, state, direction, packetId);
         }
 
-        Map<ProtocolDirection, Map<Integer, Supplier<? extends IMinecraftPacket>>> stateMap = versionMap.get(state);
-        if (stateMap == null) {
-            throw new IllegalArgumentException("Unknown state: " + state + " for protocol version " + protocolVersion);
-        }
-
-        Map<Integer, Supplier<? extends IMinecraftPacket>> directionMap = stateMap.get(direction);
-        if (directionMap == null) {
-            throw new IllegalArgumentException("Unknown direction: " + direction + " for state " + state + " and protocol version " + protocolVersion);
-        }
-
-        Supplier<? extends IMinecraftPacket> factory = directionMap.get(packetId);
         if (factory == null) {
-            throw new IllegalArgumentException("Unknown packet id: " + packetId + " for direction " + direction + ", state " + state + ", protocol version " + protocolVersion);
+            throw new IllegalArgumentException(
+                    "Unknown packet id: " + packetId
+                    + " for direction=" + direction
+                    + ", state=" + state
+                    + ", protocolVersion=" + protocolVersion
+                    + " (also not found under ALL_VERSION)"
+            );
         }
 
         return factory.get();
     }
 
-    public boolean hasPacket(int protocolVersion, ProtocolState state, ProtocolDirection direction, int packetId) {
+    /** 内部纯查找，找不到任意一层时返回 null，不抛异常。 */
+    private Supplier<? extends IMinecraftPacket> lookupFactory(int protocolVersion, ProtocolState state, ProtocolDirection direction, int packetId) {
         Map<ProtocolState, Map<ProtocolDirection, Map<Integer, Supplier<? extends IMinecraftPacket>>>> versionMap = packetFactoryMap.get(protocolVersion);
-        if (versionMap == null) return false;
-
+        if (versionMap == null) return null;
         Map<ProtocolDirection, Map<Integer, Supplier<? extends IMinecraftPacket>>> stateMap = versionMap.get(state);
-        if (stateMap == null) return false;
-
+        if (stateMap == null) return null;
         Map<Integer, Supplier<? extends IMinecraftPacket>> directionMap = stateMap.get(direction);
-        return directionMap != null && directionMap.containsKey(packetId);
+        if (directionMap == null) return null;
+        return directionMap.get(packetId);
+    }
+
+    public boolean hasPacket(int protocolVersion, ProtocolState state, ProtocolDirection direction, int packetId) {
+        if (lookupFactory(protocolVersion, state, direction, packetId) != null) return true;
+        if (protocolVersion != ALL_VERSION) {
+            return lookupFactory(ALL_VERSION, state, direction, packetId) != null;
+        }
+        return false;
     }
 
     // -------------------------------------------------------------------------

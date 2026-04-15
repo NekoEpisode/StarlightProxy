@@ -50,13 +50,13 @@ public class MinecraftPacketDecoder extends ByteToMessageDecoder {
                 ctx.channel().close();
                 return;
             }
-            IMinecraftPacket packet = packetRegistry.createPacket(ProtocolVersion.UNKNOWN_OR_PLACEHOLDER.getProtocolVersionCode(), ProtocolState.HANDSHAKE, ProtocolDirection.SERVERBOUND, packetId); // packetId应该为0
-            packet.decode(byteBuf, ProtocolVersion.UNKNOWN_OR_PLACEHOLDER);
+            IMinecraftPacket packet = packetRegistry.createPacket(ProtocolVersion.ALL_VERSION.getProtocolVersionCode(), ProtocolState.HANDSHAKE, ProtocolDirection.SERVERBOUND, packetId); // packetId应该为0
+            packet.decode(byteBuf, ProtocolVersion.ALL_VERSION);
             list.add(packet);
         } else {
             // 如果已经经过Handshake，那ConnectionContext里的ProtocolVersion应该不为null了
-            ProtocolVersion protocolVersion = context.getProtocolVersion();
-            if (context.getProtocolVersion() == null) {
+            ProtocolVersion protocolVersion = context.getHandshakeInformation().getProtocolVersion();
+            if (context.getHandshakeInformation().getProtocolVersion() == null) {
                 ctx.channel().close(); // 预料之外的行为
                 log.error("ConnectionContext's protocolVersion field is null?? why? Anyway, drop the connection");
                 return;

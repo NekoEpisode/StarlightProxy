@@ -8,7 +8,8 @@ package io.slidermc.starlight.network.protocolenum;
 public enum ProtocolVersion {
     MINECRAFT_26_1(775),
 
-    UNKNOWN_OR_PLACEHOLDER(-1);
+    ALL_VERSION(-1), // 全版本
+    UNKNOWN(-2);
 
     private final int protocolVersionCode;
 
@@ -50,6 +51,6 @@ public enum ProtocolVersion {
                 return version;
             }
         }
-        return null;
+        return UNKNOWN;
     }
 }

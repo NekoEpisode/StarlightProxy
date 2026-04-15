@@ -1,0 +1,21 @@
+# Starlight代理设置
+proxy:
+  host: "0.0.0.0" # 代理服务器监听地址
+  port: 25565 # 代理服务器启动端口
+  max-players: 100 # 仅作展示，Starlight不会真正拦截玩家
+  online-mode: true # 是否启用在线模式
+  ip-forward-type: "none" # IP转发的格式, 支持legacy(BungeeCord), none(不使用ip转发)
+  motd: "<gradient:#FFE100:#383500>Starlight Proxy</gradient>" # MOTD，支持MiniMessage语法
+  force-default-server: false # 是否强制将玩家发送到默认服务器（无论其是否加入过代理）
+  default-server: lobby # 如果玩家第一次加入代理，则将其发送到的服务器
+  bungeecord-plugin-message: false # 是否启用BungeeCord插件消息通道兼容
+  language: "zh_cn" # 默认语言 (可选: zh_cn, en_us)
+  logging-command: false # 是否记录玩家的命令操作
+  compress-threshold: 256 # 启用数据包压缩的阈值
+  allow-transfer: false # 是否允许Transfer连接
+
+servers:
+  lobby:
+    address: "127.0.0.1:25566"
+  example2:
+    address: "127.0.0.2:25567"

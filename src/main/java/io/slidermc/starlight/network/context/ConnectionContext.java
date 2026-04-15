@@ -1,16 +1,16 @@
 package io.slidermc.starlight.network.context;
 
 import io.slidermc.starlight.network.protocolenum.ProtocolState;
-import io.slidermc.starlight.network.protocolenum.ProtocolVersion;
 
 public class ConnectionContext {
-    private ProtocolVersion protocolVersion;
+    private HandshakeInformation handshakeInformation;
     private ProtocolState inboundState;
     private ProtocolState outboundState;
 
     public ConnectionContext() {
         this.inboundState = ProtocolState.HANDSHAKE;
         this.outboundState = ProtocolState.HANDSHAKE;
+        this.handshakeInformation = new HandshakeInformation();
     }
 
     public ProtocolState getInboundState() {
@@ -29,11 +29,11 @@ public class ConnectionContext {
         this.outboundState = outboundState;
     }
 
-    public ProtocolVersion getProtocolVersion() {
-        return protocolVersion;
+    public HandshakeInformation getHandshakeInformation() {
+        return handshakeInformation;
     }
 
-    public void setProtocolVersion(ProtocolVersion protocolVersion) {
-        this.protocolVersion = protocolVersion;
+    public void setHandshakeInformation(HandshakeInformation handshakeInformation) {
+        this.handshakeInformation = handshakeInformation;
     }
 }
