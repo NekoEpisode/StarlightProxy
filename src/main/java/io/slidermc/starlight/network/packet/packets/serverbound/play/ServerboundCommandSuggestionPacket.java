@@ -16,8 +16,6 @@ import io.slidermc.starlight.network.protocolenum.ProtocolVersion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Locale;
-
 /**
  * Command Suggestions Request 数据包（serverbound play）
  * 客户端请求命令 Tab 补全。
@@ -60,7 +58,7 @@ public class ServerboundCommandSuggestionPacket implements IMinecraftPacket {
                 return;
             }
 
-            String commandName = commandText.split(" ")[0].toLowerCase(Locale.ROOT);
+            String commandName = commandText.split(" ")[0];
 
             // 检查代理是否注册了该命令的根节点
             if (proxy.getCommandDispatcher().getRoot().getChild(commandName) != null) {

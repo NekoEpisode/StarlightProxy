@@ -3,7 +3,6 @@ package io.slidermc.starlight.network.packet.packets.serverbound.play;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.slidermc.starlight.StarlightProxy;
-import java.util.Locale;
 import io.slidermc.starlight.network.codec.utils.MinecraftCodecUtils;
 import io.slidermc.starlight.network.context.AttributeKeys;
 import io.slidermc.starlight.network.context.ConnectionContext;
@@ -47,7 +46,7 @@ public class ServerboundChatCommandPacket implements IMinecraftPacket {
                 context.getDownstreamChannel().writeAndFlush(packet);
                 return;
             }
-            String commandName = normalizedCommand.split(" ")[0].toLowerCase(Locale.ROOT);
+            String commandName = normalizedCommand.split(" ")[0];
             if (proxy.getCommandManager().hasCommand(commandName)) {
                 proxy.getCommandManager().execute(normalizedCommand, context.getPlayer());
                 return;
