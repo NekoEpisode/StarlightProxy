@@ -2,31 +2,32 @@ package io.slidermc.starlight;
 
 import io.slidermc.starlight.api.server.ProxiedServer;
 import io.slidermc.starlight.api.translate.TranslateManager;
+import io.slidermc.starlight.commands.ServerCommand;
 import io.slidermc.starlight.config.StarlightConfig;
 import io.slidermc.starlight.manager.ServerManager;
 import io.slidermc.starlight.network.packet.PacketRegistry;
+import io.slidermc.starlight.network.packet.RegistryPacketUtils;
 import io.slidermc.starlight.network.packet.packets.clientbound.configuration.ClientboundDisconnectConfigurationPacket;
 import io.slidermc.starlight.network.packet.packets.clientbound.configuration.ClientboundFinishConfigurationPacket;
 import io.slidermc.starlight.network.packet.packets.clientbound.configuration.ClientboundPluginMessageConfigurationPacket;
-import io.slidermc.starlight.network.packet.packets.clientbound.play.ClientboundDisconnectPlayPacket;
-import io.slidermc.starlight.network.packet.packets.clientbound.play.ClientboundStartConfigurationPacket;
-import io.slidermc.starlight.network.packet.packets.serverbound.play.ServerboundChatCommandPacket;
-import io.slidermc.starlight.network.packet.packets.serverbound.play.ServerboundConfigurationAckPacket;
-import io.slidermc.starlight.network.packet.packets.serverbound.configuration.ServerboundFinishConfigurationAckPacket;
-import io.slidermc.starlight.utils.AddressResolver;
-import io.slidermc.starlight.network.packet.RegistryPacketUtils;
 import io.slidermc.starlight.network.packet.packets.clientbound.login.ClientboundDisconnectLoginPacket;
 import io.slidermc.starlight.network.packet.packets.clientbound.login.ClientboundLoginSuccessPacket;
+import io.slidermc.starlight.network.packet.packets.clientbound.play.*;
 import io.slidermc.starlight.network.packet.packets.clientbound.status.ClientboundPongResponsePacket;
 import io.slidermc.starlight.network.packet.packets.clientbound.status.ClientboundStatusResponsePacket;
+import io.slidermc.starlight.network.packet.packets.serverbound.configuration.ServerboundFinishConfigurationAckPacket;
 import io.slidermc.starlight.network.packet.packets.serverbound.handshake.ServerboundHandshakePacket;
 import io.slidermc.starlight.network.packet.packets.serverbound.login.ServerboundLoginAckPacket;
 import io.slidermc.starlight.network.packet.packets.serverbound.login.ServerboundLoginStartPacket;
+import io.slidermc.starlight.network.packet.packets.serverbound.play.ServerboundChatCommandPacket;
+import io.slidermc.starlight.network.packet.packets.serverbound.play.ServerboundCommandSuggestionPacket;
+import io.slidermc.starlight.network.packet.packets.serverbound.play.ServerboundConfigurationAckPacket;
 import io.slidermc.starlight.network.packet.packets.serverbound.status.ServerboundPingRequestPacket;
 import io.slidermc.starlight.network.packet.packets.serverbound.status.ServerboundStatusRequestPacket;
 import io.slidermc.starlight.network.protocolenum.ProtocolDirection;
 import io.slidermc.starlight.network.protocolenum.ProtocolState;
 import io.slidermc.starlight.network.protocolenum.ProtocolVersion;
+import io.slidermc.starlight.utils.AddressResolver;
 import net.kyori.adventure.key.Key;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -112,6 +113,9 @@ public class Main {
                 serverManager
         );
         proxy.start();
+
+        // 注册内置代理命令
+        proxy.getCommandManager().register(new ServerCommand());
     }
 
     private static void printASCIIArt() {
@@ -160,6 +164,15 @@ public class Main {
 
         registryPacketUtils.registerByAutoMapping(Key.key("minecraft:start_configuration"), ProtocolState.PLAY, ProtocolDirection.CLIENTBOUND, ClientboundStartConfigurationPacket::new);
         r.registerListener(ClientboundStartConfigurationPacket.class, "default", new ClientboundStartConfigurationPacket.Listener());
+
+        registryPacketUtils.registerByAutoMapping(Key.key("minecraft:system_chat"), ProtocolState.PLAY, ProtocolDirection.CLIENTBOUND, ClientboundSystemChatPacket::new);
+        r.registerListener(ClientboundSystemChatPacket.class, "default", new ClientboundSystemChatPacket.Listener());
+
+        registryPacketUtils.registerByAutoMapping(Key.key("minecraft:commands"), ProtocolState.PLAY, ProtocolDirection.CLIENTBOUND, ClientboundCommandsPacket::new);
+        r.registerListener(ClientboundCommandsPacket.class, "default", new ClientboundCommandsPacket.Listener());
+
+        registryPacketUtils.registerByAutoMapping(Key.key("minecraft:command_suggestions"), ProtocolState.PLAY, ProtocolDirection.CLIENTBOUND, ClientboundCommandSuggestionsPacket::new);
+        r.registerListener(ClientboundCommandSuggestionsPacket.class, "default", new ClientboundCommandSuggestionsPacket.Listener());
     }
 
     private static void registerServerboundPackets(RegistryPacketUtils registryPacketUtils) {
@@ -189,5 +202,8 @@ public class Main {
 
         registryPacketUtils.registerByAutoMapping(Key.key("minecraft:chat_command"), ProtocolState.PLAY, ProtocolDirection.SERVERBOUND, ServerboundChatCommandPacket::new);
         r.registerListener(ServerboundChatCommandPacket.class, "default", new ServerboundChatCommandPacket.Listener());
+
+        registryPacketUtils.registerByAutoMapping(Key.key("minecraft:command_suggestion"), ProtocolState.PLAY, ProtocolDirection.SERVERBOUND, ServerboundCommandSuggestionPacket::new);
+        r.registerListener(ServerboundCommandSuggestionPacket.class, "default", new ServerboundCommandSuggestionPacket.Listener());
     }
 }

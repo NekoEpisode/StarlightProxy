@@ -3,9 +3,9 @@ package io.slidermc.starlight.network.packet.packets.serverbound.play;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.slidermc.starlight.StarlightProxy;
-import io.slidermc.starlight.api.server.ProxiedServer;
 import io.slidermc.starlight.network.codec.utils.MinecraftCodecUtils;
 import io.slidermc.starlight.network.context.AttributeKeys;
+import io.slidermc.starlight.network.context.ConnectionContext;
 import io.slidermc.starlight.network.packet.IMinecraftPacket;
 import io.slidermc.starlight.network.packet.listener.IPacketListener;
 import io.slidermc.starlight.network.protocolenum.ProtocolVersion;
@@ -34,16 +34,17 @@ public class ServerboundChatCommandPacket implements IMinecraftPacket {
     public static class Listener implements IPacketListener<ServerboundChatCommandPacket> {
         @Override
         public void handle(ServerboundChatCommandPacket packet, ChannelHandlerContext ctx, StarlightProxy proxy) {
-            if (packet.command.startsWith("server")) {
-                String[] parts = packet.command.split(" ");
-                if (parts.length == 2) {
-                    String server = parts[1];
-                    ProxiedServer server1 = proxy.getServerManager().getServer(server);
-                    if (server1 != null) {
-                        ctx.channel().attr(AttributeKeys.CONNECTION_CONTEXT).get().getPlayer().connect(server1);
-                    }
-                }
+            ConnectionContext context = ctx.channel().attr(AttributeKeys.CONNECTION_CONTEXT).get();
+
+            // 检查是否是代理命令
+            String commandName = packet.command.split(" ")[0];
+            if (proxy.getCommandManager().hasCommand(commandName)) {
+                proxy.getCommandManager().execute(packet.command, context.getPlayer());
+                return;
             }
+
+            // 不是代理命令，透明转发给后端
+            context.getDownstreamChannel().writeAndFlush(packet);
         }
     }
 }
