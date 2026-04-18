@@ -1,6 +1,7 @@
 package io.slidermc.starlight.network.packet.packets.serverbound.login;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.slidermc.starlight.StarlightProxy;
 import io.slidermc.starlight.network.client.StarlightMinecraftClient;
@@ -8,8 +9,12 @@ import io.slidermc.starlight.network.context.AttributeKeys;
 import io.slidermc.starlight.network.context.ConnectionContext;
 import io.slidermc.starlight.network.packet.IMinecraftPacket;
 import io.slidermc.starlight.network.packet.listener.IPacketListener;
+import io.slidermc.starlight.network.packet.packets.clientbound.configuration.ClientboundDisconnectConfigurationPacket;
 import io.slidermc.starlight.network.protocolenum.ProtocolState;
 import io.slidermc.starlight.network.protocolenum.ProtocolVersion;
+import io.slidermc.starlight.switcher.ServerSwitchKickedException;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,7 +49,7 @@ public class ServerboundLoginAckPacket implements IMinecraftPacket {
                     if (connectThrowable != null) {
                         log.error("连接默认服务器失败", connectThrowable);
                         ctx.channel().config().setAutoRead(true);
-                        ctx.close();
+                        kickWithConfigDisconnect(ctx, buildConnectFailedMessage(proxy));
                         return;
                     }
                     // 必须在 login() 之前设置 playerChannel，否则 login 阶段
@@ -58,7 +63,11 @@ public class ServerboundLoginAckPacket implements IMinecraftPacket {
                         if (loginThrowable != null) {
                             log.error("下游登录失败", loginThrowable);
                             ctx.channel().config().setAutoRead(true);
-                            ctx.close();
+                            Throwable cause = loginThrowable.getCause() != null ? loginThrowable.getCause() : loginThrowable;
+                            Component reason = cause instanceof ServerSwitchKickedException kicked
+                                    ? kicked.getReason()
+                                    : Component.text("登录失败：" + cause.getMessage(), NamedTextColor.RED);
+                            kickWithConfigDisconnect(ctx, reason);
                             return;
                         }
                         log.debug("设置上游和下游的连接");
@@ -71,8 +80,23 @@ public class ServerboundLoginAckPacket implements IMinecraftPacket {
             } catch (Exception e) {
                 log.error("连接默认服务器失败", e);
                 ctx.channel().config().setAutoRead(true);
-                ctx.close();
+                kickWithConfigDisconnect(ctx, buildConnectFailedMessage(proxy));
             }
+        }
+
+        private static Component buildConnectFailedMessage(StarlightProxy proxy) {
+            String serverName = proxy.getServerManager().getDefaultServer().getName();
+            return Component.text("无法连接到默认服务器 " + serverName, NamedTextColor.RED)
+                    .append(Component.newline())
+                    .append(Component.text("请稍后再试", NamedTextColor.GRAY));
+        }
+
+        /**
+         * 向处于 CONFIGURATION 状态的玩家发送断开包并关闭连接。
+         */
+        private static void kickWithConfigDisconnect(ChannelHandlerContext ctx, Component reason) {
+            ctx.channel().writeAndFlush(new ClientboundDisconnectConfigurationPacket(reason))
+                    .addListener(ChannelFutureListener.CLOSE);
         }
     }
 }

@@ -9,6 +9,7 @@ import io.slidermc.starlight.network.context.AttributeKeys;
 import io.slidermc.starlight.network.packet.IMinecraftPacket;
 import io.slidermc.starlight.network.packet.listener.IPacketListener;
 import io.slidermc.starlight.network.protocolenum.ProtocolVersion;
+import io.slidermc.starlight.switcher.ServerSwitchKickedException;
 import io.slidermc.starlight.utils.DisconnectUtils;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
@@ -52,7 +53,8 @@ public class ClientboundDisconnectLoginPacket implements IMinecraftPacket {
                 // Initial login: forward the disconnect reason to the player and close their connection.
                 DisconnectUtils.forwardAndClose(client, packet.getReason());
             }
-            client.callLoginCompleteExceptionally(new RuntimeException("Downstream disconnected during login"));
+            // Preserve the kick reason so ModernServerSwitcher can relay it to the player.
+            client.callLoginCompleteExceptionally(new ServerSwitchKickedException(packet.getReason()));
             client.disconnect();
         }
     }
