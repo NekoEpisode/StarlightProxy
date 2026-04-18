@@ -129,4 +129,16 @@ public class MinecraftCodecUtils {
         String key = readString(byteBuf);
         return Key.key(key);
     }
+
+    /**
+     * 计算给定值编码为 VarInt 所需的字节数（1–5）。
+     */
+    public static int varIntSize(int value) {
+        int size = 1;
+        while ((value & 0xFFFFFF80) != 0) {
+            size++;
+            value >>>= 7;
+        }
+        return size;
+    }
 }

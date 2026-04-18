@@ -66,9 +66,9 @@ public class StarlightMinecraftClient {
                         .handler(new ChannelInitializer<SocketChannel>() {
                             @Override
                             protected void initChannel(SocketChannel socketChannel) throws Exception {
-                                socketChannel.pipeline().addLast(new ClientPacketDecoder(packetRegistry, client));
-                                socketChannel.pipeline().addLast(new ClientPacketEncoder(packetRegistry, client));
-                                socketChannel.pipeline().addLast(new StarlightClientHandler(packetRegistry, proxy, client));
+                                socketChannel.pipeline().addLast("decoder", new ClientPacketDecoder(packetRegistry, client));
+                                socketChannel.pipeline().addLast("encoder", new ClientPacketEncoder(packetRegistry, client));
+                                socketChannel.pipeline().addLast("handler", new StarlightClientHandler(packetRegistry, proxy, client));
                             }
                         });
 

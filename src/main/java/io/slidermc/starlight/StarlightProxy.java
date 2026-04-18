@@ -74,13 +74,13 @@ public class StarlightProxy {
                     .childHandler(new ChannelInitializer<SocketChannel>() {
                         @Override
                         protected void initChannel(SocketChannel socketChannel) throws Exception {
-                            socketChannel.pipeline().addLast(new ServerPacketDecoder(
+                            socketChannel.pipeline().addLast("decoder", new ServerPacketDecoder(
                                     registryPacketUtils.getPacketRegistry()
                             ));
-                            socketChannel.pipeline().addLast(new ServerPacketEncoder(
+                            socketChannel.pipeline().addLast("encoder", new ServerPacketEncoder(
                                     registryPacketUtils.getPacketRegistry()
                             ));
-                            socketChannel.pipeline().addLast(new StarlightServerHandler(
+                            socketChannel.pipeline().addLast("handler", new StarlightServerHandler(
                                     registryPacketUtils.getPacketRegistry(),
                                     proxy
                             ));

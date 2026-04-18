@@ -12,6 +12,7 @@ import io.slidermc.starlight.network.packet.packets.clientbound.configuration.Cl
 import io.slidermc.starlight.network.packet.packets.clientbound.configuration.ClientboundPluginMessageConfigurationPacket;
 import io.slidermc.starlight.network.packet.packets.clientbound.login.ClientboundDisconnectLoginPacket;
 import io.slidermc.starlight.network.packet.packets.clientbound.login.ClientboundLoginSuccessPacket;
+import io.slidermc.starlight.network.packet.packets.clientbound.login.ClientboundSetCompressionPacket;
 import io.slidermc.starlight.network.packet.packets.clientbound.play.*;
 import io.slidermc.starlight.network.packet.packets.clientbound.status.ClientboundPongResponsePacket;
 import io.slidermc.starlight.network.packet.packets.clientbound.status.ClientboundStatusResponsePacket;
@@ -148,6 +149,9 @@ public class Main {
 
         r.registerPacket(av, ProtocolState.LOGIN, ProtocolDirection.CLIENTBOUND, 0x00, ClientboundDisconnectLoginPacket::new);
         r.registerListener(ClientboundDisconnectLoginPacket.class, "default", new ClientboundDisconnectLoginPacket.Listener());
+
+        registryPacketUtils.registerByAutoMapping(Key.key("minecraft:login_compression"), ProtocolState.LOGIN, ProtocolDirection.CLIENTBOUND, ClientboundSetCompressionPacket::new);
+        r.registerListener(ClientboundSetCompressionPacket.class, "default", new ClientboundSetCompressionPacket.Listener());
 
         registryPacketUtils.registerByAutoMapping(Key.key("minecraft:login_finished"), ProtocolState.LOGIN, ProtocolDirection.CLIENTBOUND, ClientboundLoginSuccessPacket::new);
         r.registerListener(ClientboundLoginSuccessPacket.class, "default", new ClientboundLoginSuccessPacket.Listener());

@@ -5,6 +5,8 @@ import io.netty.channel.ChannelHandlerContext;
 import io.slidermc.starlight.StarlightProxy;
 import io.slidermc.starlight.api.player.ProxiedPlayer;
 import io.slidermc.starlight.api.profile.GameProfile;
+import io.slidermc.starlight.network.codec.CompressionDecoder;
+import io.slidermc.starlight.network.codec.CompressionEncoder;
 import io.slidermc.starlight.network.codec.utils.MinecraftCodecUtils;
 import io.slidermc.starlight.network.context.AttributeKeys;
 import io.slidermc.starlight.network.context.ConnectionContext;
@@ -12,6 +14,7 @@ import io.slidermc.starlight.network.packet.IMinecraftPacket;
 import io.slidermc.starlight.network.packet.listener.IPacketListener;
 import io.slidermc.starlight.network.packet.packets.clientbound.login.ClientboundDisconnectLoginPacket;
 import io.slidermc.starlight.network.packet.packets.clientbound.login.ClientboundLoginSuccessPacket;
+import io.slidermc.starlight.network.packet.packets.clientbound.login.ClientboundSetCompressionPacket;
 import io.slidermc.starlight.network.protocolenum.ProtocolState;
 import io.slidermc.starlight.network.protocolenum.ProtocolVersion;
 import net.kyori.adventure.text.Component;
@@ -81,17 +84,35 @@ public class ServerboundLoginStartPacket implements IMinecraftPacket {
                 ctx.channel().writeAndFlush(new ClientboundDisconnectLoginPacket(Component.text("Online mode is not implemented yet").color(NamedTextColor.RED))).addListener(_ -> {
                     ctx.channel().close();
                 });
-            } else {
-                log.debug("玩家 {} 以离线模式登录", packet.getUsername());
-                ProxiedPlayer player = new ProxiedPlayer(new GameProfile(packet.username, packet.uuid, List.of()), ctx.channel(), proxy);
-                log.debug("已创建ProxiedPlayer对象: {}", player);
-                player.getConnectionContext().setPlayer(player);
-                proxy.getPlayerManager().addPlayer(player);
-                ctx.channel().writeAndFlush(new ClientboundLoginSuccessPacket(player.getGameProfile())).addListener(_ -> {
-                    player.getConnectionContext().setOutboundState(ProtocolState.CONFIGURATION);
-                    log.debug("上游Outbound切换到CONFIGURATION");
-                });
+                return;
             }
+
+            log.debug("玩家 {} 以离线模式登录", packet.getUsername());
+            ProxiedPlayer player = new ProxiedPlayer(new GameProfile(packet.username, packet.uuid, List.of()), ctx.channel(), proxy);
+            log.debug("已创建ProxiedPlayer对象: {}", player);
+            player.getConnectionContext().setPlayer(player);
+            proxy.getPlayerManager().addPlayer(player);
+
+            int threshold = proxy.getConfig().getCompressThreshold();
+            if (threshold >= 0) {
+                // 等 SetCompression 写出完成后再安装 pipeline 并发 LoginSuccess，
+                // 否则 LoginSuccess 可能在压缩生效前就发出，导致客户端解析失败。
+                ctx.channel().writeAndFlush(new ClientboundSetCompressionPacket(threshold)).addListener(_ -> {
+                    ctx.pipeline().addBefore("decoder", "decompress", new CompressionDecoder());
+                    ctx.pipeline().addBefore("encoder", "compress", new CompressionEncoder(threshold));
+                    log.debug("上游已启用压缩，阈值: {}", threshold);
+                    sendLoginSuccess(ctx, player);
+                });
+            } else {
+                sendLoginSuccess(ctx, player);
+            }
+        }
+
+        private static void sendLoginSuccess(ChannelHandlerContext ctx, ProxiedPlayer player) {
+            ctx.channel().writeAndFlush(new ClientboundLoginSuccessPacket(player.getGameProfile())).addListener(_ -> {
+                player.getConnectionContext().setOutboundState(ProtocolState.CONFIGURATION);
+                log.debug("上游Outbound切换到CONFIGURATION");
+            });
         }
     }
 }
