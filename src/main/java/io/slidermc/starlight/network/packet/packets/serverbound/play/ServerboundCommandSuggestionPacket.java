@@ -76,6 +76,15 @@ public class ServerboundCommandSuggestionPacket implements IMinecraftPacket {
                                     player.getGameProfile().username(),
                                     commandText,
                                     suggestions.getList().size());
+                        })
+                        .exceptionally(throwable -> {
+                            log.error("命令补全失败: 玩家={}, 命令='{}'",
+                                    player.getGameProfile().username(), commandText, throwable);
+                            // 返回空建议列表，避免客户端请求悬挂
+                            ClientboundCommandSuggestionsPacket empty =
+                                    new ClientboundCommandSuggestionsPacket(packet.transactionId, offset, 0);
+                            player.getChannel().writeAndFlush(empty);
+                            return null;
                         });
 
                 // 不转发给后端

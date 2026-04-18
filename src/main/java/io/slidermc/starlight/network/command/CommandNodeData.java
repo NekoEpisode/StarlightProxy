@@ -26,7 +26,7 @@ public class CommandNodeData {
     public static final byte FLAG_EXECUTABLE = 0x04;
     public static final byte FLAG_HAS_REDIRECT = 0x08;
     public static final byte FLAG_HAS_SUGGESTIONS = 0x10;
-    public static final byte FLAG_IS_RESTRICTED = 0x20;
+    public static final byte FLAG_IS_RESTRICTED = 0x20; // 保留
     
     private byte flags;
     private List<Integer> children;
@@ -68,11 +68,10 @@ public class CommandNodeData {
             flags |= FLAG_HAS_REDIRECT;
         }
         
-        // 设置受限标志（需要权限）
-        if (node.getRequirement() != null) {
-            flags |= FLAG_IS_RESTRICTED;
-        }
-        
+        // FLAG_IS_RESTRICTED 仅在节点确实需要权限检查时设置。
+        // Brigadier 的 getRequirement() 始终非 null（默认为 s -> true），
+        // 因此不能用 != null 判断；暂不设置此标志，避免将所有节点标记为受限。
+
         data.flags = flags;
         
         // 添加子节点索引

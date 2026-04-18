@@ -117,29 +117,48 @@ public class ClientboundCommandsPacket implements IMinecraftPacket {
      * 递归将代理命令节点追加到 nodes 列表，返回当前节点的索引。
      */
     private int addNodeRecursively(CommandNode<IStarlightCommandSource> node) {
+        // allNodeIndices 用于跟踪整棵子树内所有节点的索引（含重定向目标查找）
+        Map<CommandNode<IStarlightCommandSource>, Integer> allNodeIndices = new LinkedHashMap<>();
+        return addNodeRecursively(node, allNodeIndices);
+    }
+
+    private int addNodeRecursively(CommandNode<IStarlightCommandSource> node,
+                                   Map<CommandNode<IStarlightCommandSource>, Integer> allNodeIndices) {
         int currentIndex = nodes.size();
+        allNodeIndices.put(node, currentIndex);
         CommandNodeData nodeData = new CommandNodeData();
         nodes.add(nodeData); // 先占位，后填充
 
         Map<CommandNode<IStarlightCommandSource>, Integer> childIndices = new LinkedHashMap<>();
         for (CommandNode<IStarlightCommandSource> child : node.getChildren()) {
-            childIndices.put(child, addNodeRecursively(child));
+            int childIndex = addNodeRecursively(child, allNodeIndices);
+            childIndices.put(child, childIndex);
         }
 
-        fillNodeData(nodeData, node, childIndices);
+        fillNodeData(nodeData, node, childIndices, allNodeIndices);
         return currentIndex;
     }
 
     private void fillNodeData(CommandNodeData data,
                                CommandNode<IStarlightCommandSource> node,
-                               Map<CommandNode<IStarlightCommandSource>, Integer> childIndices) {
+                               Map<CommandNode<IStarlightCommandSource>, Integer> childIndices,
+                               Map<CommandNode<IStarlightCommandSource>, Integer> allNodeIndices) {
         byte flags = 0;
         if (node instanceof LiteralCommandNode)       flags |= CommandNodeData.NODE_TYPE_LITERAL;
         else if (node instanceof ArgumentCommandNode) flags |= CommandNodeData.NODE_TYPE_ARGUMENT;
         // NODE_TYPE_ROOT = 0，无需 OR 操作
 
         if (node.getCommand() != null)  flags |= CommandNodeData.FLAG_EXECUTABLE;
-        if (node.getRedirect() != null) flags |= CommandNodeData.FLAG_HAS_REDIRECT;
+        if (node.getRedirect() != null) {
+            Integer redirectIndex = allNodeIndices.get(node.getRedirect());
+            if (redirectIndex != null) {
+                flags |= CommandNodeData.FLAG_HAS_REDIRECT;
+                data.setRedirectNode(redirectIndex);
+            } else {
+                // 重定向目标不在已知节点中；忽略以避免产生无效的命令树
+                log.warn("命令节点 '{}' 的重定向目标未找到，已跳过重定向", node.getName());
+            }
+        }
 
         List<Integer> children = new ArrayList<>(childIndices.values());
         data.setChildren(children);
