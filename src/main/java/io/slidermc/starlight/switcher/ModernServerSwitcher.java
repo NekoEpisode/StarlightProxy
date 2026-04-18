@@ -64,6 +64,7 @@ public class ModernServerSwitcher {
                         // ServerboundConfigurationAckPacket.Listener has already set upstream states.
                         ctx.setDownstreamChannel(newClient.getChannel());
                         newClient.getChannel().config().setAutoRead(true);
+                        player.setCurrentServer(target);
                         log.debug("Switched {} to {}", player.getGameProfile().username(), target.getName());
                     });
                 })

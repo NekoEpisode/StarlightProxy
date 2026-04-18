@@ -36,6 +36,10 @@ public class ServerCommand extends StarlightCommand {
                             if (target == null) {
                                 player.sendMessage(Component.text("未找到服务器: " + serverName, NamedTextColor.RED));
                             } else {
+                                if (player.getCurrentServer().isPresent() && player.getCurrentServer().get().equals(target)) {
+                                    player.sendMessage(Component.text("你已经在服务器 " + serverName + " 上了", NamedTextColor.RED));
+                                    return;
+                                }
                                 player.sendMessage(Component.text("正在连接到 " + serverName + "...", NamedTextColor.GREEN));
                                 player.connect(target);
                             }

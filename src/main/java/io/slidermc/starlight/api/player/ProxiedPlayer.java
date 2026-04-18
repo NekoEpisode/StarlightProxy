@@ -25,6 +25,8 @@ public class ProxiedPlayer implements IStarlightCommandSource {
 
     private final Map<ContextKey<?>, Object> contextMap = new ConcurrentHashMap<>();
 
+    private volatile ProxiedServer currentServer;
+
     public ProxiedPlayer(GameProfile gameProfile, Channel channel, StarlightProxy proxy) {
         this.gameProfile = gameProfile;
         this.channel = channel;
@@ -55,6 +57,14 @@ public class ProxiedPlayer implements IStarlightCommandSource {
 
     public ConnectionContext getConnectionContext() {
         return channel.attr(AttributeKeys.CONNECTION_CONTEXT).get();
+    }
+
+    public Optional<ProxiedServer> getCurrentServer() {
+        return Optional.ofNullable(currentServer);
+    }
+
+    public void setCurrentServer(ProxiedServer server) {
+        this.currentServer = server;
     }
 
     @Override
