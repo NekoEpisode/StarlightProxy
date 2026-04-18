@@ -12,6 +12,7 @@ import io.slidermc.starlight.api.command.CommandManager;
 import io.slidermc.starlight.api.command.source.IStarlightCommandSource;
 import io.slidermc.starlight.api.player.PlayerManager;
 import io.slidermc.starlight.api.translate.TranslateManager;
+import io.slidermc.starlight.config.InternalConfig;
 import io.slidermc.starlight.config.StarlightConfig;
 import io.slidermc.starlight.manager.ServerManager;
 import io.slidermc.starlight.network.codec.ServerPacketDecoder;
@@ -74,13 +75,13 @@ public class StarlightProxy {
                     .childHandler(new ChannelInitializer<SocketChannel>() {
                         @Override
                         protected void initChannel(SocketChannel socketChannel) throws Exception {
-                            socketChannel.pipeline().addLast(new ServerPacketDecoder(
+                            socketChannel.pipeline().addLast(InternalConfig.HANDLER_DECODER, new ServerPacketDecoder(
                                     registryPacketUtils.getPacketRegistry()
                             ));
-                            socketChannel.pipeline().addLast(new ServerPacketEncoder(
+                            socketChannel.pipeline().addLast(InternalConfig.HANDLER_ENCODER, new ServerPacketEncoder(
                                     registryPacketUtils.getPacketRegistry()
                             ));
-                            socketChannel.pipeline().addLast(new StarlightServerHandler(
+                            socketChannel.pipeline().addLast(InternalConfig.HANDLER_MAIN, new StarlightServerHandler(
                                     registryPacketUtils.getPacketRegistry(),
                                     proxy
                             ));
