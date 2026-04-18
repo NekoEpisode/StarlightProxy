@@ -71,8 +71,13 @@ public class ServerboundClientInformationConfigurationPacket implements IMinecra
             ConnectionContext context = ctx.channel().attr(AttributeKeys.CONNECTION_CONTEXT).get();
             context.setClientInformation(packet.getInformation()); // 设置information
 
-            // 转发
-            context.getDownstreamChannel().writeAndFlush(packet);
+            // 转发（下游尚未就绪时跳过——连接建立后 ServerboundLoginAckPacket 会补发）
+            io.netty.channel.Channel downstream = context.getDownstreamChannel();
+            if (downstream != null && downstream.isActive()) {
+                downstream.writeAndFlush(packet);
+            } else {
+                log.debug("下游 channel 尚未就绪，ClientInformation 已缓存，稍后补发");
+            }
 
             log.debug("已得到玩家的ClientInformation信息: {}", packet.information);
         }

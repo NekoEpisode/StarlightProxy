@@ -8,6 +8,8 @@ import io.slidermc.starlight.network.client.StarlightMinecraftClient;
 import io.slidermc.starlight.network.context.ConnectionContext;
 import io.slidermc.starlight.network.packet.packets.clientbound.play.ClientboundStartConfigurationPacket;
 import io.slidermc.starlight.network.packet.packets.serverbound.configuration.ServerboundClientInformationConfigurationPacket;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -80,10 +82,21 @@ public class ModernServerSwitcher {
                     });
                 })
                 .exceptionally(e -> {
+                    Throwable cause = e.getCause() != null ? e.getCause() : e;
                     log.error("Server switch to {} failed for {}: {}",
-                            target.getName(), player.getGameProfile().username(), e.getMessage());
+                            target.getName(), player.getGameProfile().username(), cause.getMessage());
                     newClient.disconnect();
-                    // Player stays on current server, no disruption.
+                    // Notify the player about the failure instead of silently dropping the error.
+                    if (cause instanceof ServerSwitchKickedException kicked) {
+                        player.sendMessage(
+                                Component.text("无法连接到 " + target.getName() + "：", NamedTextColor.RED)
+                                        .append(kicked.getReason())
+                        );
+                    } else {
+                        player.sendMessage(
+                                Component.text("连接到 " + target.getName() + " 时出错：" + cause.getMessage(), NamedTextColor.RED)
+                        );
+                    }
                     return null;
                 });
     }
