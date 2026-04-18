@@ -50,7 +50,7 @@ public class CommandManager {
      * 是否已注册该命令名。
      */
     public boolean hasCommand(String name) {
-        return dispatcher.getRoot().getChild(name.toLowerCase()) != null;
+        return dispatcher.getRoot().getChild(name) != null;
     }
 
     /**
