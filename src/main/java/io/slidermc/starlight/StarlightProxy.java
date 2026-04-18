@@ -1,5 +1,6 @@
 package io.slidermc.starlight;
 
+import com.mojang.brigadier.CommandDispatcher;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
@@ -7,6 +8,8 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.slidermc.starlight.api.command.CommandManager;
+import io.slidermc.starlight.api.command.source.IStarlightCommandSource;
 import io.slidermc.starlight.api.player.PlayerManager;
 import io.slidermc.starlight.api.translate.TranslateManager;
 import io.slidermc.starlight.config.StarlightConfig;
@@ -29,6 +32,8 @@ public class StarlightProxy {
     private final ServerManager serverManager;
     private final RegistryPacketUtils registryPacketUtils;
     private final StarlightConfig config;
+    private final CommandDispatcher<IStarlightCommandSource> commandDispatcher = new CommandDispatcher<>();
+    private final CommandManager commandManager = new CommandManager(commandDispatcher);
 
     public StarlightProxy(InetSocketAddress address, TranslateManager translateManager,
                           RegistryPacketUtils registryPacketUtils, StarlightConfig config,
@@ -113,5 +118,13 @@ public class StarlightProxy {
 
     public ServerManager getServerManager() {
         return serverManager;
+    }
+
+    public CommandDispatcher<IStarlightCommandSource> getCommandDispatcher() {
+        return commandDispatcher;
+    }
+
+    public CommandManager getCommandManager() {
+        return commandManager;
     }
 }

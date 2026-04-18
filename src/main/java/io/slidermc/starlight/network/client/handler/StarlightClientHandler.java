@@ -58,5 +58,6 @@ public class StarlightClientHandler extends ChannelInboundHandlerAdapter {
             client.disconnect();
             log.debug("Exceptionally disconnected from server", cause);
         }
+        log.error("下游连接出现错误！", cause);
     }
 }

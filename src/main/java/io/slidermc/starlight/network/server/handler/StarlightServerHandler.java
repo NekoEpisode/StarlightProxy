@@ -30,14 +30,17 @@ public class StarlightServerHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         log.debug("连接断开: {}", ctx.channel().remoteAddress());
-        ProxiedPlayer player = ctx.channel().attr(AttributeKeys.CONNECTION_CONTEXT).get().getPlayer();
-        if (player != null) {
-            proxy.getPlayerManager().removePlayer(player.getGameProfile().uuid());
-            io.netty.channel.Channel downstream = player.getConnectionContext().getDownstreamChannel();
-            if (downstream != null) {
-                downstream.close();
+        ConnectionContext context = ctx.channel().attr(AttributeKeys.CONNECTION_CONTEXT).get();
+        if (context != null) {
+            ProxiedPlayer player = context.getPlayer();
+            if (player != null) {
+                proxy.getPlayerManager().removePlayer(player.getGameProfile().uuid());
+                io.netty.channel.Channel downstream = player.getConnectionContext().getDownstreamChannel();
+                if (downstream != null) {
+                    downstream.close();
+                }
+                log.info("Player {} exited", player.getGameProfile().username());
             }
-            log.info("Player {} exited", player.getGameProfile().username());
         }
     }
 
@@ -57,5 +60,10 @@ public class StarlightServerHandler extends ChannelInboundHandlerAdapter {
         } else {
             super.channelRead(ctx, msg);
         }
+    }
+
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+        log.error("上游连接出现错误！", cause);
     }
 }

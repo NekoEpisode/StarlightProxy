@@ -1,8 +1,5 @@
 package io.slidermc.starlight.api.player;
 
-import io.netty.channel.Channel;
-import io.slidermc.starlight.network.context.AttributeKeys;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
