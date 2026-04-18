@@ -67,16 +67,24 @@ public class CompressionEncoder extends MessageToByteEncoder<ByteBuf> {
             deflater.setInput(content);
             deflater.finish();
 
-            byte[] compressed = new byte[content.length + 256]; // 增加富余量，避免zlib在小数据/不可压数据时截断
-            int compressedLen = deflater.deflate(compressed);
-            deflater.reset();
+            ByteBuf compressedBuf = ctx.alloc().buffer();
+            try {
+                byte[] temp = new byte[8192];
+                while (!deflater.finished()) {
+                    int count = deflater.deflate(temp);
+                    compressedBuf.writeBytes(temp, 0, count);
+                }
+                deflater.reset();
 
-            // 如果压缩后反而更大，仍然使用压缩格式（协议规定 >= threshold 必须走压缩格式）
-            // Packet Length = varIntSize(dataLength) + compressedLen
-            int packetLength = MinecraftCodecUtils.varIntSize(contentLength) + compressedLen;
-            MinecraftCodecUtils.writeVarInt(out, packetLength);
-            MinecraftCodecUtils.writeVarInt(out, contentLength); // Data Length = 解压后大小
-            out.writeBytes(compressed, 0, compressedLen);
+                int compressedLen = compressedBuf.readableBytes();
+                int packetLength = MinecraftCodecUtils.varIntSize(contentLength) + compressedLen;
+
+                MinecraftCodecUtils.writeVarInt(out, packetLength);
+                MinecraftCodecUtils.writeVarInt(out, contentLength); // Data Length = 解压后大小
+                out.writeBytes(compressedBuf);
+            } finally {
+                compressedBuf.release();
+            }
         }
     }
 

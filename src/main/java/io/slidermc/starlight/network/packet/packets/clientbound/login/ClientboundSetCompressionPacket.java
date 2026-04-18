@@ -3,6 +3,7 @@ package io.slidermc.starlight.network.packet.packets.clientbound.login;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.slidermc.starlight.StarlightProxy;
+import io.slidermc.starlight.config.InternalConfig;
 import io.slidermc.starlight.network.codec.CompressionDecoder;
 import io.slidermc.starlight.network.codec.CompressionEncoder;
 import io.slidermc.starlight.network.codec.utils.MinecraftCodecUtils;
@@ -44,8 +45,12 @@ public class ClientboundSetCompressionPacket implements IMinecraftPacket {
         @Override
         public void handle(ClientboundSetCompressionPacket packet, ChannelHandlerContext ctx, StarlightProxy proxy) {
             if (packet.threshold >= 0) {
-                ctx.pipeline().addBefore("decoder", "decompress", new CompressionDecoder());
-                ctx.pipeline().addBefore("encoder", "compress", new CompressionEncoder(packet.threshold));
+                if (ctx.pipeline().get(InternalConfig.HANDLER_DECOMPRESS) == null) {
+                    ctx.pipeline().addBefore(InternalConfig.HANDLER_DECODER, InternalConfig.HANDLER_DECOMPRESS, new CompressionDecoder());
+                }
+                if (ctx.pipeline().get(InternalConfig.HANDLER_COMPRESS) == null) {
+                    ctx.pipeline().addBefore(InternalConfig.HANDLER_ENCODER, InternalConfig.HANDLER_COMPRESS, new CompressionEncoder(packet.threshold));
+                }
                 log.debug("下游已启动Compression: {}", packet.threshold);
             }
         }

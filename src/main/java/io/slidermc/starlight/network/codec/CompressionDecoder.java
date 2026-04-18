@@ -1,10 +1,10 @@
 package io.slidermc.starlight.network.codec;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
 import io.netty.handler.codec.DecoderException;
+import io.slidermc.starlight.config.InternalConfig;
 import io.slidermc.starlight.network.codec.utils.MinecraftCodecUtils;
 
 import java.util.List;
@@ -27,10 +27,8 @@ import java.util.zip.Inflater;
  */
 public class CompressionDecoder extends ByteToMessageDecoder {
 
-    /** 解压缩超过此字节数时抛出异常，防止 zip-bomb 攻击（8 MiB）。 */
-    private static final int MAX_UNCOMPRESSED_SIZE = 8 * 1024 * 1024;
-
     private final Inflater inflater = new Inflater();
+    private boolean isInflaterClosed = false;
 
     public CompressionDecoder() {}
 
@@ -68,15 +66,19 @@ public class CompressionDecoder extends ByteToMessageDecoder {
                 // 不可能出现，除非上游包长度数据极其离谱
                 throw new DecoderException("Negative uncompressed raw length: " + rawLen);
             }
+            if (rawLen > InternalConfig.MAX_UNCOMPRESSED_SIZE) {
+                throw new DecoderException("Uncompressed data length " + rawLen +
+                        " exceeds maximum " + InternalConfig.MAX_UNCOMPRESSED_SIZE);
+            }
             ByteBuf plain = ctx.alloc().buffer(MinecraftCodecUtils.varIntSize(rawLen) + rawLen);
             MinecraftCodecUtils.writeVarInt(plain, rawLen);
             plain.writeBytes(in, rawLen);
             out.add(plain);
         } else {
             // 已压缩：解压后重新打帧
-            if (dataLength > MAX_UNCOMPRESSED_SIZE) {
+            if (dataLength > InternalConfig.MAX_UNCOMPRESSED_SIZE) {
                 throw new DecoderException("Uncompressed data length " + dataLength
-                        + " exceeds maximum " + MAX_UNCOMPRESSED_SIZE);
+                        + " exceeds maximum " + InternalConfig.MAX_UNCOMPRESSED_SIZE);
             }
 
             int compressedLen = frameEnd - in.readerIndex();
@@ -101,11 +103,9 @@ public class CompressionDecoder extends ByteToMessageDecoder {
             }
 
             // 将解压数据包装为普通帧（length + data）传给下游 PacketDecoder
-            ByteBuf plain = Unpooled.wrappedBuffer(decompressed);
             ByteBuf framed = ctx.alloc().buffer(MinecraftCodecUtils.varIntSize(dataLength) + dataLength);
             MinecraftCodecUtils.writeVarInt(framed, dataLength);
-            framed.writeBytes(plain);
-            plain.release();
+            framed.writeBytes(decompressed);
             out.add(framed);
         }
 
@@ -114,8 +114,20 @@ public class CompressionDecoder extends ByteToMessageDecoder {
     }
 
     @Override
+    protected void handlerRemoved0(ChannelHandlerContext ctx) throws Exception {
+        if (!isInflaterClosed) {
+            isInflaterClosed = true;
+            inflater.end();
+        }
+        super.handlerRemoved0(ctx);
+    }
+
+    @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-        inflater.end();
+        if (!isInflaterClosed) {
+            isInflaterClosed = true;
+            inflater.end();
+        }
         super.channelInactive(ctx);
     }
 }
