@@ -15,6 +15,8 @@ import io.slidermc.starlight.network.packet.packets.clientbound.login.Clientboun
 import io.slidermc.starlight.network.packet.packets.clientbound.play.*;
 import io.slidermc.starlight.network.packet.packets.clientbound.status.ClientboundPongResponsePacket;
 import io.slidermc.starlight.network.packet.packets.clientbound.status.ClientboundStatusResponsePacket;
+import io.slidermc.starlight.network.packet.packets.serverbound.configuration.ServerboundClientInformationConfigurationPacket;
+import io.slidermc.starlight.network.packet.packets.serverbound.play.ServerboundClientInformationPlayPacket;
 import io.slidermc.starlight.network.packet.packets.serverbound.configuration.ServerboundFinishConfigurationAckPacket;
 import io.slidermc.starlight.network.packet.packets.serverbound.handshake.ServerboundHandshakePacket;
 import io.slidermc.starlight.network.packet.packets.serverbound.login.ServerboundLoginAckPacket;
@@ -197,6 +199,9 @@ public class Main {
         registryPacketUtils.registerByAutoMapping(Key.key("minecraft:finish_configuration"), ProtocolState.CONFIGURATION, ProtocolDirection.SERVERBOUND, ServerboundFinishConfigurationAckPacket::new);
         r.registerListener(ServerboundFinishConfigurationAckPacket.class, "default", new ServerboundFinishConfigurationAckPacket.Listener());
 
+        registryPacketUtils.registerByAutoMapping(Key.key("minecraft:client_information"), ProtocolState.CONFIGURATION, ProtocolDirection.SERVERBOUND, ServerboundClientInformationConfigurationPacket::new);
+        r.registerListener(ServerboundClientInformationConfigurationPacket.class, "default", new ServerboundClientInformationConfigurationPacket.Listener());
+
         registryPacketUtils.registerByAutoMapping(Key.key("minecraft:configuration_acknowledged"), ProtocolState.PLAY, ProtocolDirection.SERVERBOUND, ServerboundConfigurationAckPacket::new);
         r.registerListener(ServerboundConfigurationAckPacket.class, "default", new ServerboundConfigurationAckPacket.Listener());
 
@@ -205,5 +210,8 @@ public class Main {
 
         registryPacketUtils.registerByAutoMapping(Key.key("minecraft:command_suggestion"), ProtocolState.PLAY, ProtocolDirection.SERVERBOUND, ServerboundCommandSuggestionPacket::new);
         r.registerListener(ServerboundCommandSuggestionPacket.class, "default", new ServerboundCommandSuggestionPacket.Listener());
+
+        registryPacketUtils.registerByAutoMapping(Key.key("minecraft:client_information"), ProtocolState.PLAY, ProtocolDirection.SERVERBOUND, ServerboundClientInformationPlayPacket::new);
+        r.registerListener(ServerboundClientInformationPlayPacket.class, "default", new ServerboundClientInformationPlayPacket.Listener());
     }
 }

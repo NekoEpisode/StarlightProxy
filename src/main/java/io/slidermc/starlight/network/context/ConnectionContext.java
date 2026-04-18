@@ -2,8 +2,10 @@ package io.slidermc.starlight.network.context;
 
 import io.netty.channel.Channel;
 import io.slidermc.starlight.api.player.ProxiedPlayer;
+import io.slidermc.starlight.data.clientinformation.ClientInformation;
 import io.slidermc.starlight.network.protocolenum.ProtocolState;
 
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 public class ConnectionContext {
@@ -15,6 +17,7 @@ public class ConnectionContext {
     private Channel downstreamChannel;
     /** Set by ModernServerSwitcher before sending StartConfiguration; completed by ServerboundConfigurationAckPacket.Listener. */
     private volatile CompletableFuture<Void> pendingReconfiguration;
+    private ClientInformation clientInformation;
 
     public ConnectionContext() {
         this.inboundState = ProtocolState.HANDSHAKE;
@@ -68,5 +71,13 @@ public class ConnectionContext {
 
     public void setPendingReconfiguration(CompletableFuture<Void> pendingReconfiguration) {
         this.pendingReconfiguration = pendingReconfiguration;
+    }
+
+    public Optional<ClientInformation> getClientInformation() {
+        return Optional.ofNullable(clientInformation);
+    }
+
+    public void setClientInformation(ClientInformation clientInformation) {
+        this.clientInformation = clientInformation;
     }
 }

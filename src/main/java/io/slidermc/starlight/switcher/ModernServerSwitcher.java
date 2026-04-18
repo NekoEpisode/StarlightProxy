@@ -7,6 +7,7 @@ import io.slidermc.starlight.api.server.ProxiedServer;
 import io.slidermc.starlight.network.client.StarlightMinecraftClient;
 import io.slidermc.starlight.network.context.ConnectionContext;
 import io.slidermc.starlight.network.packet.packets.clientbound.play.ClientboundStartConfigurationPacket;
+import io.slidermc.starlight.network.packet.packets.serverbound.configuration.ServerboundClientInformationConfigurationPacket;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,6 +64,16 @@ public class ModernServerSwitcher {
                     return ackFuture.thenRun(() -> {
                         // ServerboundConfigurationAckPacket.Listener has already set upstream states.
                         ctx.setDownstreamChannel(newClient.getChannel());
+
+                        // 在 Configuration 阶段将客户端设置转发给新下游，
+                        // 确保新服务器获得正确的语言、视距、皮肤等信息。
+                        ctx.getClientInformation().ifPresentOrElse(
+                                info -> newClient.getChannel().writeAndFlush(
+                                        new ServerboundClientInformationConfigurationPacket(info)),
+                                () -> log.warn("No ClientInformation available for {} during server switch to {}",
+                                        player.getGameProfile().username(), target.getName())
+                        );
+
                         newClient.getChannel().config().setAutoRead(true);
                         player.setCurrentServer(target);
                         log.debug("Switched {} to {}", player.getGameProfile().username(), target.getName());
