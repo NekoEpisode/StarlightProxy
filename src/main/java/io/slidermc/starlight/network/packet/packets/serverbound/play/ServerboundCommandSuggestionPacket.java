@@ -16,6 +16,8 @@ import io.slidermc.starlight.network.protocolenum.ProtocolVersion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Locale;
+
 /**
  * Command Suggestions Request 数据包（serverbound play）
  * 客户端请求命令 Tab 补全。
@@ -50,8 +52,15 @@ public class ServerboundCommandSuggestionPacket implements IMinecraftPacket {
             ProxiedPlayer player = connCtx.getPlayer();
 
             // text 包含 '/'，Brigadier 命令字符串不含 '/'
-            String commandText = packet.text.startsWith("/") ? packet.text.substring(1) : packet.text;
-            String commandName = commandText.split(" ")[0];
+            int offset = packet.text.startsWith("/") ? 1 : 0;
+            String commandText = packet.text.substring(offset).trim();
+
+            if (commandText.isEmpty()) {
+                connCtx.getDownstreamChannel().writeAndFlush(packet);
+                return;
+            }
+
+            String commandName = commandText.split(" ")[0].toLowerCase(Locale.ROOT);
 
             // 检查代理是否注册了该命令的根节点
             if (proxy.getCommandDispatcher().getRoot().getChild(commandName) != null) {
@@ -59,7 +68,6 @@ public class ServerboundCommandSuggestionPacket implements IMinecraftPacket {
                 ParseResults<IStarlightCommandSource> parse =
                         proxy.getCommandDispatcher().parse(commandText, player);
 
-                int offset = packet.text.startsWith("/") ? 1 : 0;
 
                 proxy.getCommandDispatcher().getCompletionSuggestions(parse)
                         .thenAccept(suggestions -> {
