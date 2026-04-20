@@ -65,7 +65,7 @@ public class ServerboundChatCommandPacket implements IMinecraftPacket {
                 final String finalCommand = normalizedCommand;
                 CompletableFuture.runAsync(() -> proxy.getCommandManager().execute(finalCommand, context.getPlayer()))
                         .exceptionally(throwable -> {
-                            log.error("执行命令时发生异常: /{}", finalCommand, throwable);
+                            log.error(proxy.getTranslateManager().translate("starlight.logging.error.error_on_executing_command"), finalCommand, throwable);
                             return null;
                         });
                 return;
