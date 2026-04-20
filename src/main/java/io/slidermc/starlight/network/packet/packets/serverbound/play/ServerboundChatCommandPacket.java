@@ -14,6 +14,8 @@ import io.slidermc.starlight.utils.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.CompletableFuture;
+
 public class ServerboundChatCommandPacket implements IMinecraftPacket {
     private static final Logger log = LoggerFactory.getLogger(ServerboundChatCommandPacket.class);
     private String command;
@@ -60,7 +62,14 @@ public class ServerboundChatCommandPacket implements IMinecraftPacket {
                     }
                     log.info(proxy.getTranslateManager().translate("starlight.logging.info.player_executed_command"), context.getPlayer().getGameProfile().username(), "/" + logCommand);
                 }
-                proxy.getCommandManager().execute(normalizedCommand, context.getPlayer());
+                final String finalCommand = normalizedCommand;
+                CompletableFuture.runAsync(
+                        () -> proxy.getCommandManager().execute(finalCommand, context.getPlayer()),
+                        proxy.getExecutors().getCommandExecutor()
+                ).exceptionally(throwable -> {
+                            log.error(proxy.getTranslateManager().translate("starlight.logging.error.error_on_executing_command"), finalCommand, throwable);
+                            return null;
+                        });
                 return;
             }
 

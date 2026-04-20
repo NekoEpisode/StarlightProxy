@@ -14,6 +14,7 @@ import io.slidermc.starlight.api.player.PlayerManager;
 import io.slidermc.starlight.api.translate.TranslateManager;
 import io.slidermc.starlight.config.InternalConfig;
 import io.slidermc.starlight.config.StarlightConfig;
+import io.slidermc.starlight.executor.ProxyExecutors;
 import io.slidermc.starlight.manager.ServerManager;
 import io.slidermc.starlight.network.codec.ServerPacketDecoder;
 import io.slidermc.starlight.network.codec.ServerPacketEncoder;
@@ -35,6 +36,7 @@ public class StarlightProxy {
     private final StarlightConfig config;
     private final CommandDispatcher<IStarlightCommandSource> commandDispatcher = new CommandDispatcher<>();
     private final CommandManager commandManager = new CommandManager(commandDispatcher, this);
+    private final ProxyExecutors executors = new ProxyExecutors();
 
     public StarlightProxy(InetSocketAddress address, TranslateManager translateManager,
                           RegistryPacketUtils registryPacketUtils, StarlightConfig config,
@@ -128,5 +130,9 @@ public class StarlightProxy {
 
     public CommandManager getCommandManager() {
         return commandManager;
+    }
+
+    public ProxyExecutors getExecutors() {
+        return executors;
     }
 }
