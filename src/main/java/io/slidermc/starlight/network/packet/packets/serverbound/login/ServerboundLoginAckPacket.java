@@ -50,7 +50,7 @@ public class ServerboundLoginAckPacket implements IMinecraftPacket {
                     if (connectThrowable != null) {
                         log.error(proxy.getTranslateManager().translate("starlight.logging.error.connect_default_server_failed"), connectThrowable);
                         ctx.channel().config().setAutoRead(true);
-                        kickWithConfigDisconnect(ctx, buildConnectFailedMessage(proxy, (context.getClientInformation().isPresent() ? context.getClientInformation().get().getLocale() : proxy.getTranslateManager().getActiveLocale())));
+                        kickWithConfigDisconnect(ctx, buildConnectFailedMessage(proxy, context.getLocale()));
                         return;
                     }
                     // 必须在 login() 之前设置 playerChannel，否则 login 阶段
