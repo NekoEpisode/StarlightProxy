@@ -18,6 +18,7 @@ import io.slidermc.starlight.network.packet.packets.clientbound.login.Clientboun
 import io.slidermc.starlight.network.packet.packets.clientbound.login.ClientboundSetCompressionPacket;
 import io.slidermc.starlight.network.protocolenum.ProtocolState;
 import io.slidermc.starlight.network.protocolenum.ProtocolVersion;
+import io.slidermc.starlight.utils.UUIDUtils;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.slf4j.Logger;
@@ -87,7 +88,7 @@ public class ServerboundLoginStartPacket implements IMinecraftPacket {
             }
 
             log.debug("玩家 {} 以离线模式登录", packet.getUsername());
-            ProxiedPlayer player = new ProxiedPlayer(new GameProfile(packet.username, packet.uuid, List.of()), ctx.channel(), proxy);
+            ProxiedPlayer player = new ProxiedPlayer(new GameProfile(packet.username, UUIDUtils.generateOfflineUuid(packet.username), List.of()), ctx.channel(), proxy);
             log.debug("已创建ProxiedPlayer对象: {}", player);
             player.getConnectionContext().setPlayer(player);
             proxy.getPlayerManager().addPlayer(player);
