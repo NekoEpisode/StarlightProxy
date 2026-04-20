@@ -42,6 +42,14 @@
     "starlight.logging.error.downstream_login_failed": "Downstream login failed",
     "starlight.logging.error.command_suggent_failed": "Command suggestion failed: player={}, command='{}'",
     "starlight.logging.error.server_switch_failed": "Failed to switch server — target: {}, player: {}, error: {}",
+    "starlight.logging.warn.encryption.rsa_decrypt_failed": "RSA decryption failed, kicking player",
+    "starlight.logging.warn.encryption.verify_token_mismatch": "verifyToken mismatch (possible MITM), kicking player",
+    "starlight.logging.warn.encryption.mojang_auth_failed": "Mojang auth failed (HTTP {}), kicking player: {}",
+    "starlight.logging.warn.encryption.downstream_sent_encryption_request": "Downstream sent EncryptionRequest — backend server may be in online-mode. Disconnecting player.",
+    "starlight.logging.error.encryption.pipeline_install_failed": "Failed to install encryption pipeline handlers",
+    "starlight.logging.error.encryption.hash_compute_failed": "Failed to compute serverId hash",
+    "starlight.logging.error.encryption.mojang_response_parse_failed": "Failed to parse Mojang session response",
+    "starlight.logging.error.encryption.session_server_request_failed": "Failed to contact Mojang session server",
 
     "starlight.unknown_error": "Unknown error",
 

@@ -19,6 +19,10 @@ public class ConnectionContext {
     /** Set by ModernServerSwitcher before sending StartConfiguration; completed by ServerboundConfigurationAckPacket.Listener. */
     private volatile CompletableFuture<Void> pendingReconfiguration;
     private ClientInformation clientInformation;
+    private boolean isAuthenticate;
+    private byte[] verifyToken;
+    /** 正版验证流程中暂存的用户名，EncryptionResponse.Listener 使用后可清除 */
+    private String pendingUsername;
 
     private final StarlightProxy proxy;
 
@@ -83,6 +87,30 @@ public class ConnectionContext {
 
     public void setClientInformation(ClientInformation clientInformation) {
         this.clientInformation = clientInformation;
+    }
+
+    public boolean isAuthenticate() {
+        return isAuthenticate;
+    }
+
+    public void setAuthenticate(boolean authenticate) {
+        isAuthenticate = authenticate;
+    }
+
+    public byte[] getVerifyToken() {
+        return verifyToken;
+    }
+
+    public void setVerifyToken(byte[] verifyToken) {
+        this.verifyToken = verifyToken;
+    }
+
+    public String getPendingUsername() {
+        return pendingUsername;
+    }
+
+    public void setPendingUsername(String pendingUsername) {
+        this.pendingUsername = pendingUsername;
     }
 
     public StarlightProxy getProxy() {

@@ -11,6 +11,7 @@ import io.slidermc.starlight.network.packet.packets.clientbound.configuration.Cl
 import io.slidermc.starlight.network.packet.packets.clientbound.configuration.ClientboundFinishConfigurationPacket;
 import io.slidermc.starlight.network.packet.packets.clientbound.configuration.ClientboundPluginMessageConfigurationPacket;
 import io.slidermc.starlight.network.packet.packets.clientbound.login.ClientboundDisconnectLoginPacket;
+import io.slidermc.starlight.network.packet.packets.clientbound.login.ClientboundEncryptionRequestPacket;
 import io.slidermc.starlight.network.packet.packets.clientbound.login.ClientboundLoginSuccessPacket;
 import io.slidermc.starlight.network.packet.packets.clientbound.login.ClientboundSetCompressionPacket;
 import io.slidermc.starlight.network.packet.packets.clientbound.play.*;
@@ -19,6 +20,7 @@ import io.slidermc.starlight.network.packet.packets.clientbound.status.Clientbou
 import io.slidermc.starlight.network.packet.packets.serverbound.configuration.ServerboundClientInformationConfigurationPacket;
 import io.slidermc.starlight.network.packet.packets.serverbound.configuration.ServerboundFinishConfigurationAckPacket;
 import io.slidermc.starlight.network.packet.packets.serverbound.handshake.ServerboundHandshakePacket;
+import io.slidermc.starlight.network.packet.packets.serverbound.login.ServerboundEncryptionResponsePacket;
 import io.slidermc.starlight.network.packet.packets.serverbound.login.ServerboundLoginAckPacket;
 import io.slidermc.starlight.network.packet.packets.serverbound.login.ServerboundLoginStartPacket;
 import io.slidermc.starlight.network.packet.packets.serverbound.play.ServerboundChatCommandPacket;
@@ -150,6 +152,9 @@ public class Main {
         r.registerPacket(av, ProtocolState.LOGIN, ProtocolDirection.CLIENTBOUND, 0x00, ClientboundDisconnectLoginPacket::new);
         r.registerListener(ClientboundDisconnectLoginPacket.class, "default", new ClientboundDisconnectLoginPacket.Listener());
 
+        registryPacketUtils.registerByAutoMapping(Key.key("minecraft:hello"), ProtocolState.LOGIN, ProtocolDirection.CLIENTBOUND, ClientboundEncryptionRequestPacket::new);
+        r.registerListener(ClientboundEncryptionRequestPacket.class, "default", new ClientboundEncryptionRequestPacket.Listener());
+
         registryPacketUtils.registerByAutoMapping(Key.key("minecraft:login_compression"), ProtocolState.LOGIN, ProtocolDirection.CLIENTBOUND, ClientboundSetCompressionPacket::new);
         r.registerListener(ClientboundSetCompressionPacket.class, "default", new ClientboundSetCompressionPacket.Listener());
 
@@ -196,6 +201,9 @@ public class Main {
 
         r.registerPacket(av, ProtocolState.LOGIN, ProtocolDirection.SERVERBOUND, 0x00, ServerboundLoginStartPacket::new);
         r.registerListener(ServerboundLoginStartPacket.class, "default", new ServerboundLoginStartPacket.Listener());
+
+        registryPacketUtils.registerByAutoMapping(Key.key("minecraft:key"), ProtocolState.LOGIN, ProtocolDirection.SERVERBOUND, ServerboundEncryptionResponsePacket::new);
+        r.registerListener(ServerboundEncryptionResponsePacket.class, "default", new ServerboundEncryptionResponsePacket.Listener());
 
         registryPacketUtils.registerByAutoMapping(Key.key("minecraft:login_acknowledged"), ProtocolState.LOGIN, ProtocolDirection.SERVERBOUND, ServerboundLoginAckPacket::new);
         r.registerListener(ServerboundLoginAckPacket.class, "default", new ServerboundLoginAckPacket.Listener());

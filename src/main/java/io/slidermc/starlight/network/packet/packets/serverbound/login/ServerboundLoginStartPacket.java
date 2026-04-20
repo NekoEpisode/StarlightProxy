@@ -3,20 +3,15 @@ package io.slidermc.starlight.network.packet.packets.serverbound.login;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.slidermc.starlight.StarlightProxy;
-import io.slidermc.starlight.api.player.ProxiedPlayer;
 import io.slidermc.starlight.api.profile.GameProfile;
-import io.slidermc.starlight.config.InternalConfig;
-import io.slidermc.starlight.network.codec.CompressionDecoder;
-import io.slidermc.starlight.network.codec.CompressionEncoder;
 import io.slidermc.starlight.network.codec.utils.MinecraftCodecUtils;
 import io.slidermc.starlight.network.context.AttributeKeys;
 import io.slidermc.starlight.network.context.ConnectionContext;
 import io.slidermc.starlight.network.packet.IMinecraftPacket;
 import io.slidermc.starlight.network.packet.listener.IPacketListener;
 import io.slidermc.starlight.network.packet.packets.clientbound.login.ClientboundDisconnectLoginPacket;
-import io.slidermc.starlight.network.packet.packets.clientbound.login.ClientboundLoginSuccessPacket;
-import io.slidermc.starlight.network.packet.packets.clientbound.login.ClientboundSetCompressionPacket;
-import io.slidermc.starlight.network.protocolenum.ProtocolState;
+import io.slidermc.starlight.network.packet.packets.clientbound.login.ClientboundEncryptionRequestPacket;
+import io.slidermc.starlight.network.packet.packets.serverbound.login.helper.LoginHelper;
 import io.slidermc.starlight.network.protocolenum.ProtocolVersion;
 import io.slidermc.starlight.utils.UUIDUtils;
 import net.kyori.adventure.text.Component;
@@ -74,50 +69,35 @@ public class ServerboundLoginStartPacket implements IMinecraftPacket {
             ConnectionContext context = ctx.channel().attr(AttributeKeys.CONNECTION_CONTEXT).get();
             if (context.getHandshakeInformation().getProtocolVersion() == ProtocolVersion.UNKNOWN) {
                 log.debug("不支持的版本，踢出");
-                ctx.channel().writeAndFlush(new ClientboundDisconnectLoginPacket(Component.text("Unsupported protocol version: " + context.getHandshakeInformation().getOriginalProtocolVersion()).color(NamedTextColor.RED))).addListener(_ ->
-                        ctx.channel().close());
+                ctx.channel().writeAndFlush(new ClientboundDisconnectLoginPacket(
+                        Component.text("Unsupported protocol version: " + context.getHandshakeInformation().getOriginalProtocolVersion())
+                                .color(NamedTextColor.RED)
+                )).addListener(_ -> ctx.channel().close());
                 return;
             }
 
             if (proxy.getConfig().isOnlineMode()) {
-                // TODO: 实现正版验证
-                log.error("Online mode is not implemented yet");
-                ctx.channel().writeAndFlush(new ClientboundDisconnectLoginPacket(Component.text("Online mode is not implemented yet").color(NamedTextColor.RED))).addListener(_ ->
-                        ctx.channel().close());
-                return;
-            }
-
-            log.debug("玩家 {} 以离线模式登录", packet.getUsername());
-            ProxiedPlayer player = new ProxiedPlayer(new GameProfile(packet.username, UUIDUtils.generateOfflineUuid(packet.username), List.of()), ctx.channel(), proxy);
-            log.debug("已创建ProxiedPlayer对象: {}", player);
-            player.getConnectionContext().setPlayer(player);
-            proxy.getPlayerManager().addPlayer(player);
-            log.info(proxy.getTranslateManager().translate("starlight.logging.info.player.join"), player.getGameProfile().username(), player.getGameProfile().uuid(), player.getChannel().remoteAddress());
-
-            int threshold = proxy.getConfig().getCompressThreshold();
-            if (threshold >= 0) {
-                // 等 SetCompression 写出完成后再安装 pipeline 并发 LoginSuccess，
-                // 否则 LoginSuccess 可能在压缩生效前就发出，导致客户端解析失败。
-                ctx.channel().writeAndFlush(new ClientboundSetCompressionPacket(threshold)).addListener(_ -> {
-                    if (ctx.pipeline().get(InternalConfig.HANDLER_DECOMPRESS) == null) {
-                        ctx.pipeline().addBefore(InternalConfig.HANDLER_DECODER, InternalConfig.HANDLER_DECOMPRESS, new CompressionDecoder());
-                    }
-                    if (ctx.pipeline().get(InternalConfig.HANDLER_COMPRESS) == null) {
-                        ctx.pipeline().addBefore(InternalConfig.HANDLER_ENCODER, InternalConfig.HANDLER_COMPRESS, new CompressionEncoder(threshold));
-                    }
-                    log.debug("上游已启用压缩，阈值: {}", threshold);
-                    sendLoginSuccess(ctx, player);
-                });
+                log.debug("玩家 {} 进入正版验证流程", packet.getUsername());
+                // 暂存用户名供 EncryptionResponse.Listener 使用
+                context.setPendingUsername(packet.getUsername());
+                // 生成 verifyToken 并存入 context 待验证
+                byte[] verifyToken = proxy.getEncryptionManager().generateVerifyToken();
+                context.setVerifyToken(verifyToken);
+                ctx.channel().writeAndFlush(new ClientboundEncryptionRequestPacket(
+                        "",
+                        proxy.getEncryptionManager().getPublicKeyBytes(),
+                        verifyToken,
+                        true
+                )).addListener(_ -> log.debug("已发送 EncryptionRequest"));
             } else {
-                sendLoginSuccess(ctx, player);
+                log.debug("玩家 {} 以离线模式登录", packet.getUsername());
+                GameProfile profile = new GameProfile(
+                        packet.username,
+                        UUIDUtils.generateOfflineUuid(packet.username),
+                        List.of()
+                );
+                LoginHelper.completeLogin(ctx, proxy, profile);
             }
-        }
-
-        private static void sendLoginSuccess(ChannelHandlerContext ctx, ProxiedPlayer player) {
-            ctx.channel().writeAndFlush(new ClientboundLoginSuccessPacket(player.getGameProfile())).addListener(_ -> {
-                player.getConnectionContext().setOutboundState(ProtocolState.CONFIGURATION);
-                log.debug("上游Outbound切换到CONFIGURATION");
-            });
         }
     }
 }

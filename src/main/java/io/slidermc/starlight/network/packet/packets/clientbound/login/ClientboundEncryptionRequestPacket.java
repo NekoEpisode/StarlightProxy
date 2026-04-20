@@ -4,9 +4,15 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.slidermc.starlight.StarlightProxy;
 import io.slidermc.starlight.network.codec.utils.MinecraftCodecUtils;
+import io.slidermc.starlight.network.context.AttributeKeys;
+import io.slidermc.starlight.network.context.DownstreamConnectionContext;
 import io.slidermc.starlight.network.packet.IMinecraftPacket;
 import io.slidermc.starlight.network.packet.listener.IPacketListener;
 import io.slidermc.starlight.network.protocolenum.ProtocolVersion;
+import io.slidermc.starlight.utils.DisconnectUtils;
+import net.kyori.adventure.text.minimessage.MiniMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ClientboundEncryptionRequestPacket implements IMinecraftPacket {
     private String serverId;
@@ -75,10 +81,27 @@ public class ClientboundEncryptionRequestPacket implements IMinecraftPacket {
     }
 
     public static class Listener implements IPacketListener<ClientboundEncryptionRequestPacket> {
+        private static final Logger log = LoggerFactory.getLogger(Listener.class);
+
         @Override
         public void handle(ClientboundEncryptionRequestPacket packet, ChannelHandlerContext ctx, StarlightProxy proxy) {
             // 下游把Encryption发来了，应该是配置错误
-            // TODO: 待处理
+            // Starlight目前不支持与正版模式下游建立加密，直接断开玩家并提示
+            log.warn(proxy.getTranslateManager().translate("starlight.logging.warn.encryption.downstream_sent_encryption_request"));
+
+            DownstreamConnectionContext downstreamCtx = ctx.channel().attr(AttributeKeys.DOWNSTREAM_CONNECTION_CONTEXT).get();
+            if (downstreamCtx != null && downstreamCtx.getClient() != null) {
+                DisconnectUtils.forwardAndClose(
+                        downstreamCtx.getClient(),
+                        MiniMessage.miniMessage().deserialize(
+                                proxy.getTranslateManager().translate("starlight.disconnect.login_failed")
+                                        .replace("<error_msg>", "Backend server requires online-mode")
+                        ),
+                        proxy
+                );
+            }
+            // 关闭下游连接
+            ctx.channel().close();
         }
     }
 }
