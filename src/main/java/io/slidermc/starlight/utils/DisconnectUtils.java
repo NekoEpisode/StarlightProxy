@@ -2,6 +2,7 @@ package io.slidermc.starlight.utils;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFutureListener;
+import io.slidermc.starlight.StarlightProxy;
 import io.slidermc.starlight.network.client.StarlightMinecraftClient;
 import io.slidermc.starlight.network.context.AttributeKeys;
 import io.slidermc.starlight.network.context.ConnectionContext;
@@ -38,7 +39,7 @@ public final class DisconnectUtils {
      * @param client 下游客户端（持有 playerChannel 引用）
      * @param reason 断开原因
      */
-    public static void forwardAndClose(StarlightMinecraftClient client, Component reason) {
+    public static void forwardAndClose(StarlightMinecraftClient client, Component reason, StarlightProxy proxy) {
         Channel playerChannel = client.getPlayerChannel();
         if (playerChannel == null || !playerChannel.isActive()) {
             return;
@@ -55,13 +56,13 @@ public final class DisconnectUtils {
         };
 
         String reasonText = PlainTextComponentSerializer.plainText().serialize(reason);
-        log.info("向玩家转发断开包 [{}]: {}", state, reasonText);
+        log.debug("向玩家转发断开包 [{}]: {}", state, reasonText);
 
         if (packet != null) {
             // 写完后自动关闭 channel，确保玩家收到断开原因后连接才断
             playerChannel.writeAndFlush(packet).addListener(ChannelFutureListener.CLOSE);
         } else {
-            log.warn("无法确定断开包类型（outboundState={}），直接关闭连接", state);
+            log.warn(proxy.getTranslateManager().translate("starlight.logging.warn.disconnect.type_failed"), state);
             playerChannel.close();
         }
     }

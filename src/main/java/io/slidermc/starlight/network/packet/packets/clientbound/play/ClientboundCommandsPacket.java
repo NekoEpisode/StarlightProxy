@@ -53,9 +53,9 @@ public class ClientboundCommandsPacket implements IMinecraftPacket {
     /**
      * 将代理自身的命令树合并进来（代理命令优先，覆盖同名后端命令）。
      */
-    public void mergeProxyCommands(RootCommandNode<IStarlightCommandSource> proxyRoot) {
+    public void mergeProxyCommands(RootCommandNode<IStarlightCommandSource> proxyRoot, StarlightProxy proxy) {
         if (nodes.isEmpty() || rootIndex < 0 || rootIndex >= nodes.size()) {
-            log.warn("后端命令树为空或根节点索引无效，只使用代理命令");
+            log.warn(proxy.getTranslateManager().translate("starlight.logging.warn.downstream_command_tree_empty_or_root_index_invaild"));
             buildFromRoot(proxyRoot);
             return;
         }
@@ -77,7 +77,7 @@ public class ClientboundCommandsPacket implements IMinecraftPacket {
                 return false;
             });
 
-            int newIndex = addNodeRecursively(proxyChild);
+            int newIndex = addNodeRecursively(proxyChild, proxy);
             backendRoot.getChildren().add(newIndex);
             log.debug("已添加代理命令: {}", commandName);
         }
@@ -116,14 +116,15 @@ public class ClientboundCommandsPacket implements IMinecraftPacket {
     /**
      * 递归将代理命令节点追加到 nodes 列表，返回当前节点的索引。
      */
-    private int addNodeRecursively(CommandNode<IStarlightCommandSource> node) {
+    private int addNodeRecursively(CommandNode<IStarlightCommandSource> node, StarlightProxy proxy) {
         // allNodeIndices 用于跟踪整棵子树内所有节点的索引（含重定向目标查找）
         Map<CommandNode<IStarlightCommandSource>, Integer> allNodeIndices = new LinkedHashMap<>();
-        return addNodeRecursively(node, allNodeIndices);
+        return addNodeRecursively(node, allNodeIndices, proxy);
     }
 
     private int addNodeRecursively(CommandNode<IStarlightCommandSource> node,
-                                   Map<CommandNode<IStarlightCommandSource>, Integer> allNodeIndices) {
+                                   Map<CommandNode<IStarlightCommandSource>, Integer> allNodeIndices,
+                                   StarlightProxy proxy) {
         int currentIndex = nodes.size();
         allNodeIndices.put(node, currentIndex);
         CommandNodeData nodeData = new CommandNodeData();
@@ -131,18 +132,19 @@ public class ClientboundCommandsPacket implements IMinecraftPacket {
 
         Map<CommandNode<IStarlightCommandSource>, Integer> childIndices = new LinkedHashMap<>();
         for (CommandNode<IStarlightCommandSource> child : node.getChildren()) {
-            int childIndex = addNodeRecursively(child, allNodeIndices);
+            int childIndex = addNodeRecursively(child, allNodeIndices, proxy);
             childIndices.put(child, childIndex);
         }
 
-        fillNodeData(nodeData, node, childIndices, allNodeIndices);
+        fillNodeData(nodeData, node, childIndices, allNodeIndices, proxy);
         return currentIndex;
     }
 
     private void fillNodeData(CommandNodeData data,
                                CommandNode<IStarlightCommandSource> node,
                                Map<CommandNode<IStarlightCommandSource>, Integer> childIndices,
-                               Map<CommandNode<IStarlightCommandSource>, Integer> allNodeIndices) {
+                               Map<CommandNode<IStarlightCommandSource>, Integer> allNodeIndices,
+                              StarlightProxy proxy) {
         byte flags = 0;
         if (node instanceof LiteralCommandNode)       flags |= CommandNodeData.NODE_TYPE_LITERAL;
         else if (node instanceof ArgumentCommandNode) flags |= CommandNodeData.NODE_TYPE_ARGUMENT;
@@ -156,7 +158,7 @@ public class ClientboundCommandsPacket implements IMinecraftPacket {
                 data.setRedirectNode(redirectIndex);
             } else {
                 // 重定向目标不在已知节点中；忽略以避免产生无效的命令树
-                log.warn("命令节点 '{}' 的重定向目标未找到，已跳过重定向", node.getName());
+                log.warn(proxy.getTranslateManager().translate("starlight.logging.warn.cannot_found_target_redirect_node"), node.getName());
             }
         }
 
@@ -188,7 +190,7 @@ public class ClientboundCommandsPacket implements IMinecraftPacket {
             // 将代理命令树合并进后端命令树
             RootCommandNode<IStarlightCommandSource> proxyRoot =
                     proxy.getCommandDispatcher().getRoot();
-            packet.mergeProxyCommands(proxyRoot);
+            packet.mergeProxyCommands(proxyRoot, proxy);
 
             // 转发给上游客户端
             io.slidermc.starlight.network.client.StarlightMinecraftClient client =

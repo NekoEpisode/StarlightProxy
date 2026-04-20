@@ -34,7 +34,7 @@ public class StarlightProxy {
     private final RegistryPacketUtils registryPacketUtils;
     private final StarlightConfig config;
     private final CommandDispatcher<IStarlightCommandSource> commandDispatcher = new CommandDispatcher<>();
-    private final CommandManager commandManager = new CommandManager(commandDispatcher);
+    private final CommandManager commandManager = new CommandManager(commandDispatcher, this);
 
     public StarlightProxy(InetSocketAddress address, TranslateManager translateManager,
                           RegistryPacketUtils registryPacketUtils, StarlightConfig config,

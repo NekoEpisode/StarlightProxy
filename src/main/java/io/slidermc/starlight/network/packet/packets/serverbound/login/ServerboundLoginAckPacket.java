@@ -13,8 +13,9 @@ import io.slidermc.starlight.network.packet.packets.clientbound.configuration.Cl
 import io.slidermc.starlight.network.protocolenum.ProtocolState;
 import io.slidermc.starlight.network.protocolenum.ProtocolVersion;
 import io.slidermc.starlight.switcher.ServerSwitchKickedException;
+import io.slidermc.starlight.utils.MiniMessageUtils;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,9 +48,9 @@ public class ServerboundLoginAckPacket implements IMinecraftPacket {
             try {
                 client.connectAsync().whenComplete((_, connectThrowable) -> {
                     if (connectThrowable != null) {
-                        log.error("连接默认服务器失败", connectThrowable);
+                        log.error(proxy.getTranslateManager().translate("starlight.logging.error.connect_default_server_failed"), connectThrowable);
                         ctx.channel().config().setAutoRead(true);
-                        kickWithConfigDisconnect(ctx, buildConnectFailedMessage(proxy));
+                        kickWithConfigDisconnect(ctx, buildConnectFailedMessage(proxy, (context.getClientInformation().isPresent() ? context.getClientInformation().get().getLocale() : proxy.getTranslateManager().getActiveLocale())));
                         return;
                     }
                     // 必须在 login() 之前设置 playerChannel，否则 login 阶段
@@ -61,12 +62,19 @@ public class ServerboundLoginAckPacket implements IMinecraftPacket {
                             context.getPlayer().getGameProfile().uuid()
                     ).whenComplete((_, loginThrowable) -> {
                         if (loginThrowable != null) {
-                            log.error("下游登录失败", loginThrowable);
+                            log.error(proxy.getTranslateManager().translate("starlight.logging.error.downstream_login_failed"), loginThrowable);
                             ctx.channel().config().setAutoRead(true);
                             Throwable cause = loginThrowable.getCause() != null ? loginThrowable.getCause() : loginThrowable;
+                            String locale = (context.getClientInformation().isPresent() ? context.getClientInformation().get().getLocale() : proxy.getTranslateManager().getActiveLocale());
                             Component reason = cause instanceof ServerSwitchKickedException kicked
                                     ? kicked.getReason()
-                                    : Component.text("登录失败：" + cause.getMessage(), NamedTextColor.RED);
+                                    : MiniMessageUtils.MINI_MESSAGE.deserialize(
+                                    proxy.getTranslateManager().translate(
+                                            locale,
+                                            "starlight.disconnect.login_failed"
+                                    ),
+                                    Placeholder.parsed("error_msg", cause.getMessage() != null ? cause.getMessage() : proxy.getTranslateManager().translate(locale, "starlight.unknown_error"))
+                            );
                             kickWithConfigDisconnect(ctx, reason);
                             return;
                         }
@@ -78,17 +86,21 @@ public class ServerboundLoginAckPacket implements IMinecraftPacket {
                     });
                 });
             } catch (Exception e) {
-                log.error("连接默认服务器失败", e);
+                log.error(proxy.getTranslateManager().translate("starlight.logging.error.connect_default_server_failed"), e);
                 ctx.channel().config().setAutoRead(true);
-                kickWithConfigDisconnect(ctx, buildConnectFailedMessage(proxy));
+                kickWithConfigDisconnect(ctx, buildConnectFailedMessage(proxy, (context.getClientInformation().isPresent() ? context.getClientInformation().get().getLocale() : proxy.getTranslateManager().getActiveLocale())));
             }
         }
 
-        private static Component buildConnectFailedMessage(StarlightProxy proxy) {
+        private static Component buildConnectFailedMessage(StarlightProxy proxy, String locale) {
             String serverName = proxy.getServerManager().getDefaultServer().getName();
-            return Component.text("无法连接到默认服务器 " + serverName, NamedTextColor.RED)
-                    .append(Component.newline())
-                    .append(Component.text("请稍后再试", NamedTextColor.GRAY));
+
+            String template = proxy.getTranslateManager().translate(locale, "starlight.disconnect.failed_connect_default_server");
+
+            return MiniMessageUtils.MINI_MESSAGE.deserialize(
+                    template,
+                    Placeholder.parsed("server_name", serverName)
+            );
         }
 
         /**

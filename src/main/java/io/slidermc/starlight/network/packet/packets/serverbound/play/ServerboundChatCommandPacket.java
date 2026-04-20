@@ -9,8 +9,11 @@ import io.slidermc.starlight.network.context.ConnectionContext;
 import io.slidermc.starlight.network.packet.IMinecraftPacket;
 import io.slidermc.starlight.network.packet.listener.IPacketListener;
 import io.slidermc.starlight.network.protocolenum.ProtocolVersion;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ServerboundChatCommandPacket implements IMinecraftPacket {
+    private static final Logger log = LoggerFactory.getLogger(ServerboundChatCommandPacket.class);
     private String command;
 
     @Override
@@ -48,6 +51,8 @@ public class ServerboundChatCommandPacket implements IMinecraftPacket {
             }
             String commandName = normalizedCommand.split(" ")[0];
             if (proxy.getCommandManager().hasCommand(commandName)) {
+                if (proxy.getConfig().isLoggingCommand())
+                    log.info(proxy.getTranslateManager().translate("starlight.logging.info.player_executed_command"), context.getPlayer().getGameProfile().username(), "/" + packet.command);
                 proxy.getCommandManager().execute(normalizedCommand, context.getPlayer());
                 return;
             }

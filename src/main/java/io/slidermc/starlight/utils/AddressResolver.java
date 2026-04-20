@@ -70,7 +70,7 @@ public class AddressResolver {
         if (!portExplicit) {
             InetSocketAddress srvResult = trySrvLookup(host);
             if (srvResult != null) {
-                log.info("SRV解析: {} → {}:{}", host, srvResult.getHostString(), srvResult.getPort());
+                log.debug("SRV解析: {} → {}:{}", host, srvResult.getHostString(), srvResult.getPort());
                 return srvResult;
             }
             log.debug("未找到 SRV 记录，使用默认端口: {}:{}", host, DEFAULT_MINECRAFT_PORT);
@@ -109,7 +109,7 @@ public class AddressResolver {
             String record = srvAttr.get(0).toString();
             String[] parts = record.split("\\s+");
             if (parts.length < 4) {
-                log.warn("SRV 记录格式不正确，已忽略: {}", record);
+                log.warn("SRV format is invalid: {}, ignored", record);
                 return null;
             }
 
@@ -128,7 +128,7 @@ public class AddressResolver {
             return null;
         } catch (Exception e) {
             // DNS 上下文初始化失败（例如 jdk.naming.dns 模块不可用）
-            log.warn("SRV 查询异常，已跳过: {}", e.getMessage());
+            log.warn("SRV query error, skipped: {}", e.getMessage());
             return null;
         }
     }

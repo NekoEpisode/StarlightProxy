@@ -64,10 +64,10 @@ public class StarlightConfig {
      */
     public static StarlightConfig loadOrCreate(Path configPath) throws IOException {
         if (!Files.exists(configPath)) {
-            log.info("配置文件不存在，正在从内置资源复制默认配置到: {}", configPath.toAbsolutePath());
+            log.info("Configuration file not found; copying default configuration from built-in resources to: {}", configPath.toAbsolutePath());
             try (InputStream src = StarlightConfig.class.getClassLoader().getResourceAsStream("config.yml")) {
                 if (src == null) {
-                    throw new IOException("内置资源 config.yml 未找到，无法创建默认配置文件");
+                    throw new IOException("Built-in resource config.yml not found; unable to create default configuration file.");
                 }
                 if (configPath.getParent() != null) {
                     Files.createDirectories(configPath.getParent());
@@ -76,7 +76,7 @@ public class StarlightConfig {
             }
         }
 
-        log.info("加载配置文件: {}", configPath.toAbsolutePath());
+        log.info("Loaded configuration: {}", configPath.toAbsolutePath());
         try (InputStream in = Files.newInputStream(configPath)) {
             Map<String, Object> root = new Yaml().load(in);
             return parse(root);

@@ -51,7 +51,7 @@ public class ClientboundDisconnectLoginPacket implements IMinecraftPacket {
             StarlightMinecraftClient client = ctx.channel().attr(AttributeKeys.DOWNSTREAM_CONNECTION_CONTEXT).get().getClient();
             if (!client.isSwitching()) {
                 // Initial login: forward the disconnect reason to the player and close their connection.
-                DisconnectUtils.forwardAndClose(client, packet.getReason());
+                DisconnectUtils.forwardAndClose(client, packet.getReason(), proxy);
             }
             // Preserve the kick reason so ModernServerSwitcher can relay it to the player.
             client.callLoginCompleteExceptionally(new ServerSwitchKickedException(packet.getReason()));

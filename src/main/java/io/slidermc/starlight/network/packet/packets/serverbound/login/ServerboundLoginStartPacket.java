@@ -92,6 +92,7 @@ public class ServerboundLoginStartPacket implements IMinecraftPacket {
             log.debug("已创建ProxiedPlayer对象: {}", player);
             player.getConnectionContext().setPlayer(player);
             proxy.getPlayerManager().addPlayer(player);
+            log.info(proxy.getTranslateManager().translate("starlight.logging.info.player.join"), player.getGameProfile().username(), player.getGameProfile().uuid(), player.getChannel().remoteAddress());
 
             int threshold = proxy.getConfig().getCompressThreshold();
             if (threshold >= 0) {
