@@ -30,7 +30,7 @@ public class ServerCommand extends StarlightCommand {
                 Optional<ProxiedPlayer> optPlayer = ctx.getSource().asProxiedPlayer();
                 if (optPlayer.isPresent()) {
                     ConnectionContext context = optPlayer.get().getConnectionContext();
-                    locale = (context.getClientInformation().isPresent() ? context.getClientInformation().get().getLocale() : proxy.getTranslateManager().getActiveLocale());
+                    locale = context.getLocale();
                 }
                 ctx.getSource().sendMessage(
                         MiniMessageUtils.MINI_MESSAGE.deserialize(
@@ -54,12 +54,11 @@ public class ServerCommand extends StarlightCommand {
                     ctx.getSource().asProxiedPlayer().ifPresentOrElse(
                             player -> {
                                 ConnectionContext context = player.getConnectionContext();
-                                String locale = (context.getClientInformation().isPresent() ? context.getClientInformation().get().getLocale() : proxy.getTranslateManager().getActiveLocale());
                                 var target = player.getProxy().getServerManager().getServer(serverName);
                                 if (target == null) {
                                     player.sendMessage(
                                             MiniMessageUtils.MINI_MESSAGE.deserialize(
-                                                    proxy.getTranslateManager().translate(locale, "starlight.command.server.server_not_found"),
+                                                    context.getTranslation("starlight.command.server.server_not_found"),
                                                     Placeholder.parsed("server_name", serverName)
                                             )
                                     );
@@ -67,7 +66,7 @@ public class ServerCommand extends StarlightCommand {
                                     if (player.getCurrentServer().isPresent() && player.getCurrentServer().get().equals(target)) {
                                         player.sendMessage(
                                                 MiniMessageUtils.MINI_MESSAGE.deserialize(
-                                                        proxy.getTranslateManager().translate(locale, "starlight.command.server.already_on_target_server"),
+                                                        context.getTranslation("starlight.command.server.already_on_target_server"),
                                                         Placeholder.parsed("server_name", serverName)
                                                 )
                                         );
@@ -75,7 +74,7 @@ public class ServerCommand extends StarlightCommand {
                                     }
                                     player.sendMessage(
                                             MiniMessageUtils.MINI_MESSAGE.deserialize(
-                                                    proxy.getTranslateManager().translate(locale, "starlight.command.server.connecting"),
+                                                    context.getTranslation("starlight.command.server.connecting"),
                                                     Placeholder.parsed("server_name", serverName)
                                             )
                                     );

@@ -89,20 +89,19 @@ public class ModernServerSwitcher {
                     newClient.disconnect();
                     // Notify the player about the failure instead of silently dropping the error.
                     ConnectionContext context = player.getConnectionContext();
-                    String locale = (context.getClientInformation().isPresent() ? context.getClientInformation().get().getLocale() : proxy.getTranslateManager().getActiveLocale());
                     if (cause instanceof ServerSwitchKickedException kicked) {
                         player.sendMessage(
                                 MiniMessageUtils.MINI_MESSAGE.deserialize(
-                                        proxy.getTranslateManager().translate(locale, "starlight.switching.error.failed_connect_to"),
+                                        context.getTranslation("starlight.switching.error.failed_connect_to"),
                                         Placeholder.component("target", Component.text(target.getName())),
                                         Placeholder.component("error", kicked.getReason())
                                 )
                         );
                     } else {
-                        String errorMsg = cause.getMessage() != null ? cause.getMessage() : proxy.getTranslateManager().translate(locale, "starlight.unknown_error");
+                        String errorMsg = cause.getMessage() != null ? cause.getMessage() : context.getTranslation("starlight.unknown_error");
                         player.sendMessage(
                                 MiniMessageUtils.MINI_MESSAGE.deserialize(
-                                        proxy.getTranslateManager().translate(locale, "starlight.switching.error.error_on_connecting"),
+                                        context.getTranslation("starlight.switching.error.error_on_connecting"),
                                         Placeholder.parsed("target", target.getName()),
                                         Placeholder.parsed("error", errorMsg)
                                 )

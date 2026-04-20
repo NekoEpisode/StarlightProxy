@@ -65,15 +65,11 @@ public class ServerboundLoginAckPacket implements IMinecraftPacket {
                             log.error(proxy.getTranslateManager().translate("starlight.logging.error.downstream_login_failed"), loginThrowable);
                             ctx.channel().config().setAutoRead(true);
                             Throwable cause = loginThrowable.getCause() != null ? loginThrowable.getCause() : loginThrowable;
-                            String locale = (context.getClientInformation().isPresent() ? context.getClientInformation().get().getLocale() : proxy.getTranslateManager().getActiveLocale());
                             Component reason = cause instanceof ServerSwitchKickedException kicked
                                     ? kicked.getReason()
                                     : MiniMessageUtils.MINI_MESSAGE.deserialize(
-                                    proxy.getTranslateManager().translate(
-                                            locale,
-                                            "starlight.disconnect.login_failed"
-                                    ),
-                                    Placeholder.parsed("error_msg", cause.getMessage() != null ? cause.getMessage() : proxy.getTranslateManager().translate(locale, "starlight.unknown_error"))
+                                    context.getTranslation("starlight.disconnect.login_failed"),
+                                    Placeholder.parsed("error_msg", cause.getMessage() != null ? cause.getMessage() : context.getTranslation("starlight.unknown_error"))
                             );
                             kickWithConfigDisconnect(ctx, reason);
                             return;
@@ -88,7 +84,7 @@ public class ServerboundLoginAckPacket implements IMinecraftPacket {
             } catch (Exception e) {
                 log.error(proxy.getTranslateManager().translate("starlight.logging.error.connect_default_server_failed"), e);
                 ctx.channel().config().setAutoRead(true);
-                kickWithConfigDisconnect(ctx, buildConnectFailedMessage(proxy, (context.getClientInformation().isPresent() ? context.getClientInformation().get().getLocale() : proxy.getTranslateManager().getActiveLocale())));
+                kickWithConfigDisconnect(ctx, buildConnectFailedMessage(proxy, context.getLocale()));
             }
         }
 

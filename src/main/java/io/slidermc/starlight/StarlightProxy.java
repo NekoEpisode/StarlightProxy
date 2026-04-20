@@ -76,7 +76,8 @@ public class StarlightProxy {
                         @Override
                         protected void initChannel(SocketChannel socketChannel) throws Exception {
                             socketChannel.pipeline().addLast(InternalConfig.HANDLER_DECODER, new ServerPacketDecoder(
-                                    registryPacketUtils.getPacketRegistry()
+                                    registryPacketUtils.getPacketRegistry(),
+                                    proxy
                             ));
                             socketChannel.pipeline().addLast(InternalConfig.HANDLER_ENCODER, new ServerPacketEncoder(
                                     registryPacketUtils.getPacketRegistry()

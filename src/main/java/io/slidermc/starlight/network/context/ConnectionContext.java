@@ -1,6 +1,7 @@
 package io.slidermc.starlight.network.context;
 
 import io.netty.channel.Channel;
+import io.slidermc.starlight.StarlightProxy;
 import io.slidermc.starlight.api.player.ProxiedPlayer;
 import io.slidermc.starlight.data.clientinformation.ClientInformation;
 import io.slidermc.starlight.network.protocolenum.ProtocolState;
@@ -19,10 +20,13 @@ public class ConnectionContext {
     private volatile CompletableFuture<Void> pendingReconfiguration;
     private ClientInformation clientInformation;
 
-    public ConnectionContext() {
+    private final StarlightProxy proxy;
+
+    public ConnectionContext(StarlightProxy proxy) {
         this.inboundState = ProtocolState.HANDSHAKE;
         this.outboundState = ProtocolState.HANDSHAKE;
         this.handshakeInformation = new HandshakeInformation();
+        this.proxy = proxy;
     }
 
     public ProtocolState getInboundState() {
@@ -79,5 +83,18 @@ public class ConnectionContext {
 
     public void setClientInformation(ClientInformation clientInformation) {
         this.clientInformation = clientInformation;
+    }
+
+    public StarlightProxy getProxy() {
+        return proxy;
+    }
+
+    public String getTranslation(String key) {
+        String locale = (getClientInformation().isPresent() ? getClientInformation().get().getLocale() : proxy.getTranslateManager().getActiveLocale());
+        return proxy.getTranslateManager().translate(locale, key);
+    }
+
+    public String getLocale() {
+        return (getClientInformation().isPresent() ? getClientInformation().get().getLocale() : proxy.getTranslateManager().getActiveLocale());
     }
 }
