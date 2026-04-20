@@ -78,13 +78,13 @@ public class ServerboundCommandSuggestionPacket implements IMinecraftPacket {
                             suggestions.getList().forEach(s -> response.addSuggestion(s.getText()));
 
                             player.getChannel().writeAndFlush(response);
-                            log.debug("代理命令补全: 玩家={}, 命令={}, 建议数={}",
+                            log.debug("已发送补全列表给玩家: {}, 命令: {}, 列表长度: {}",
                                     player.getGameProfile().username(),
                                     commandText,
                                     suggestions.getList().size());
                         })
                         .exceptionally(throwable -> {
-                            log.error("命令补全失败: 玩家={}, 命令='{}'",
+                            log.error(proxy.getTranslateManager().translate("starlight.logging.error.command_suggent_failed"),
                                     player.getGameProfile().username(), commandText, throwable);
                             // 返回空建议列表，避免客户端请求悬挂
                             ClientboundCommandSuggestionsPacket empty =

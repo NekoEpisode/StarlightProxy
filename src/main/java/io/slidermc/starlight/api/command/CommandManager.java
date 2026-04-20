@@ -2,6 +2,7 @@ package io.slidermc.starlight.api.command;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import io.slidermc.starlight.StarlightProxy;
 import io.slidermc.starlight.api.command.source.IStarlightCommandSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,8 +22,11 @@ public class CommandManager {
     /** 已注册的命令，key 为命令名（小写）。 */
     private final Map<String, StarlightCommand> commands = new ConcurrentHashMap<>();
 
-    public CommandManager(CommandDispatcher<IStarlightCommandSource> dispatcher) {
+    private final StarlightProxy proxy;
+
+    public CommandManager(CommandDispatcher<IStarlightCommandSource> dispatcher, StarlightProxy proxy) {
         this.dispatcher = dispatcher;
+        this.proxy = proxy;
     }
 
     /**
@@ -65,7 +69,7 @@ public class CommandManager {
             source.sendMessage(net.kyori.adventure.text.Component.text(e.getMessage()));
             return 0;
         } catch (Exception e) {
-            log.error("执行命令 '{}' 时出错", input, e);
+            log.error(proxy.getTranslateManager().translate("starlight.logging.error.error_on_executing_command"), input, e);
             return 0;
         }
     }

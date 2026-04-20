@@ -17,12 +17,12 @@ import io.slidermc.starlight.network.packet.packets.clientbound.play.*;
 import io.slidermc.starlight.network.packet.packets.clientbound.status.ClientboundPongResponsePacket;
 import io.slidermc.starlight.network.packet.packets.clientbound.status.ClientboundStatusResponsePacket;
 import io.slidermc.starlight.network.packet.packets.serverbound.configuration.ServerboundClientInformationConfigurationPacket;
-import io.slidermc.starlight.network.packet.packets.serverbound.play.ServerboundClientInformationPlayPacket;
 import io.slidermc.starlight.network.packet.packets.serverbound.configuration.ServerboundFinishConfigurationAckPacket;
 import io.slidermc.starlight.network.packet.packets.serverbound.handshake.ServerboundHandshakePacket;
 import io.slidermc.starlight.network.packet.packets.serverbound.login.ServerboundLoginAckPacket;
 import io.slidermc.starlight.network.packet.packets.serverbound.login.ServerboundLoginStartPacket;
 import io.slidermc.starlight.network.packet.packets.serverbound.play.ServerboundChatCommandPacket;
+import io.slidermc.starlight.network.packet.packets.serverbound.play.ServerboundClientInformationPlayPacket;
 import io.slidermc.starlight.network.packet.packets.serverbound.play.ServerboundCommandSuggestionPacket;
 import io.slidermc.starlight.network.packet.packets.serverbound.play.ServerboundConfigurationAckPacket;
 import io.slidermc.starlight.network.packet.packets.serverbound.status.ServerboundPingRequestPacket;
@@ -53,7 +53,7 @@ public class Main {
         try {
             config = StarlightConfig.loadOrCreate(Path.of("config.yml"));
         } catch (IOException e) {
-            log.error("无法加载配置文件，代理终止", e);
+            log.error("Cannot load configuration file, shutting down...", e);
             System.exit(1);
             return;
         }
@@ -67,12 +67,12 @@ public class Main {
 
         String defaultServer = config.getDefaultServer();
         if (defaultServer == null) {
-            log.error("配置文件中缺少default-server设置项，请先设置！");
+            log.error(translateManager.translate("starlight.logging.error.config_dont_have_default_server"));
             System.exit(1);
             return;
         }
         if (!config.getServers().containsKey(defaultServer)) {
-            log.error("未找到此default-server: {}", defaultServer);
+            log.error(translateManager.translate("starlight.logging.error.cannot_found_default_server"), defaultServer);
             System.exit(1);
             return;
         }
@@ -83,7 +83,7 @@ public class Main {
             log.debug("加载默认服务器: {} ({})", defaultServer, defaultEntry.address());
             defaultAddr = AddressResolver.resolve(defaultEntry.address());
         } catch (IllegalArgumentException e) {
-            log.error("默认服务器 {} 地址解析失败: {}", defaultServer, e.getMessage());
+            log.error(translateManager.translate("starlight.logging.error.default_server_address_resolve_error"), defaultServer, e.getMessage());
             System.exit(1);
             return;
         }
@@ -97,7 +97,7 @@ public class Main {
                 InetSocketAddress addr = AddressResolver.resolve(entry.getValue().address());
                 serverManager.addServer(new ProxiedServer(addr, entry.getKey()));
             } catch (IllegalArgumentException e) {
-                log.warn("服务器 {} 地址解析失败，跳过: {}", entry.getKey(), e.getMessage());
+                log.warn(translateManager.translate("starlight.logging.warn.server_address_resolve_failed"), entry.getKey(), e.getMessage());
             }
         }
 
@@ -118,7 +118,7 @@ public class Main {
         proxy.start();
 
         // 注册内置代理命令
-        proxy.getCommandManager().register(new ServerCommand());
+        proxy.getCommandManager().register(new ServerCommand(proxy));
     }
 
     private static void printASCIIArt() {

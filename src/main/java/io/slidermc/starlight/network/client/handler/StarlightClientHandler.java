@@ -42,7 +42,7 @@ public class StarlightClientHandler extends ChannelInboundHandlerAdapter {
             if (playerChannel != null && playerChannel.isActive()) {
                 playerChannel.writeAndFlush(rawPacket);
             } else {
-                log.warn("Received RawPacket from downstream but no active player channel, dropping");
+                log.warn(proxy.getTranslateManager().translate("starlight.logging.warn.packet.received_raw_but_no_player_channel"));
             }
         } else if (msg instanceof IMinecraftPacket packet) {
             packetRegistry.dispatch(packet, ctx, proxy);
@@ -58,6 +58,6 @@ public class StarlightClientHandler extends ChannelInboundHandlerAdapter {
             client.disconnect();
             log.debug("Exceptionally disconnected from server", cause);
         }
-        log.error("下游连接出现错误！", cause);
+        log.error(proxy.getTranslateManager().translate("starlight.logging.error.error_on_downstream_connection"), cause);
     }
 }

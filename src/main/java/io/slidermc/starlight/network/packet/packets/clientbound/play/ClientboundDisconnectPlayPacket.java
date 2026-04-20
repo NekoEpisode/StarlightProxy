@@ -44,7 +44,7 @@ public class ClientboundDisconnectPlayPacket implements IMinecraftPacket {
         public void handle(ClientboundDisconnectPlayPacket packet, ChannelHandlerContext ctx, StarlightProxy proxy) {
             StarlightMinecraftClient client = ctx.channel().attr(AttributeKeys.DOWNSTREAM_CONNECTION_CONTEXT).get().getClient();
             // 转发断开包给玩家并关闭上游 channel
-            DisconnectUtils.forwardAndClose(client, packet.getReason());
+            DisconnectUtils.forwardAndClose(client, packet.getReason(), proxy);
             // 关闭下游 channel
             client.disconnect();
         }

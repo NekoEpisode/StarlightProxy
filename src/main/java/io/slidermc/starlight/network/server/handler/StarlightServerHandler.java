@@ -39,7 +39,7 @@ public class StarlightServerHandler extends ChannelInboundHandlerAdapter {
                 if (downstream != null) {
                     downstream.close();
                 }
-                log.info("Player {} exited", player.getGameProfile().username());
+                log.info(proxy.getTranslateManager().translate("starlight.logging.info.player.exit"), player.getGameProfile().username(), player.getGameProfile().uuid());
             }
         }
     }
@@ -53,7 +53,7 @@ public class StarlightServerHandler extends ChannelInboundHandlerAdapter {
             if (downstream != null && downstream.isActive()) {
                 downstream.writeAndFlush(rawPacket);
             } else {
-                log.warn("Received RawPacket from player but no active downstream channel, dropping");
+                log.warn(proxy.getTranslateManager().translate("starlight.logging.warn.packet.received_raw_but_no_downstream_channel"));
             }
         } else if (msg instanceof IMinecraftPacket packet) {
             packetRegistry.dispatch(packet, ctx, proxy);
@@ -64,6 +64,6 @@ public class StarlightServerHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        log.error("上游连接出现错误！", cause);
+        log.error(proxy.getTranslateManager().translate("starlight.logging.error.error_on_upstream"), cause);
     }
 }

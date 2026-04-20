@@ -8,8 +8,9 @@ import io.slidermc.starlight.network.client.StarlightMinecraftClient;
 import io.slidermc.starlight.network.context.ConnectionContext;
 import io.slidermc.starlight.network.packet.packets.clientbound.play.ClientboundStartConfigurationPacket;
 import io.slidermc.starlight.network.packet.packets.serverbound.configuration.ServerboundClientInformationConfigurationPacket;
+import io.slidermc.starlight.utils.MiniMessageUtils;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -83,18 +84,27 @@ public class ModernServerSwitcher {
                 })
                 .exceptionally(e -> {
                     Throwable cause = e.getCause() != null ? e.getCause() : e;
-                    log.error("Server switch to {} failed for {}: {}",
+                    log.error(proxy.getTranslateManager().translate("starlight.logging.error.server_switch_failed"),
                             target.getName(), player.getGameProfile().username(), cause.getMessage());
                     newClient.disconnect();
                     // Notify the player about the failure instead of silently dropping the error.
+                    ConnectionContext context = player.getConnectionContext();
                     if (cause instanceof ServerSwitchKickedException kicked) {
                         player.sendMessage(
-                                Component.text("无法连接到 " + target.getName() + "：", NamedTextColor.RED)
-                                        .append(kicked.getReason())
+                                MiniMessageUtils.MINI_MESSAGE.deserialize(
+                                        context.getTranslation("starlight.switching.error.failed_connect_to"),
+                                        Placeholder.component("target", Component.text(target.getName())),
+                                        Placeholder.component("error", kicked.getReason())
+                                )
                         );
                     } else {
+                        String errorMsg = cause.getMessage() != null ? cause.getMessage() : context.getTranslation("starlight.unknown_error");
                         player.sendMessage(
-                                Component.text("连接到 " + target.getName() + " 时出错：" + cause.getMessage(), NamedTextColor.RED)
+                                MiniMessageUtils.MINI_MESSAGE.deserialize(
+                                        context.getTranslation("starlight.switching.error.error_on_connecting"),
+                                        Placeholder.parsed("target", target.getName()),
+                                        Placeholder.parsed("error", errorMsg)
+                                )
                         );
                     }
                     return null;

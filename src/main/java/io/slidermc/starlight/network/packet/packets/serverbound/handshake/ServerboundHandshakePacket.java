@@ -108,7 +108,7 @@ public class ServerboundHandshakePacket implements IMinecraftPacket {
                     context.setOutboundState(ProtocolState.LOGIN);
                 }
                 default -> {
-                    log.warn("Unknown Next State: {}, Closing connection", packet.nextState);
+                    log.warn(proxy.getTranslateManager().translate("starlight.logging.warn.unknown_next_state"), packet.nextState);
                     ctx.channel().close();
                 }
             }

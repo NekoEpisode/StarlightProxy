@@ -34,7 +34,7 @@ public class StarlightProxy {
     private final RegistryPacketUtils registryPacketUtils;
     private final StarlightConfig config;
     private final CommandDispatcher<IStarlightCommandSource> commandDispatcher = new CommandDispatcher<>();
-    private final CommandManager commandManager = new CommandManager(commandDispatcher);
+    private final CommandManager commandManager = new CommandManager(commandDispatcher, this);
 
     public StarlightProxy(InetSocketAddress address, TranslateManager translateManager,
                           RegistryPacketUtils registryPacketUtils, StarlightConfig config,
@@ -76,7 +76,8 @@ public class StarlightProxy {
                         @Override
                         protected void initChannel(SocketChannel socketChannel) throws Exception {
                             socketChannel.pipeline().addLast(InternalConfig.HANDLER_DECODER, new ServerPacketDecoder(
-                                    registryPacketUtils.getPacketRegistry()
+                                    registryPacketUtils.getPacketRegistry(),
+                                    proxy
                             ));
                             socketChannel.pipeline().addLast(InternalConfig.HANDLER_ENCODER, new ServerPacketEncoder(
                                     registryPacketUtils.getPacketRegistry()

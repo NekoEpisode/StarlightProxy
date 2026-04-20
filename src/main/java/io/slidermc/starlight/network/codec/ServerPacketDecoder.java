@@ -3,6 +3,7 @@ package io.slidermc.starlight.network.codec;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
+import io.slidermc.starlight.StarlightProxy;
 import io.slidermc.starlight.network.codec.utils.MinecraftCodecUtils;
 import io.slidermc.starlight.network.context.AttributeKeys;
 import io.slidermc.starlight.network.context.ConnectionContext;
@@ -20,9 +21,11 @@ import java.util.List;
 public class ServerPacketDecoder extends ByteToMessageDecoder {
     private static final Logger log = LoggerFactory.getLogger(ServerPacketDecoder.class);
     private final PacketRegistry packetRegistry;
+    private final StarlightProxy proxy;
 
-    public ServerPacketDecoder(PacketRegistry packetRegistry) {
+    public ServerPacketDecoder(PacketRegistry packetRegistry, StarlightProxy proxy) {
         this.packetRegistry = packetRegistry;
+        this.proxy = proxy;
     }
 
     @Override
@@ -45,7 +48,7 @@ public class ServerPacketDecoder extends ByteToMessageDecoder {
 
         ConnectionContext context = ctx.channel().attr(AttributeKeys.CONNECTION_CONTEXT).get();
         if (context == null) {
-            context = new ConnectionContext();
+            context = new ConnectionContext(proxy);
             ctx.channel().attr(AttributeKeys.CONNECTION_CONTEXT).set(context);
         }
 

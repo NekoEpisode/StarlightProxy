@@ -62,7 +62,7 @@ public class TranslateManager {
             if (content != null) {
                 parseAndLoad(locale, content);
             } else {
-                log.warn("无法读取内置语言文件: {}", LANG_RESOURCE_DIR + fileName);
+                log.warn("Cannot read built-in language file: {}", LANG_RESOURCE_DIR + fileName);
             }
         }
     }
@@ -78,7 +78,7 @@ public class TranslateManager {
             String content = Files.readString(jsonFile.toPath(), StandardCharsets.UTF_8);
             parseAndLoad(locale, content);
         } catch (IOException e) {
-            log.error("加载外部翻译文件失败: {}", jsonFile.getAbsolutePath(), e);
+            log.error("Load external language file failed: {}", jsonFile.getAbsolutePath(), e);
         }
     }
 
