@@ -63,8 +63,10 @@ public class ServerboundChatCommandPacket implements IMinecraftPacket {
                     log.info(proxy.getTranslateManager().translate("starlight.logging.info.player_executed_command"), context.getPlayer().getGameProfile().username(), "/" + logCommand);
                 }
                 final String finalCommand = normalizedCommand;
-                CompletableFuture.runAsync(() -> proxy.getCommandManager().execute(finalCommand, context.getPlayer()))
-                        .exceptionally(throwable -> {
+                CompletableFuture.runAsync(
+                        () -> proxy.getCommandManager().execute(finalCommand, context.getPlayer()),
+                        proxy.getExecutors().getCommandExecutor()
+                ).exceptionally(throwable -> {
                             log.error(proxy.getTranslateManager().translate("starlight.logging.error.error_on_executing_command"), finalCommand, throwable);
                             return null;
                         });
