@@ -141,7 +141,7 @@ public class ServerboundEncryptionResponsePacket implements IMinecraftPacket {
 
             HTTP_CLIENT.sendAsync(request, HttpResponse.BodyHandlers.ofString())
                     .thenAccept(response -> ctx.channel().eventLoop().execute(() -> {
-                        if (response.statusCode() == 204 || response.statusCode() != 200) {
+                        if (response.statusCode() != 200) {
                             log.warn(proxy.getTranslateManager().translate("starlight.logging.warn.encryption.mojang_auth_failed"), response.statusCode(), username);
                             disconnect(ctx, "Failed to verify username!");
                             return;
