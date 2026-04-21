@@ -31,7 +31,6 @@ public class ClientboundEncryptionRequestPacket implements IMinecraftPacket {
 
     @Override
     public void encode(ByteBuf byteBuf, ProtocolVersion protocolVersion) {
-        if (serverId.length() > 20) throw new IllegalArgumentException("Server ID length cannot be greater than 20");
         MinecraftCodecUtils.writeString(byteBuf, serverId);
         MinecraftCodecUtils.writeByteArray(byteBuf, publicKey);
         MinecraftCodecUtils.writeByteArray(byteBuf, verifyToken);
@@ -40,9 +39,7 @@ public class ClientboundEncryptionRequestPacket implements IMinecraftPacket {
 
     @Override
     public void decode(ByteBuf byteBuf, ProtocolVersion protocolVersion) {
-        String serverId = MinecraftCodecUtils.readString(byteBuf);
-        if (serverId.length() > 20) return;
-        this.serverId = serverId;
+        this.serverId = MinecraftCodecUtils.readString(byteBuf);
         this.publicKey = MinecraftCodecUtils.readByteArray(byteBuf);
         this.verifyToken = MinecraftCodecUtils.readByteArray(byteBuf);
         this.shouldAuthenticate = byteBuf.readBoolean();
