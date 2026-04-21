@@ -138,8 +138,7 @@ public class PluginManager {
             return;
         }
 
-        Logger pluginLogger = LoggerFactory.getLogger("plugin." + description.name());
-        PluginContainer container = new PluginContainer(description, plugin, pluginLogger, null);
+        PluginContainer container = new PluginContainer(description, plugin, null);
 
         if (loadPhaseActive) {
             pendingMemoryPlugins.add(container);
@@ -236,7 +235,7 @@ public class PluginManager {
                     .filter(p -> p.toString().endsWith(".jar"))
                     .toList();
         } catch (IOException e) {
-            log.error(t("starlight.logging.error.plugin.directory_create_failed"), directory, e);
+            log.error(t("starlight.logging.error.plugin.directory_list_failed"), directory, e);
             return Collections.emptyList();
         }
     }
@@ -310,14 +309,13 @@ public class PluginManager {
             jp.init(description, this);
         }
 
-        Logger pluginLogger = LoggerFactory.getLogger("plugin." + description.name());
         log.info(t("starlight.logging.info.plugin.discovered"), description.name(), description.version());
 
         try {
             jarFile.close();
         } catch (IOException ignored) {}
 
-        return new PluginContainer(description, instance, pluginLogger, classLoader);
+        return new PluginContainer(description, instance, classLoader);
     }
 
     /**
