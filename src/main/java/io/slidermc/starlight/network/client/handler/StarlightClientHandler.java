@@ -30,6 +30,7 @@ public class StarlightClientHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         if (client.isLoggingIn()) {
+            // 只有在 future 未完成时才填充通用原因，避免覆盖 failLogin() 已设置的具体原因
             client.callLoginCompleteExceptionally(new RuntimeException("Disconnected from server during login"));
         }
     }

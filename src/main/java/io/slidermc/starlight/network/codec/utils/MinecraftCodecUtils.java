@@ -56,9 +56,7 @@ public class MinecraftCodecUtils {
     }
 
     public static String readString(ByteBuf byteBuf) {
-        int length = readVarInt(byteBuf);
-        byte[] bytes = new byte[length];
-        byteBuf.readBytes(bytes);
+        byte[] bytes = readByteArray(byteBuf);
         return new String(bytes, StandardCharsets.UTF_8);
     }
 
@@ -74,39 +72,13 @@ public class MinecraftCodecUtils {
     public static void writeGameProfile(ByteBuf byteBuf, GameProfile gameProfile) {
         writeUUID(byteBuf, gameProfile.uuid());
         writeString(byteBuf, gameProfile.username());
-
-        writeVarInt(byteBuf, gameProfile.properties().size());
-        for (GameProfile.Property prop : gameProfile.properties()) {
-            writeString(byteBuf, prop.name());
-            writeString(byteBuf, prop.value());
-            if (prop.signature() != null) {
-                byteBuf.writeBoolean(true);
-                writeString(byteBuf, prop.signature());
-            } else {
-                byteBuf.writeBoolean(false);
-            }
-        }
+        writeProperties(byteBuf, gameProfile.properties());
     }
 
     public static GameProfile readGameProfile(ByteBuf byteBuf) {
         UUID uuid = readUUID(byteBuf);
         String username = readString(byteBuf);
-
-        int length = readVarInt(byteBuf);
-        List<GameProfile.Property> properties = new ArrayList<>(length);
-        for (int i = 0; i < length; i++) {
-            String name = readString(byteBuf);
-            String value = readString(byteBuf);
-            String signature = null;
-            boolean hasSign = byteBuf.readBoolean();
-            if (hasSign) {
-                signature = readString(byteBuf);
-            }
-            GameProfile.Property property = new GameProfile.Property(name, value, signature);
-            properties.add(property);
-        }
-
-        return new GameProfile(username, uuid, properties);
+        return new GameProfile(username, uuid, readProperties(byteBuf));
     }
 
     public static void writeByteArray(ByteBuf byteBuf, byte[] array) {
@@ -140,5 +112,36 @@ public class MinecraftCodecUtils {
             value >>>= 7;
         }
         return size;
+    }
+
+    public static void writeProperties(ByteBuf buf, List<GameProfile.Property> properties) {
+        writeVarInt(buf, properties.size());
+        for (GameProfile.Property property : properties) {
+            writeString(buf, property.name());
+            writeString(buf, property.value());
+            String signature = property.signature();
+            if (signature != null && !signature.isEmpty()) {
+                buf.writeBoolean(true);
+                writeString(buf, signature);
+            } else {
+                buf.writeBoolean(false);
+            }
+        }
+    }
+
+    public static List<GameProfile.Property> readProperties(ByteBuf buf) {
+        int size = readVarInt(buf);
+        List<GameProfile.Property> properties = new ArrayList<>(size);
+        for (int i = 0; i < size; i++) {
+            String name = readString(buf);
+            String value = readString(buf);
+            String signature = null;
+            boolean hasSignature = buf.readBoolean();
+            if (hasSignature) {
+                signature = readString(buf);
+            }
+            properties.add(new GameProfile.Property(name, value, signature));
+        }
+        return properties;
     }
 }

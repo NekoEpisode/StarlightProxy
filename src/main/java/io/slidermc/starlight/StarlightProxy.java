@@ -15,6 +15,7 @@ import io.slidermc.starlight.api.translate.TranslateManager;
 import io.slidermc.starlight.config.InternalConfig;
 import io.slidermc.starlight.config.StarlightConfig;
 import io.slidermc.starlight.executor.ProxyExecutors;
+import io.slidermc.starlight.manager.EncryptionManager;
 import io.slidermc.starlight.manager.ServerManager;
 import io.slidermc.starlight.network.codec.ServerPacketDecoder;
 import io.slidermc.starlight.network.codec.ServerPacketEncoder;
@@ -24,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
+import java.security.NoSuchAlgorithmException;
 
 public class StarlightProxy {
     private static final Logger log = LoggerFactory.getLogger(StarlightProxy.class);
@@ -34,6 +36,7 @@ public class StarlightProxy {
     private final ServerManager serverManager;
     private final RegistryPacketUtils registryPacketUtils;
     private final StarlightConfig config;
+    private final EncryptionManager encryptionManager;
     private final CommandDispatcher<IStarlightCommandSource> commandDispatcher = new CommandDispatcher<>();
     private final CommandManager commandManager = new CommandManager(commandDispatcher, this);
     private final ProxyExecutors executors = new ProxyExecutors();
@@ -47,6 +50,11 @@ public class StarlightProxy {
         this.config = config;
         this.playerManager = new PlayerManager();
         this.serverManager = serverManager;
+        try {
+            this.encryptionManager = new EncryptionManager();
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException("Failed to initialize EncryptionManager", e);
+        }
     }
 
     void start() {
@@ -122,6 +130,10 @@ public class StarlightProxy {
 
     public ServerManager getServerManager() {
         return serverManager;
+    }
+
+    public EncryptionManager getEncryptionManager() {
+        return encryptionManager;
     }
 
     public CommandDispatcher<IStarlightCommandSource> getCommandDispatcher() {
