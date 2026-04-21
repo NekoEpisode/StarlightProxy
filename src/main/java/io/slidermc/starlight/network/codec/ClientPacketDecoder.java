@@ -3,6 +3,7 @@ package io.slidermc.starlight.network.codec;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
+import io.netty.handler.codec.DecoderException;
 import io.slidermc.starlight.network.client.StarlightMinecraftClient;
 import io.slidermc.starlight.network.codec.utils.MinecraftCodecUtils;
 import io.slidermc.starlight.network.packet.IMinecraftPacket;
@@ -95,7 +96,7 @@ public class ClientPacketDecoder extends ByteToMessageDecoder {
 
     /**
      * 安全读取 VarInt：若任意一个字节不可读则返回 {@code Integer.MIN_VALUE}（调用方应 reset 并等待更多数据）。
-     * 正常情况返回解码后的值；若 VarInt 超过 5 字节则抛出 RuntimeException。
+     * 正常情况返回解码后的值；若 VarInt 超过 5 字节则抛出 {@link DecoderException}。
      */
     private static int tryReadVarInt(ByteBuf buf) {
         int numRead = 0;
@@ -110,7 +111,7 @@ public class ClientPacketDecoder extends ByteToMessageDecoder {
             result |= (value << (7 * numRead));
             numRead++;
             if (numRead > 5) {
-                throw new RuntimeException("VarInt is too big");
+                throw new DecoderException("VarInt is too big");
             }
         } while ((read & 0b10000000) != 0);
         return result;
