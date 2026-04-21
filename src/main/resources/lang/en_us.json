@@ -66,7 +66,7 @@
     "starlight.error.forwarding.non_inet_address": "<red>Internal error: invalid player remote address format</red>",
     "starlight.error.forwarding.player_not_found": "<red>Internal error: player information retrieval failed</red>",
     "starlight.error.forwarding.hmac_computation_failed": "<red>Internal error: verification data computation failed</red>",
-    "starlight.error.forwarding.secret_not_configured": "<red>Server configuration error: forwarding secret is not set</red>",
+    "starlight.error.forwarding.secret_not_configured": "<red>Proxy configuration error: forwarding secret is not set</red>",
 
     "starlight.switching.error.failed_connect_to": "<red>Could not connect to <target>: <error></red>",
     "starlight.switching.error.error_on_connecting": "<red>Error connecting to <target>: <error></red>",
