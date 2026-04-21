@@ -5,7 +5,7 @@ proxy:
   max-players: 100 # 仅作展示，Starlight不会真正拦截玩家
   online-mode: true # 是否启用在线模式（正版验证），开启时强制启用加密
   encryption: true # 是否启用加密（即使是离线模式）；online-mode 为 true 时此项无效，加密始终开启
-  forward-type: "none" # IP转发的格式, 支持modern(Velocity转发), none(不使用ip转发)
+  forward-type: "none" # IP转发的格式, 支持modern(Velocity现代转发), none(不使用转发)
   forward-secret: "" # IP转发的密钥，仅当forward-type为"modern"时有效
   motd: "<gradient:#FFE100:#383500>Starlight Proxy</gradient>" # MOTD，支持MiniMessage语法
   force-default-server: false # 是否强制将玩家发送到默认服务器（无论其是否加入过代理）
