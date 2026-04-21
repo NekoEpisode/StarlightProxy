@@ -170,6 +170,7 @@ public class PluginManager {
     /**
      * 按启用逆序调用所有插件的 {@link IPlugin#onDisable()}，并释放类加载器资源。
      * 应在代理关闭时调用。
+     * 注: disableAll后此实例不可复用，如需要，请创建新的PluginManager
      */
     public void disableAll() {
         List<PluginContainer> reversed = new ArrayList<>(orderedPlugins);

@@ -9,7 +9,7 @@ import org.slf4j.Logger;
  *
  * <p>生命周期顺序：
  * <ol>
- *   <li>{@link #onLoad(TranslateManager)} — I18N加载之前，可在此注册额外的内存插件</li>
+ *   <li>{@link #onLoad(TranslateManager)} — I18N加载之后，代理启动之前调用，可在此注册插件翻译键和额外的内存插件</li>
  *   <li>{@link #onEnable(StarlightProxy)} — 代理完全启动后调用</li>
  *   <li>{@link #onReload(StarlightProxy)} — 收到重载指令时调用</li>
  *   <li>{@link #onDisable()} — 代理关闭时调用，应释放所有资源</li>
