@@ -51,6 +51,7 @@
     "starlight.logging.error.encryption.mojang_response_parse_failed": "Failed to parse Mojang session response",
     "starlight.logging.error.encryption.session_server_request_failed": "Failed to contact Mojang session server",
     "starlight.logging.error.compute_velocity_hmac_failed": "Failed to compute Velocity forwarding verification HMAC",
+    "starlight.logging.error.forwarding_secret_not_configured": "Velocity Modern Forwarding is enabled but forward-secret is not configured or is empty",
     "starlight.logging.warn.forwarding.downstream_requires_modern_login": "Downstream requires Modern Forwarding but proxy is not configured — disconnecting player",
     "starlight.logging.warn.forwarding.downstream_requires_modern_switch": "Downstream requires Modern Forwarding but proxy is not configured — aborting server switch",
     "starlight.logging.warn.forwarding.non_inet_address": "Player remote address is not InetSocketAddress — cannot build forwarding data, closing downstream",
@@ -61,6 +62,11 @@
     "starlight.disconnect.failed_connect_default_server": "<red>Could not connect to the default server <server_name></red>\n<gray>Please try again later</gray>",
     "starlight.disconnect.login_failed": "<red>Login failed: <error_msg></red>",
     "starlight.disconnect.downstream_requires_modern_forwarding": "<red>The server requires Velocity Modern Forwarding, but this proxy is not configured for it.</red>",
+
+    "starlight.error.forwarding.non_inet_address": "<red>Internal error: invalid player remote address format</red>",
+    "starlight.error.forwarding.player_not_found": "<red>Internal error: player information retrieval failed</red>",
+    "starlight.error.forwarding.hmac_computation_failed": "<red>Internal error: verification data computation failed</red>",
+    "starlight.error.forwarding.secret_not_configured": "<red>Server configuration error: forwarding secret is not set</red>",
 
     "starlight.switching.error.failed_connect_to": "<red>Could not connect to <target>: <error></red>",
     "starlight.switching.error.error_on_connecting": "<red>Error connecting to <target>: <error></red>",

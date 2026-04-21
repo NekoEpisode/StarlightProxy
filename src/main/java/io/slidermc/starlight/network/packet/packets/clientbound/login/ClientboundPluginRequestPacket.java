@@ -16,7 +16,6 @@ import io.slidermc.starlight.network.packet.packets.serverbound.login.Serverboun
 import io.slidermc.starlight.network.protocolenum.ProtocolVersion;
 import io.slidermc.starlight.utils.MiniMessageUtils;
 import net.kyori.adventure.key.Key;
-import net.kyori.adventure.text.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -108,14 +107,22 @@ public class ClientboundPluginRequestPacket implements IMinecraftPacket {
 
             if (!(downstreamCtx.getClient().getPlayerChannel().remoteAddress() instanceof InetSocketAddress remoteAddr)) {
                 log.warn(proxy.getTranslateManager().translate("starlight.logging.warn.forwarding.non_inet_address"));
-                downstreamCtx.getClient().failLogin(Component.text("Internal error: non-InetSocketAddress"));
+                downstreamCtx.getClient().failLogin(
+                        MiniMessageUtils.MINI_MESSAGE.deserialize(
+                                context.getTranslation("starlight.error.forwarding.non_inet_address")
+                        )
+                );
                 return;
             }
 
             ProxiedPlayer player = context.getPlayer().asProxiedPlayer().orElse(null);
             if (player == null) {
                 log.warn(proxy.getTranslateManager().translate("starlight.logging.warn.forwarding.player_not_found"));
-                downstreamCtx.getClient().failLogin(Component.text("Internal error: player not found"));
+                downstreamCtx.getClient().failLogin(
+                        MiniMessageUtils.MINI_MESSAGE.deserialize(
+                                context.getTranslation("starlight.error.forwarding.player_not_found")
+                        )
+                );
                 return;
             }
 
@@ -139,13 +146,27 @@ public class ClientboundPluginRequestPacket implements IMinecraftPacket {
                 // 计算 HMAC
                 byte[] hmac;
                 try {
+                    String forwardSecret = proxy.getConfig().getForwardSecret();
+                    if (forwardSecret == null || forwardSecret.isEmpty()) {
+                        log.error(proxy.getTranslateManager().translate("starlight.logging.error.forwarding_secret_not_configured"));
+                        downstreamCtx.getClient().failLogin(
+                                MiniMessageUtils.MINI_MESSAGE.deserialize(
+                                        context.getTranslation("starlight.error.forwarding.secret_not_configured")
+                                )
+                        );
+                        return;
+                    }
                     hmac = proxy.getEncryptionManager().computeVelocityHmac(
-                            proxy.getConfig().getForwardSecret().getBytes(StandardCharsets.UTF_8),
+                            forwardSecret.getBytes(StandardCharsets.UTF_8),
                             dataBytes
                     );
                 } catch (Exception e) {
                     log.error(proxy.getTranslateManager().translate("starlight.logging.error.compute_velocity_hmac_failed"), e);
-                    downstreamCtx.getClient().failLogin(Component.text("Internal error: HMAC computation failed"));
+                    downstreamCtx.getClient().failLogin(
+                            MiniMessageUtils.MINI_MESSAGE.deserialize(
+                                    context.getTranslation("starlight.error.forwarding.hmac_computation_failed")
+                            )
+                    );
                     return;
                 }
 
