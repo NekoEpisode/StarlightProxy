@@ -163,7 +163,6 @@ public class ServerboundEncryptionResponsePacket implements IMinecraftPacket {
                         GameProfile profile;
                         try {
                             profile = parseMojangProfile(response.body());
-                            System.out.println("profile: " + profile);
                         } catch (Exception e) {
                             log.error(proxy.getTranslateManager().translate("starlight.logging.error.encryption.mojang_response_parse_failed"), e);
                             disconnect(ctx, "Failed to parse session response");
