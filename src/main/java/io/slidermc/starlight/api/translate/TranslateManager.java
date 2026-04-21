@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.*;
@@ -64,6 +65,22 @@ public class TranslateManager {
             } else {
                 log.warn("Cannot read built-in language file: {}", LANG_RESOURCE_DIR + fileName);
             }
+        }
+    }
+
+    /**
+     * 从 {@link InputStream} 加载翻译，语言内部名称由调用方指定。
+     * 流将在读取完成后关闭。
+     *
+     * @param locale 语言内部名称，如 {@code zh_cn}
+     * @param stream JSON 语言文件输入流
+     */
+    public void loadExternal(String locale, InputStream stream) {
+        try (stream) {
+            String content = new String(stream.readAllBytes(), StandardCharsets.UTF_8);
+            parseAndLoad(locale, content);
+        } catch (IOException e) {
+            log.error("Load language from InputStream failed (locale={})", locale, e);
         }
     }
 

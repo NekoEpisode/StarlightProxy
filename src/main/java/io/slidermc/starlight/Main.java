@@ -31,6 +31,7 @@ import io.slidermc.starlight.network.protocolenum.ProtocolDirection;
 import io.slidermc.starlight.network.protocolenum.ProtocolState;
 import io.slidermc.starlight.network.protocolenum.ProtocolVersion;
 import io.slidermc.starlight.utils.AddressResolver;
+import io.slidermc.starlight.plugin.PluginManager;
 import net.kyori.adventure.key.Key;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,9 +45,14 @@ public class Main {
     private static final Logger log = LoggerFactory.getLogger(Main.class);
 
     static void main() {
+        long start = System.currentTimeMillis();
+
         log.info("Loading I18N...");
         TranslateManager translateManager = new TranslateManager();
         translateManager.loadBuiltin();
+
+        PluginManager pluginManager = new PluginManager(translateManager);
+        pluginManager.loadPlugins(Path.of("plugins"));
 
         // 加载配置（不存在则从内置资源复制）
         StarlightConfig config;
@@ -113,12 +119,20 @@ public class Main {
                 translateManager,
                 registryPacketUtils,
                 config,
-                serverManager
+                serverManager,
+                pluginManager
         );
-        proxy.start();
+
+        // onEnable 在代理完全创建后调用
+        pluginManager.enableAll(proxy);
 
         // 注册内置代理命令
         proxy.getCommandManager().register(new ServerCommand(proxy));
+
+        // 开始监听
+        proxy.start();
+
+        log.info(translateManager.translate("starlight.logging.info.done"), (System.currentTimeMillis() - start));
     }
 
     private static void printASCIIArt() {

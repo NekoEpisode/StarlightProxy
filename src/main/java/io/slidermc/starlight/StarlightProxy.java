@@ -17,6 +17,7 @@ import io.slidermc.starlight.config.StarlightConfig;
 import io.slidermc.starlight.executor.ProxyExecutors;
 import io.slidermc.starlight.manager.EncryptionManager;
 import io.slidermc.starlight.manager.ServerManager;
+import io.slidermc.starlight.plugin.PluginManager;
 import io.slidermc.starlight.network.codec.ServerPacketDecoder;
 import io.slidermc.starlight.network.codec.ServerPacketEncoder;
 import io.slidermc.starlight.network.packet.RegistryPacketUtils;
@@ -40,16 +41,18 @@ public class StarlightProxy {
     private final CommandDispatcher<IStarlightCommandSource> commandDispatcher = new CommandDispatcher<>();
     private final CommandManager commandManager = new CommandManager(commandDispatcher, this);
     private final ProxyExecutors executors = new ProxyExecutors();
+    private final PluginManager pluginManager;
 
     public StarlightProxy(InetSocketAddress address, TranslateManager translateManager,
                           RegistryPacketUtils registryPacketUtils, StarlightConfig config,
-                          ServerManager serverManager) {
+                          ServerManager serverManager, PluginManager pluginManager) {
         this.address = address;
         this.translateManager = translateManager;
         this.registryPacketUtils = registryPacketUtils;
         this.config = config;
         this.playerManager = new PlayerManager();
         this.serverManager = serverManager;
+        this.pluginManager = pluginManager;
         try {
             this.encryptionManager = new EncryptionManager();
         } catch (NoSuchAlgorithmException e) {
@@ -58,8 +61,6 @@ public class StarlightProxy {
     }
 
     void start() {
-        long start = System.currentTimeMillis();
-
         new Thread(() -> {
             Thread.currentThread().setName("Server Thread");
             try {
@@ -70,7 +71,6 @@ public class StarlightProxy {
             }
         }).start();
 
-        log.info(translateManager.translate("starlight.logging.info.done"), (System.currentTimeMillis() - start));
         log.info(translateManager.translate("starlight.logging.info.join_with_address"), address.getPort());
     }
 
@@ -146,5 +146,12 @@ public class StarlightProxy {
 
     public ProxyExecutors getExecutors() {
         return executors;
+    }
+
+    /**
+     * 返回插件管理器实例。
+     */
+    public PluginManager getPluginManager() {
+        return pluginManager;
     }
 }

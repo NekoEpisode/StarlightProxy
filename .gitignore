@@ -39,4 +39,6 @@ build/
 .DS_Store
 
 logs
+plugins
 config.yml
+.idea/copilotDiffState.xml
