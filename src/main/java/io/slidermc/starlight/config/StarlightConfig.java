@@ -20,7 +20,9 @@ public class StarlightConfig {
     private final int port;
     private final int maxPlayers;
     private final boolean onlineMode;
+    private final boolean encryption;
     private final String ipForwardType;
+    private final String forwardSecret;
     private final String motd;
     private final boolean forceDefaultServer;
     private final String defaultServer;
@@ -35,15 +37,17 @@ public class StarlightConfig {
     public record ServerEntry(String address) {}
 
     public StarlightConfig(String host, int port, int maxPlayers, boolean onlineMode,
-                           String ipForwardType, String motd, boolean forceDefaultServer,
-                           String defaultServer, boolean bungeecordPluginMessage,
-                           String language, boolean loggingCommand, int compressThreshold,
-                           Map<String, ServerEntry> servers) {
+                           boolean encryption, String ipForwardType, String forwardSecret, String motd,
+                           boolean forceDefaultServer, String defaultServer,
+                           boolean bungeecordPluginMessage, String language, boolean loggingCommand,
+                           int compressThreshold, Map<String, ServerEntry> servers) {
         this.host = host;
         this.port = port;
         this.maxPlayers = maxPlayers;
         this.onlineMode = onlineMode;
+        this.encryption = encryption;
         this.ipForwardType = ipForwardType;
+        this.forwardSecret = forwardSecret;
         this.motd = motd;
         this.forceDefaultServer = forceDefaultServer;
         this.defaultServer = defaultServer;
@@ -91,10 +95,12 @@ public class StarlightConfig {
         int    port                  = (int)      proxy.get("port");
         int    maxPlayers            = (int)      proxy.get("max-players");
         boolean onlineMode           = (boolean)  proxy.get("online-mode");
-        String ipForwardType         = (String)   proxy.get("ip-forward-type");
+        boolean encryption           = onlineMode || (boolean) proxy.get("encryption");
+        String ipForwardType         = (String)   proxy.get("forward-type");
+        String forwardSecret         = (String)   proxy.get("forward-secret");
         String motd                  = (String)   proxy.get("motd");
         boolean forceDefaultServer   = (boolean)  proxy.get("force-default-server");
-        String defaultServer         =             proxy.get("default-server").toString();
+        String defaultServer         =            proxy.get("default-server").toString();
         boolean bungeecordPluginMsg  = (boolean)  proxy.get("bungeecord-plugin-message");
         String language              = (String)   proxy.get("language");
         boolean loggingCommand       = (boolean)  proxy.get("logging-command");
@@ -110,8 +116,8 @@ public class StarlightConfig {
             }
         }
 
-        return new StarlightConfig(host, port, maxPlayers, onlineMode, ipForwardType, motd,
-                forceDefaultServer, defaultServer, bungeecordPluginMsg,
+        return new StarlightConfig(host, port, maxPlayers, onlineMode, encryption, ipForwardType, forwardSecret,
+                motd, forceDefaultServer, defaultServer, bungeecordPluginMsg,
                 language, loggingCommand, compressThreshold, servers);
     }
 
@@ -123,7 +129,9 @@ public class StarlightConfig {
     public int getPort()                  { return port; }
     public int getMaxPlayers()            { return maxPlayers; }
     public boolean isOnlineMode()         { return onlineMode; }
-    public String getIpForwardType()      { return ipForwardType; }
+    public boolean isEncryption()         { return encryption; }
+    public String getForwardType()        { return ipForwardType; }
+    public String getForwardSecret()      { return forwardSecret; }
     public String getMotd()               { return motd; }
     public boolean isForceDefaultServer() { return forceDefaultServer; }
     public String getDefaultServer()      { return defaultServer; }

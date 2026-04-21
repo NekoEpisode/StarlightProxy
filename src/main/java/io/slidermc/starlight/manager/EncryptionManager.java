@@ -1,6 +1,7 @@
 package io.slidermc.starlight.manager;
 
 import javax.crypto.Cipher;
+import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
@@ -81,5 +82,14 @@ public class EncryptionManager {
         Cipher cipher = Cipher.getInstance("AES/CFB8/NoPadding");
         cipher.init(mode, secretKey, iv);
         return cipher;
+    }
+
+    public byte[] computeVelocityHmac(byte[] secret, byte[]... data) throws Exception {
+        Mac mac = Mac.getInstance("HmacSHA256");
+        mac.init(new SecretKeySpec(secret, "HmacSHA256"));
+        for (byte[] d : data) {
+            mac.update(d);
+        }
+        return mac.doFinal();
     }
 }

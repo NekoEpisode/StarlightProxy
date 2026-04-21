@@ -10,10 +10,7 @@ import io.slidermc.starlight.network.packet.RegistryPacketUtils;
 import io.slidermc.starlight.network.packet.packets.clientbound.configuration.ClientboundDisconnectConfigurationPacket;
 import io.slidermc.starlight.network.packet.packets.clientbound.configuration.ClientboundFinishConfigurationPacket;
 import io.slidermc.starlight.network.packet.packets.clientbound.configuration.ClientboundPluginMessageConfigurationPacket;
-import io.slidermc.starlight.network.packet.packets.clientbound.login.ClientboundDisconnectLoginPacket;
-import io.slidermc.starlight.network.packet.packets.clientbound.login.ClientboundEncryptionRequestPacket;
-import io.slidermc.starlight.network.packet.packets.clientbound.login.ClientboundLoginSuccessPacket;
-import io.slidermc.starlight.network.packet.packets.clientbound.login.ClientboundSetCompressionPacket;
+import io.slidermc.starlight.network.packet.packets.clientbound.login.*;
 import io.slidermc.starlight.network.packet.packets.clientbound.play.*;
 import io.slidermc.starlight.network.packet.packets.clientbound.status.ClientboundPongResponsePacket;
 import io.slidermc.starlight.network.packet.packets.clientbound.status.ClientboundStatusResponsePacket;
@@ -23,6 +20,7 @@ import io.slidermc.starlight.network.packet.packets.serverbound.handshake.Server
 import io.slidermc.starlight.network.packet.packets.serverbound.login.ServerboundEncryptionResponsePacket;
 import io.slidermc.starlight.network.packet.packets.serverbound.login.ServerboundLoginAckPacket;
 import io.slidermc.starlight.network.packet.packets.serverbound.login.ServerboundLoginStartPacket;
+import io.slidermc.starlight.network.packet.packets.serverbound.login.ServerboundPluginResponsePacket;
 import io.slidermc.starlight.network.packet.packets.serverbound.play.ServerboundChatCommandPacket;
 import io.slidermc.starlight.network.packet.packets.serverbound.play.ServerboundClientInformationPlayPacket;
 import io.slidermc.starlight.network.packet.packets.serverbound.play.ServerboundCommandSuggestionPacket;
@@ -158,6 +156,9 @@ public class Main {
         registryPacketUtils.registerByAutoMapping(Key.key("minecraft:login_compression"), ProtocolState.LOGIN, ProtocolDirection.CLIENTBOUND, ClientboundSetCompressionPacket::new);
         r.registerListener(ClientboundSetCompressionPacket.class, "default", new ClientboundSetCompressionPacket.Listener());
 
+        registryPacketUtils.registerByAutoMapping(Key.key("minecraft:custom_query"), ProtocolState.LOGIN, ProtocolDirection.CLIENTBOUND, ClientboundPluginRequestPacket::new);
+        r.registerListener(ClientboundPluginRequestPacket.class, "default", new ClientboundPluginRequestPacket.Listener());
+
         registryPacketUtils.registerByAutoMapping(Key.key("minecraft:login_finished"), ProtocolState.LOGIN, ProtocolDirection.CLIENTBOUND, ClientboundLoginSuccessPacket::new);
         r.registerListener(ClientboundLoginSuccessPacket.class, "default", new ClientboundLoginSuccessPacket.Listener());
 
@@ -204,6 +205,9 @@ public class Main {
 
         registryPacketUtils.registerByAutoMapping(Key.key("minecraft:key"), ProtocolState.LOGIN, ProtocolDirection.SERVERBOUND, ServerboundEncryptionResponsePacket::new);
         r.registerListener(ServerboundEncryptionResponsePacket.class, "default", new ServerboundEncryptionResponsePacket.Listener());
+
+        registryPacketUtils.registerByAutoMapping(Key.key("minecraft:custom_query_answer"), ProtocolState.LOGIN, ProtocolDirection.SERVERBOUND, ServerboundPluginResponsePacket::new);
+        r.registerListener(ServerboundPluginResponsePacket.class, "default", new ServerboundPluginResponsePacket.Listener());
 
         registryPacketUtils.registerByAutoMapping(Key.key("minecraft:login_acknowledged"), ProtocolState.LOGIN, ProtocolDirection.SERVERBOUND, ServerboundLoginAckPacket::new);
         r.registerListener(ServerboundLoginAckPacket.class, "default", new ServerboundLoginAckPacket.Listener());

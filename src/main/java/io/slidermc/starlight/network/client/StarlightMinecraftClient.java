@@ -157,6 +157,15 @@ public class StarlightMinecraftClient {
         isLoggingIn = false;
     }
 
+    /**
+     * 以指定原因失败登录并关闭连接。
+     * 先完成 future 再关 channel，确保 channelInactive 不会用通用消息覆盖原因。
+     */
+    public void failLogin(net.kyori.adventure.text.Component reason) {
+        callLoginCompleteExceptionally(new io.slidermc.starlight.switcher.ServerSwitchKickedException(reason));
+        disconnect();
+    }
+
     public boolean isLoggingIn() {
         return isLoggingIn;
     }

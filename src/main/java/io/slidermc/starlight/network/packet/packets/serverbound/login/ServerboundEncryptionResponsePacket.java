@@ -120,9 +120,21 @@ public class ServerboundEncryptionResponsePacket implements IMinecraftPacket {
                 return;
             }
 
-            // 4. 异步请求 Mojang Session Server 验证
+            // 4. 根据 online-mode 决定是否请求 Mojang
             String username = context.getPendingUsername();
             context.setPendingUsername(null);
+
+            if (!proxy.getConfig().isOnlineMode()) {
+                // 仅加密，不验证：直接用离线 UUID 完成登录
+                log.debug("加密通道已建立，跳过 Mojang 验证（离线模式）");
+                GameProfile offlineProfile = new GameProfile(
+                        username,
+                        io.slidermc.starlight.utils.UUIDUtils.generateOfflineUuid(username),
+                        java.util.List.of()
+                );
+                LoginHelper.completeLogin(ctx, proxy, offlineProfile);
+                return;
+            }
 
             String serverIdHash;
             try {
@@ -151,6 +163,7 @@ public class ServerboundEncryptionResponsePacket implements IMinecraftPacket {
                         GameProfile profile;
                         try {
                             profile = parseMojangProfile(response.body());
+                            System.out.println("profile: " + profile);
                         } catch (Exception e) {
                             log.error(proxy.getTranslateManager().translate("starlight.logging.error.encryption.mojang_response_parse_failed"), e);
                             disconnect(ctx, "Failed to parse session response");

@@ -76,8 +76,9 @@ public class ServerboundLoginStartPacket implements IMinecraftPacket {
                 return;
             }
 
-            if (proxy.getConfig().isOnlineMode()) {
-                log.debug("玩家 {} 进入正版验证流程", packet.getUsername());
+            if (proxy.getConfig().isEncryption()) {
+                log.debug("玩家 {} 进入{}流程", packet.getUsername(),
+                        proxy.getConfig().isOnlineMode() ? "正版验证" : "加密登录");
                 // 暂存用户名供 EncryptionResponse.Listener 使用
                 context.setPendingUsername(packet.getUsername());
                 // 生成 verifyToken 并存入 context 待验证
