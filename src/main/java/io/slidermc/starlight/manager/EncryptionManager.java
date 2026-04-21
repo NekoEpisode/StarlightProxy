@@ -17,7 +17,8 @@ public class EncryptionManager {
 
     private KeyPair generateKeyPair() throws NoSuchAlgorithmException {
         KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
-        keyPairGenerator.initialize(1024, new SecureRandom());
+        keyPairGenerator.initialize(1024, new SecureRandom()); // It's mojang's fault
+        // Thank you Mojang
         return keyPairGenerator.generateKeyPair();
     }
 
