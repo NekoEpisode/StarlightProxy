@@ -42,7 +42,12 @@ public class ClientPacketDecoder extends ByteToMessageDecoder {
 
         byteBuf.markReaderIndex();
 
-        int length = MinecraftCodecUtils.readVarInt(byteBuf);
+        // 逐字节安全读取 length VarInt，若中途数据不足则 reset 等待更多数据
+        int length = tryReadVarInt(byteBuf);
+        if (length == Integer.MIN_VALUE) {
+            byteBuf.resetReaderIndex();
+            return;
+        }
         if (byteBuf.readableBytes() < length) {
             byteBuf.resetReaderIndex();
             return;
@@ -86,5 +91,28 @@ public class ClientPacketDecoder extends ByteToMessageDecoder {
         ByteBuf slice = byteBuf.readSlice(payloadLength);
         packet.decode(slice, protocolVersion);
         list.add(packet);
+    }
+
+    /**
+     * 安全读取 VarInt：若任意一个字节不可读则返回 {@code Integer.MIN_VALUE}（调用方应 reset 并等待更多数据）。
+     * 正常情况返回解码后的值；若 VarInt 超过 5 字节则抛出 RuntimeException。
+     */
+    private static int tryReadVarInt(ByteBuf buf) {
+        int numRead = 0;
+        int result = 0;
+        byte read;
+        do {
+            if (!buf.isReadable()) {
+                return Integer.MIN_VALUE; // 数据不足，需要等待
+            }
+            read = buf.readByte();
+            int value = (read & 0b01111111);
+            result |= (value << (7 * numRead));
+            numRead++;
+            if (numRead > 5) {
+                throw new RuntimeException("VarInt is too big");
+            }
+        } while ((read & 0b10000000) != 0);
+        return result;
     }
 }
