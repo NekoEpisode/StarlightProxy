@@ -57,11 +57,27 @@
     "starlight.logging.warn.forwarding.non_inet_address": "玩家远程地址不是InetSocketAddress，无法构建转发数据，正在关闭下游连接",
     "starlight.logging.warn.forwarding.player_not_found": "处理velocity:player_info时未找到ProxiedPlayer，正在关闭下游连接",
 
+    "starlight.logging.info.plugin.discovered": "已发现插件 [{}] v{}",
+    "starlight.logging.info.plugin.enabled": "插件 [{}] v{} 已启用",
+    "starlight.logging.info.plugin.disabled": "插件 [{}] 已禁用",
+    "starlight.logging.info.plugin.reloaded": "插件 [{}] 已重载",
+    "starlight.logging.warn.plugin.duplicate": "插件 [{}] 已注册，跳过重复注册",
+    "starlight.logging.warn.plugin.soft_dep_missing": "插件 [{}] 的软依赖 [{}] 未找到，继续加载",
+     "starlight.logging.warn.plugin.classloader_close_failed": "关闭插件 [{}] 的类加载器时出错",
+     "starlight.logging.error.plugin.directory_create_failed": "无法创建插件目录: {}",
+     "starlight.logging.error.plugin.directory_list_failed": "无法列举插件目录: {}",
+     "starlight.logging.error.plugin.jar_load_failed": "加载插件JAR失败 [{}]: {}",
+    "starlight.logging.error.plugin.dependency_resolve_failed": "插件依赖解析失败: {}",
+    "starlight.logging.error.plugin.on_load_failed": "插件 [{}] onLoad 发生异常",
+    "starlight.logging.error.plugin.on_enable_failed": "插件 [{}] onEnable 发生异常，该插件将被标记为禁用",
+    "starlight.logging.error.plugin.on_disable_failed": "插件 [{}] onDisable 发生异常",
+    "starlight.logging.error.plugin.on_reload_failed": "插件 [{}] onReload 发生异常",
+
     "starlight.unknown_error": "未知错误",
 
     "starlight.disconnect.failed_connect_default_server": "<red>无法连接到默认服务器 <server_name></red>\n<gray>请稍后再试</gray>",
     "starlight.disconnect.login_failed": "<red>登录失败: <error_msg></red>",
-    "starlight.disconnect.downstream_requires_modern_forwarding": "<red>服务器要求Velocity Modern Forwarding，但代理未启用此功能。</red>",
+    "starlight.disconnect.downstream_requires_modern_forwarding": "<red>服务器要求Velocity Modern Forwarding，但代理未启用此功能</red>",
 
     "starlight.error.forwarding.non_inet_address": "<red>内部错误：玩家远程地址格式错误</red>",
     "starlight.error.forwarding.player_not_found": "<red>内部错误：玩家信息获取失败</red>",
@@ -70,7 +86,7 @@
 
     "starlight.switching.error.failed_connect_to": "<red>无法连接到 <target>: <error></red>",
     "starlight.switching.error.error_on_connecting": "<red>连接到 <target> 时出错: <error></red>",
-    "starlight.switching.error.downstream_requires_modern_forwarding": "<red>目标服务器要求Velocity Modern Forwarding，但代理未启用此功能。</red>",
+    "starlight.switching.error.downstream_requires_modern_forwarding": "<red>目标服务器要求Velocity Modern Forwarding，但代理未启用此功能</red>",
 
     "starlight.command.server.server_not_found": "<red>未找到服务器: <server_name></red>",
     "starlight.command.server.already_on_target_server": "<red>你已经在服务器 <server_name> 上了</red>",

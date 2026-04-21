@@ -47,8 +47,8 @@
             <AppenderRef ref="FileLogger"/>
         </Logger>
 
-        <!-- 插件日志，尚未实现插件 -->
-        <Logger name="io.slidermc.starlight.api.plugin.Plugin" level="info" additivity="false">
+        <!-- 插件日志，前缀 plugin.<插件名>，匹配所有已注册插件的 Logger -->
+        <Logger name="plugin" level="info" additivity="false">
             <AppenderRef ref="PluginConsole"/>
             <AppenderRef ref="PluginFileLogger"/>
         </Logger>
