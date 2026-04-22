@@ -128,6 +128,7 @@ public class Main {
 
         // 注册内置代理命令
         proxy.getCommandManager().register(new ServerCommand(proxy));
+        // proxy.getCommandManager().register(new TestCommand());
 
         // 开始监听
         proxy.start();
@@ -199,6 +200,9 @@ public class Main {
 
         registryPacketUtils.registerByAutoMapping(Key.key("minecraft:command_suggestions"), ProtocolState.PLAY, ProtocolDirection.CLIENTBOUND, ClientboundCommandSuggestionsPacket::new);
         r.registerListener(ClientboundCommandSuggestionsPacket.class, "default", new ClientboundCommandSuggestionsPacket.Listener());
+
+        registryPacketUtils.registerByAutoMapping(Key.key("minecraft:custom_payload"), ProtocolState.PLAY, ProtocolDirection.CLIENTBOUND, ClientboundPluginMessagePlayPacket::new);
+        r.registerListener(ClientboundPluginMessagePlayPacket.class, "default", new ClientboundPluginMessagePlayPacket.Listener());
     }
 
     private static void registerServerboundPackets(RegistryPacketUtils registryPacketUtils) {

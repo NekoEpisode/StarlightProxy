@@ -8,8 +8,12 @@ import io.slidermc.starlight.api.profile.GameProfile;
 import io.slidermc.starlight.api.server.ProxiedServer;
 import io.slidermc.starlight.network.context.AttributeKeys;
 import io.slidermc.starlight.network.context.ConnectionContext;
+import io.slidermc.starlight.network.packet.packets.clientbound.configuration.ClientboundPluginMessageConfigurationPacket;
+import io.slidermc.starlight.network.packet.packets.clientbound.play.ClientboundPluginMessagePlayPacket;
 import io.slidermc.starlight.network.packet.packets.clientbound.play.ClientboundSystemChatPacket;
+import io.slidermc.starlight.network.protocolenum.ProtocolState;
 import io.slidermc.starlight.switcher.ModernServerSwitcher;
+import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 
 import java.util.*;
@@ -96,6 +100,28 @@ public class ProxiedPlayer implements IStarlightCommandSource {
     @Override
     public Set<ContextKey<?>> contextKeys() {
         return Collections.unmodifiableSet(contextMap.keySet());
+    }
+
+    public CompletableFuture<Void> sendPluginMessage(Key key, byte[] data) {
+        CompletableFuture<Void> future = new CompletableFuture<>();
+        try {
+            if (getConnectionContext().getOutboundState() == ProtocolState.LOGIN) {
+                throw new IllegalStateException("Cannot send plugin message during login phase");
+            } else if (getConnectionContext().getOutboundState() == ProtocolState.HANDSHAKE) {
+                throw new IllegalStateException("Cannot send plugin message during handshake phase");
+            } else if (getConnectionContext().getOutboundState() == ProtocolState.CONFIGURATION) {
+                channel.writeAndFlush(new ClientboundPluginMessageConfigurationPacket(key, data)).addListener(_ ->
+                        future.complete(null));
+            } else if (getConnectionContext().getOutboundState() == ProtocolState.PLAY) {
+                channel.writeAndFlush(new ClientboundPluginMessagePlayPacket(key, data)).addListener(_ ->
+                        future.complete(null));
+            } else {
+                throw new IllegalStateException("Unknown protocol state: " + getConnectionContext().getOutboundState());
+            }
+        } catch (Exception e) {
+            future.completeExceptionally(e);
+        }
+        return future;
     }
 
     @Override
