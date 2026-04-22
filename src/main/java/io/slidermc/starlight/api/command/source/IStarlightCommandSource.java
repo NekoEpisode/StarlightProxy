@@ -30,4 +30,10 @@ public interface IStarlightCommandSource {
      * 返回当前已存入的所有 key。
      */
     Set<ContextKey<?>> contextKeys();
+
+    /**
+     * 检查此CommandSource时候持有某个权限
+     * @return 结果
+     */
+    boolean hasPermission(String permission);
 }

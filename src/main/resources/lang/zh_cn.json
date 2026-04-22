@@ -79,10 +79,10 @@
     "starlight.disconnect.login_failed": "<red>登录失败: <error_msg></red>",
     "starlight.disconnect.downstream_requires_modern_forwarding": "<red>服务器要求Velocity Modern Forwarding，但代理未启用此功能</red>",
 
-    "starlight.error.forwarding.non_inet_address": "<red>内部错误：玩家远程地址格式错误</red>",
-    "starlight.error.forwarding.player_not_found": "<red>内部错误：玩家信息获取失败</red>",
-    "starlight.error.forwarding.hmac_computation_failed": "<red>内部错误：验证数据计算失败</red>",
-    "starlight.error.forwarding.secret_not_configured": "<red>代理配置错误：转发密钥未设置</red>",
+    "starlight.error.forwarding.non_inet_address": "<red>内部错误: 玩家远程地址格式错误</red>",
+    "starlight.error.forwarding.player_not_found": "<red>内部错误: 玩家信息获取失败</red>",
+    "starlight.error.forwarding.hmac_computation_failed": "<red>内部错误: 验证数据计算失败</red>",
+    "starlight.error.forwarding.secret_not_configured": "<red>代理配置错误: 转发密钥未设置</red>",
 
     "starlight.switching.error.failed_connect_to": "<red>无法连接到 <target>: <error></red>",
     "starlight.switching.error.error_on_connecting": "<red>连接到 <target> 时出错: <error></red>",
@@ -93,6 +93,39 @@
     "starlight.command.server.connecting": "<green>正在连接到 <server_name>...</green>",
 
     "starlight.command.only_player_can_use_command": "<red>只有玩家才能使用此命令<red>",
-    "starlight.command.usage": "<red>用法: <usage></red>"
+    "starlight.command.usage": "<red>用法: <usage></red>",
+
+    "starlight.command.starlight.brief": " <gray>— <version></gray>",
+    "starlight.command.starlight.hint": "<dark_gray>使用 /starlight help 查看命令列表  ·  By SliderMC</dark_gray>",
+
+    "starlight.command.starlight.version.header": "<gradient:#FFE100:#C8A200>— StarlightProxy —</gradient>",
+    "starlight.command.starlight.version.version": " <gray>版本  </gray><white><version></white>",
+    "starlight.command.starlight.version.address": " <gray>地址  </gray><white><host>:<port></white>",
+    "starlight.command.starlight.version.players": " <gray>在线  </gray><white><count> 名玩家</white>",
+    "starlight.command.starlight.version.footer": "<dark_gray>By SliderMC</dark_gray>",
+
+    "starlight.command.starlight.plugins.header": "<gradient:#FFE100:#C8A200>— 插件列表 (<count>) —</gradient>",
+    "starlight.command.starlight.plugins.empty": "<gray>  未加载任何插件</gray>",
+    "starlight.command.starlight.plugins.entry": "<gray>  · </gray><white><name></white> <dark_gray>(<version>)</dark_gray>",
+    "starlight.command.starlight.plugins.hover.authors": "<gray>作者: </gray><white><authors></white>",
+    "starlight.command.starlight.plugins.hover.depends": "<gray>硬依赖: </gray><white><depends></white>",
+    "starlight.command.starlight.plugins.hover.soft_depends": "<gray>软依赖: </gray><white><soft_depends></white>",
+
+    "starlight.command.starlight.help.header": "<gradient:#FFE100:#C8A200>— 帮助 —</gradient>",
+    "starlight.command.starlight.help.entry": "<gray>  <usage></gray> <dark_gray>— <description></dark_gray>",
+    "starlight.command.starlight.help.footer": "<dark_gray>By SliderMC</dark_gray>",
+
+    "starlight.command.glist.summary": "<gradient:#FFE100:#C8A200>在线人数: </gradient><white><players></white> <gray>名玩家，共</gray> <white><servers></white> <gray>个服务器</gray>",
+    "starlight.command.glist.all.header": "<gradient:#FFE100:#C8A200>— 服务器列表(共 <servers> 个)—</gradient>",
+    "starlight.command.glist.all.empty": "<gray>  当前没有玩家在线</gray>",
+    "starlight.command.glist.all.footer": "<dark_gray>共计: <servers> 个服务器，<players> 名在线玩家</dark_gray>",
+    "starlight.command.glist.server_entry": "<gray>  [</gray><white><server></white><gray>](<count>)</gray> <dark_gray><players></dark_gray>",
+    "starlight.command.glist.no_players": "<dark_gray>(无玩家)</dark_gray>",
+    "starlight.command.glist.server_not_found": "<red>未找到服务器: <server></red>",
+    "starlight.command.glist.help.header": "<gradient:#FFE100:#C8A200>— /glist 帮助 —</gradient>",
+    "starlight.command.glist.help.summary": "<gray>  /glist</gray> <dark_gray>— 显示全局在线人数与服务器数量</dark_gray>",
+    "starlight.command.glist.help.all": "<gray>  /glist all</gray> <dark_gray>— 列出所有有玩家在线的服务器</dark_gray>",
+    "starlight.command.glist.help.all_force": "<gray>  /glist all force</gray> <dark_gray>— 列出所有服务器(包括空服务器)</dark_gray>",
+    "starlight.command.glist.help.server": "<gray>  /glist <服务器名></gray> <dark_gray>— 查看指定服务器的玩家列表</dark_gray>"
   }
 }

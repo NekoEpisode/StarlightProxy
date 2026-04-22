@@ -1,5 +1,7 @@
 package io.slidermc.starlight.api.player;
 
+import io.slidermc.starlight.api.server.ProxiedServer;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -37,5 +39,17 @@ public class PlayerManager {
 
     public List<ProxiedPlayer> getPlayers() {
         return new ArrayList<>(uuidToPlayer.values());
+    }
+
+    /**
+     * 返回当前连接到指定服务器的玩家列表。
+     *
+     * @param server 目标服务器
+     * @return 在该服务器上的玩家，顺序不保证
+     */
+    public List<ProxiedPlayer> getPlayers(ProxiedServer server) {
+        return uuidToPlayer.values().stream()
+                .filter(p -> p.getCurrentServer().map(s -> s.getName().equals(server.getName())).orElse(false))
+                .toList();
     }
 }

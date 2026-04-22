@@ -93,6 +93,39 @@
     "starlight.command.server.connecting": "<green>Connecting to <server_name>...</green>",
 
     "starlight.command.only_player_can_use_command": "<red>Only players can use this command</red>",
-    "starlight.command.usage": "<red>Usage: <usage></red>"
+    "starlight.command.usage": "<red>Usage: <usage></red>",
+
+    "starlight.command.starlight.brief": " <gray>— <version></gray>",
+    "starlight.command.starlight.hint": "<dark_gray>Use /starlight help for a list of commands  ·  By SliderMC</dark_gray>",
+
+    "starlight.command.starlight.version.header": "<gradient:#FFE100:#C8A200>— StarlightProxy —</gradient>",
+    "starlight.command.starlight.version.version": " <gray>Version  </gray><white><version></white>",
+    "starlight.command.starlight.version.address": " <gray>Address  </gray><white><host>:<port></white>",
+    "starlight.command.starlight.version.players": " <gray>Players  </gray><white><count> online</white>",
+    "starlight.command.starlight.version.footer": "<dark_gray>By SliderMC</dark_gray>",
+
+    "starlight.command.starlight.plugins.header": "<gradient:#FFE100:#C8A200>— Plugins (<count>) —</gradient>",
+    "starlight.command.starlight.plugins.empty": "<gray>  No plugins loaded.</gray>",
+    "starlight.command.starlight.plugins.entry": "<gray>  · </gray><white><name></white> <dark_gray>(<version>)</dark_gray>",
+    "starlight.command.starlight.plugins.hover.authors": "<gray>Authors: </gray><white><authors></white>",
+    "starlight.command.starlight.plugins.hover.depends": "<gray>Depends: </gray><white><depends></white>",
+    "starlight.command.starlight.plugins.hover.soft_depends": "<gray>Soft Depends: </gray><white><soft_depends></white>",
+
+    "starlight.command.starlight.help.header": "<gradient:#FFE100:#C8A200>— Help —</gradient>",
+    "starlight.command.starlight.help.entry": "<gray>  <usage></gray> <dark_gray>— <description></dark_gray>",
+    "starlight.command.starlight.help.footer": "<dark_gray>By SliderMC</dark_gray>",
+
+    "starlight.command.glist.summary": "<gradient:#FFE100:#C8A200>Online:</gradient> <white><players></white> <gray>player(s) across</gray> <white><servers></white> <gray>server(s)</gray>",
+    "starlight.command.glist.all.header": "<gradient:#FFE100:#C8A200>— Server List (<servers> servers) —</gradient>",
+    "starlight.command.glist.all.empty": "<gray>  No players online.</gray>",
+    "starlight.command.glist.all.footer": "<dark_gray>Total: <players> player(s) across <servers> server(s)</dark_gray>",
+    "starlight.command.glist.server_entry": "<gray>  [</gray><white><server></white><gray>] (<count>)</gray> <dark_gray><players></dark_gray>",
+    "starlight.command.glist.no_players": "<dark_gray>(empty)</dark_gray>",
+    "starlight.command.glist.server_not_found": "<red>Server not found: <server></red>",
+    "starlight.command.glist.help.header": "<gradient:#FFE100:#C8A200>— /glist Help —</gradient>",
+    "starlight.command.glist.help.summary": "<gray>  /glist</gray> <dark_gray>— Show total online players and server count</dark_gray>",
+    "starlight.command.glist.help.all": "<gray>  /glist all</gray> <dark_gray>— List all servers with online players</dark_gray>",
+    "starlight.command.glist.help.all_force": "<gray>  /glist all force</gray> <dark_gray>— List all servers including empty ones</dark_gray>",
+    "starlight.command.glist.help.server": "<gray>  /glist &lt;server&gt;</gray> <dark_gray>— List players on a specific server</dark_gray>"
   }
 }

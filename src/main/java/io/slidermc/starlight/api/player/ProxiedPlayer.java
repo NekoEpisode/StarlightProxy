@@ -102,6 +102,11 @@ public class ProxiedPlayer implements IStarlightCommandSource {
         return Collections.unmodifiableSet(contextMap.keySet());
     }
 
+    @Override
+    public boolean hasPermission(String permission) {
+        throw new UnsupportedOperationException("Permission system not implemented yet"); // TODO: 实现权限系统
+    }
+
     public CompletableFuture<Void> sendPluginMessage(Key key, byte[] data) {
         CompletableFuture<Void> future = new CompletableFuture<>();
         try {
