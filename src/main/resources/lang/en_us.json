@@ -73,6 +73,21 @@
     "starlight.logging.error.plugin.on_disable_failed": "Plugin [{}] threw an exception in onDisable",
     "starlight.logging.error.plugin.on_reload_failed": "Plugin [{}] threw an exception in onReload",
 
+    "starlight.logging.error.event.handler_threw": "Event handler [{}::{}] threw an exception while handling {}",
+    "starlight.logging.warn.event.handler_param_count_invalid": "Listener [{}] method [{}] is annotated @EventHandler but has wrong parameter count, skipped",
+    "starlight.logging.warn.event.handler_param_type_invalid": "Listener [{}] method [{}] parameter type [{}] is not a subtype of IStarlightEvent, skipped",
+    "starlight.logging.warn.event.no_valid_handlers": "Listener [{}] from source [{}] has no valid @EventHandler methods",
+    "starlight.logging.warn.event.unregister_nonexistent": "Attempt to unregister non-existent listener [{}] (source: {})",
+    "starlight.logging.error.event.listener_id_duplicate": "Listener ID [{}] is already registered under source [{}], please unregister first",
+
+    "starlight.logging.error.plugin.cannot_open_jar": "Cannot open JAR file: {}",
+    "starlight.logging.error.plugin.plugin_yml_missing": "plugin.yml not found in JAR: {}",
+    "starlight.logging.error.plugin.read_plugin_yml_failed": "Failed to read plugin.yml: {}",
+    "starlight.logging.error.plugin.classloader_create_failed": "Failed to create class loader for: {}",
+    "starlight.logging.error.plugin.main_class_not_found": "Main class not found: {} [{}]",
+    "starlight.logging.error.plugin.main_class_not_plugin": "Main class {} does not implement IPlugin",
+    "starlight.logging.error.plugin.instantiate_main_failed": "Failed to instantiate main class {} (ensure a public no-arg constructor exists)",
+
     "starlight.unknown_error": "Unknown error",
 
     "starlight.disconnect.failed_connect_default_server": "<red>Could not connect to the default server <server_name></red>\n<gray>Please try again later</gray>",

@@ -1,6 +1,7 @@
 package io.slidermc.starlight.api.plugin;
 
 import io.slidermc.starlight.StarlightProxy;
+import io.slidermc.starlight.api.event.EventListener;
 import io.slidermc.starlight.api.translate.TranslateManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,10 +34,14 @@ import org.slf4j.LoggerFactory;
  * getPluginManager().registerPlugin(new MyFeature());
  * }</pre>
  */
+
 public abstract class PluginBase implements IPlugin {
 
     private final PluginDescription description;
     private final Logger logger;
+    private StarlightProxy proxy;
+
+    private long currentId;
 
     /**
      * 通过描述构造内存插件，Logger 名称自动设为 {@code plugin.<插件名>}。
@@ -62,7 +67,9 @@ public abstract class PluginBase implements IPlugin {
     public void onLoad(TranslateManager translateManager) {}
 
     @Override
-    public void onEnable(StarlightProxy proxy) {}
+    public void onEnable(StarlightProxy proxy) {
+        this.proxy = proxy;
+    }
 
     @Override
     public void onDisable() {}
@@ -71,6 +78,23 @@ public abstract class PluginBase implements IPlugin {
     public void onReload(StarlightProxy proxy) {
         onDisable();
         onEnable(proxy);
+    }
+
+    @Override
+    public void registerListener(String listenerId, io.slidermc.starlight.api.event.EventListener listener) {
+        if (proxy == null) throw new IllegalStateException("proxy field is null, do you forget to call super.onEnable in onEnable?");
+        proxy.getEventManager().register(this, listenerId, listener);
+    }
+
+    @Override
+    public void registerListener(EventListener listener) {
+        registerListener("listener-" + currentId++, listener);
+    }
+
+    @Override
+    public void unregisterListener(String listenerId) {
+        if (proxy == null) return;
+        proxy.getEventManager().unregister(this, listenerId);
     }
 }
 

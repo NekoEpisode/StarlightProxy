@@ -1,6 +1,7 @@
 package io.slidermc.starlight.plugin;
 
 import io.slidermc.starlight.StarlightProxy;
+import io.slidermc.starlight.api.event.EventListener;
 import io.slidermc.starlight.api.plugin.IPlugin;
 import io.slidermc.starlight.api.plugin.PluginDescription;
 import io.slidermc.starlight.api.translate.TranslateManager;
@@ -20,6 +21,9 @@ public abstract class JavaPlugin implements IPlugin {
     private PluginDescription description;
     private Logger logger;
     private PluginManager pluginManager;
+    private StarlightProxy proxy;
+
+    private long currentId;
 
     /**
      * 由 {@link PluginManager} 在实例化后立即调用，完成必要字段注入。
@@ -48,11 +52,14 @@ public abstract class JavaPlugin implements IPlugin {
         return pluginManager;
     }
 
+
     @Override
     public void onLoad(TranslateManager translateManager) {}
 
     @Override
-    public void onEnable(StarlightProxy proxy) {}
+    public void onEnable(StarlightProxy proxy) {
+        this.proxy = proxy;
+    }
 
     @Override
     public void onDisable() {}
@@ -61,5 +68,22 @@ public abstract class JavaPlugin implements IPlugin {
     public void onReload(StarlightProxy proxy) {
         onDisable();
         onEnable(proxy);
+    }
+
+    @Override
+    public void registerListener(String listenerId, EventListener listener) {
+        if (proxy == null) throw new IllegalStateException("proxy field is null, do you forget to call super.onEnable in onEnable?");
+        proxy.getEventManager().register(this, listenerId, listener);
+    }
+
+    @Override
+    public void registerListener(EventListener listener) {
+        registerListener("listener-" + currentId++, listener);
+    }
+
+    @Override
+    public void unregisterListener(String listenerId) {
+        if (proxy == null) return;
+        proxy.getEventManager().unregister(this, listenerId);
     }
 }

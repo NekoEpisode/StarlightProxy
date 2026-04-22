@@ -8,6 +8,7 @@ import io.slidermc.starlight.api.profile.GameProfile;
 import io.slidermc.starlight.api.server.ProxiedServer;
 import io.slidermc.starlight.network.context.AttributeKeys;
 import io.slidermc.starlight.network.context.ConnectionContext;
+import io.slidermc.starlight.network.packet.IMinecraftPacket;
 import io.slidermc.starlight.network.packet.packets.clientbound.configuration.ClientboundPluginMessageConfigurationPacket;
 import io.slidermc.starlight.network.packet.packets.clientbound.play.ClientboundPluginMessagePlayPacket;
 import io.slidermc.starlight.network.packet.packets.clientbound.play.ClientboundSystemChatPacket;
@@ -19,6 +20,7 @@ import net.kyori.adventure.text.Component;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedDeque;
 
 public class ProxiedPlayer implements IStarlightCommandSource {
     private static final int RECONFIGURATION_MIN_VERSION = 764;
@@ -26,6 +28,7 @@ public class ProxiedPlayer implements IStarlightCommandSource {
     private final GameProfile gameProfile;
     private final Channel channel;
     private final StarlightProxy proxy;
+    private final ConcurrentLinkedDeque<InQueueMessage> pendingMessageQueue = new ConcurrentLinkedDeque<>();
 
     private final Map<ContextKey<?>, Object> contextMap = new ConcurrentHashMap<>();
 
@@ -71,13 +74,78 @@ public class ProxiedPlayer implements IStarlightCommandSource {
         this.currentServer = server;
     }
 
+    /**
+     * 发送指定消息给玩家
+     * 如果玩家尚未进入PLAY阶段，则消息积压，直到进入PLAY阶段后在LoginPlay包后发送
+     * @param component 要发送的消息
+     */
     @Override
     public void sendMessage(Component component) {
+        if (channel.eventLoop().inEventLoop()) {
+            doSendMessage(component);
+        } else {
+            channel.eventLoop().execute(() -> doSendMessage(component));
+        }
+    }
+
+    private void doSendMessage(Component component) {
+        if (getConnectionContext().getOutboundState() != ProtocolState.PLAY) {
+            pendingMessageQueue.addLast(new InQueueMessage(component, false));
+            return;
+        }
         channel.writeAndFlush(new ClientboundSystemChatPacket(component, false));
     }
 
+    /**
+     * 发送Actionbar消息，积压机制与{@code sendMessage(Component)}相同
+     * @param component 要发送的消息
+     */
     public void sendActionbar(Component component) {
+        if (channel.eventLoop().inEventLoop()) {
+            doSendActionbar(component);
+        } else {
+            channel.eventLoop().execute(() -> doSendActionbar(component));
+        }
+    }
+
+    private void doSendActionbar(Component component) {
+        if (getConnectionContext().getOutboundState() != ProtocolState.PLAY) {
+            pendingMessageQueue.addLast(new InQueueMessage(component, true));
+            return;
+        }
         channel.writeAndFlush(new ClientboundSystemChatPacket(component, true));
+    }
+
+    public void sendAllPendingMessages() {
+        if (!channel.eventLoop().inEventLoop()) {
+            channel.eventLoop().execute(this::sendAllPendingMessages);
+            return;
+        }
+
+        if (getConnectionContext().getOutboundState() != ProtocolState.PLAY) {
+            throw new IllegalStateException("Can only send pending messages in PLAY state");
+        }
+
+        InQueueMessage msg;
+        while ((msg = pendingMessageQueue.pollFirst()) != null) {
+            if (msg.actionbar) {
+                doSendActionbar(msg.component);
+            } else {
+                doSendMessage(msg.component);
+            }
+        }
+    }
+
+    public CompletableFuture<Void> sendPacket(IMinecraftPacket packet) {
+        CompletableFuture<Void> completableFuture = new CompletableFuture<>();
+        channel.writeAndFlush(packet).addListener(future -> {
+            if (future.isSuccess()) {
+                completableFuture.complete(null);
+            } else {
+                completableFuture.completeExceptionally(future.cause());
+            }
+        });
+        return completableFuture;
     }
 
     @Override
@@ -149,4 +217,6 @@ public class ProxiedPlayer implements IStarlightCommandSource {
                 ", proxy=" + proxy +
                 '}';
     }
+
+    private record InQueueMessage(Component component, boolean actionbar) {}
 }

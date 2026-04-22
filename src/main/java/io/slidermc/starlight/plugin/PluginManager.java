@@ -249,7 +249,7 @@ public class PluginManager {
         try {
             jarFile = new JarFile(jarPath.toFile());
         } catch (IOException e) {
-            throw new PluginLoadException("无法打开JAR文件: " + jarPath, e);
+            throw new PluginLoadException(formatTranslated(t("starlight.logging.error.plugin.cannot_open_jar"), jarPath), e);
         }
 
         PluginDescription description;
@@ -257,7 +257,7 @@ public class PluginManager {
             JarEntry entry = jarFile.getJarEntry("plugin.yml");
             if (entry == null) {
                 jarFile.close();
-                throw new PluginLoadException("JAR中未找到 plugin.yml: " + jarPath.getFileName());
+                throw new PluginLoadException(formatTranslated(t("starlight.logging.error.plugin.plugin_yml_missing"), jarPath.getFileName()));
             }
             try (InputStream is = jarFile.getInputStream(entry)) {
                 Yaml yaml = new Yaml();
@@ -269,7 +269,7 @@ public class PluginManager {
             throw e;
         } catch (IOException e) {
             try { jarFile.close(); } catch (IOException ignored) {}
-            throw new PluginLoadException("读取 plugin.yml 失败: " + jarPath.getFileName(), e);
+            throw new PluginLoadException(formatTranslated(t("starlight.logging.error.plugin.read_plugin_yml_failed"), jarPath.getFileName()), e);
         }
 
         PluginClassLoader classLoader;
@@ -281,7 +281,7 @@ public class PluginManager {
             );
         } catch (Exception e) {
             try { jarFile.close(); } catch (IOException ignored) {}
-            throw new PluginLoadException("创建类加载器失败: " + jarPath.getFileName(), e);
+            throw new PluginLoadException(formatTranslated(t("starlight.logging.error.plugin.classloader_create_failed"), jarPath.getFileName()), e);
         }
 
         Class<?> mainClass;
@@ -289,12 +289,12 @@ public class PluginManager {
             mainClass = classLoader.loadClass(description.main());
         } catch (ClassNotFoundException e) {
             try { classLoader.close(); jarFile.close(); } catch (IOException ignored) {}
-            throw new PluginLoadException("主类未找到: " + description.main() + " [" + jarPath.getFileName() + "]", e);
+            throw new PluginLoadException(formatTranslated(t("starlight.logging.error.plugin.main_class_not_found"), description.main(), jarPath.getFileName()), e);
         }
 
         if (!IPlugin.class.isAssignableFrom(mainClass)) {
             try { classLoader.close(); jarFile.close(); } catch (IOException ignored) {}
-            throw new PluginLoadException("主类 " + description.main() + " 未实现 IPlugin 接口");
+            throw new PluginLoadException(formatTranslated(t("starlight.logging.error.plugin.main_class_not_plugin"), description.main()));
         }
 
         IPlugin instance;
@@ -302,7 +302,7 @@ public class PluginManager {
             instance = (IPlugin) mainClass.getDeclaredConstructor().newInstance();
         } catch (Exception e) {
             try { classLoader.close(); jarFile.close(); } catch (IOException ignored) {}
-            throw new PluginLoadException("无法实例化主类 " + description.main() + "（确保存在无参构造器）", e);
+            throw new PluginLoadException(formatTranslated(t("starlight.logging.error.plugin.instantiate_main_failed"), description.main()), e);
         }
 
         if (instance instanceof JavaPlugin jp) {
@@ -446,11 +446,35 @@ public class PluginManager {
         } catch (Exception e) {
             log.error(t("starlight.logging.error.plugin.on_disable_failed"), container.description().name(), e);
         }
+        // 插件禁用后自动注销其所有事件监听器，防止内存泄漏
+        if (proxy != null) {
+            proxy.getEventManager().unregisterAll(container.plugin());
+        }
     }
 
     /** 便捷方法，减少重复的 translateManager.translate() 调用。 */
     private String t(String key) {
         return translateManager.translate(key);
+    }
+
+    /** 简单的占位符替换，按顺序用 args 替换 pattern 中的 {}。返回格式化后的字符串。 */
+    private String formatTranslated(String pattern, Object... args) {
+        if (pattern == null || args == null || args.length == 0) return pattern;
+        StringBuilder sb = new StringBuilder();
+        int argIndex = 0;
+        int i = 0;
+        while (i < pattern.length()) {
+            int j = pattern.indexOf("{}", i);
+            if (j == -1) {
+                sb.append(pattern, i, pattern.length());
+                break;
+            }
+            sb.append(pattern, i, j);
+            sb.append(args[argIndex] == null ? "null" : args[argIndex].toString());
+            argIndex = Math.min(argIndex + 1, args.length - 1);
+            i = j + 2;
+        }
+        return sb.toString();
     }
 }
 

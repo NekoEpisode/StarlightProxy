@@ -10,6 +10,7 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.slidermc.starlight.api.command.CommandManager;
 import io.slidermc.starlight.api.command.source.IStarlightCommandSource;
+import io.slidermc.starlight.api.event.EventManager;
 import io.slidermc.starlight.api.player.PlayerManager;
 import io.slidermc.starlight.api.translate.TranslateManager;
 import io.slidermc.starlight.config.InternalConfig;
@@ -41,6 +42,7 @@ public class StarlightProxy {
     private final CommandDispatcher<IStarlightCommandSource> commandDispatcher = new CommandDispatcher<>();
     private final CommandManager commandManager = new CommandManager(commandDispatcher, this);
     private final ProxyExecutors executors = new ProxyExecutors();
+    private final EventManager eventManager;
     private final PluginManager pluginManager;
 
     public StarlightProxy(InetSocketAddress address, TranslateManager translateManager,
@@ -58,6 +60,7 @@ public class StarlightProxy {
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException("Failed to initialize EncryptionManager", e);
         }
+        eventManager = new EventManager(executors.getEventExecutor(), translateManager);
     }
 
     void start() {
@@ -153,5 +156,12 @@ public class StarlightProxy {
      */
     public PluginManager getPluginManager() {
         return pluginManager;
+    }
+
+    /**
+     * 返回事件管理器实例。
+     */
+    public EventManager getEventManager() {
+        return eventManager;
     }
 }

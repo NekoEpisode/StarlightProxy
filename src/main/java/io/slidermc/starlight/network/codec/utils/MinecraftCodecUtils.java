@@ -144,4 +144,24 @@ public class MinecraftCodecUtils {
         }
         return properties;
     }
+
+    /**
+     * 读取 Position (8 bytes)
+     * x: 26-bit signed, y: 12-bit signed, z: 26-bit signed
+     */
+    public static int[] readPosition(ByteBuf buf) {
+        long val = buf.readLong();
+        int x = (int) (val >> 38);
+        int y = (int) (val & 0xFFF);
+        int z = (int) ((val << 26 >> 38));
+        return new int[]{x, y, z};
+    }
+
+    /**
+     * 写 Position
+     */
+    public static void writePosition(ByteBuf buf, int x, int y, int z) {
+        long val = (((long)x & 0x3FFFFFF) << 38) | (((long)z & 0x3FFFFFF) << 12) | ((long)y & 0xFFF);
+        buf.writeLong(val);
+    }
 }

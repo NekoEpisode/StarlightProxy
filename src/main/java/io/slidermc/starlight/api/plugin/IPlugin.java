@@ -1,6 +1,7 @@
 package io.slidermc.starlight.api.plugin;
 
 import io.slidermc.starlight.StarlightProxy;
+import io.slidermc.starlight.api.event.EventListener;
 import io.slidermc.starlight.api.translate.TranslateManager;
 import org.slf4j.Logger;
 
@@ -33,6 +34,26 @@ public interface IPlugin {
      * @param proxy 已启动的代理实例
      */
     void onEnable(StarlightProxy proxy);
+
+    /**
+     * 向事件管理器注册一个监听器。
+     * <p>等同于 proxy.getEventManager().register(this, listenerId, listener)，只能在 onEnable 或之后调用。
+     * @param listenerId 监听器唯一 ID，同一插件内不可重复
+     * @param listener   监听器实例
+     */
+    void registerListener(String listenerId, EventListener listener);
+
+    /**
+     * 注册一个随机/递增id(内部处理)的listener，用于后续不需要跟踪(unregister之类)的情况
+     * @param listener 监听器实例
+     */
+    void registerListener(EventListener listener);
+
+    /**
+     * 注销本插件注册的指定 ID 监听器。
+     * @param listenerId 监听器 ID
+     */
+    void unregisterListener(String listenerId);
 
     /**
      * 在代理优雅关闭时调用。应释放所有资源、取消订阅事件。

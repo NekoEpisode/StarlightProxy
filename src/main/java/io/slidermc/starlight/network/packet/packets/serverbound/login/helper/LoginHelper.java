@@ -2,6 +2,7 @@ package io.slidermc.starlight.network.packet.packets.serverbound.login.helper;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.slidermc.starlight.StarlightProxy;
+import io.slidermc.starlight.api.event.events.internal.PlayerJoinEvent;
 import io.slidermc.starlight.api.player.ProxiedPlayer;
 import io.slidermc.starlight.api.profile.GameProfile;
 import io.slidermc.starlight.config.InternalConfig;
@@ -36,30 +37,33 @@ public final class LoginHelper {
         log.debug("已创建ProxiedPlayer对象: {}", player);
         player.getConnectionContext().setPlayer(player);
         proxy.getPlayerManager().addPlayer(player);
-        log.info(
-                proxy.getTranslateManager().translate("starlight.logging.info.player.join"),
-                player.getGameProfile().username(),
-                player.getGameProfile().uuid(),
-                player.getChannel().remoteAddress()
-        );
+        PlayerJoinEvent playerJoinEvent = new PlayerJoinEvent(player);
+        proxy.getEventManager().fireAsync(playerJoinEvent).thenRun(() -> { // 异步call, 防止拖慢Netty
+            log.info(
+                    proxy.getTranslateManager().translate("starlight.logging.info.player.join"),
+                    player.getGameProfile().username(),
+                    player.getGameProfile().uuid(),
+                    player.getChannel().remoteAddress()
+            );
 
-        int threshold = proxy.getConfig().getCompressThreshold();
-        if (threshold >= 0) {
-            // 等 SetCompression 写出完成后再安装 pipeline 并发 LoginSuccess，
-            // 否则 LoginSuccess 可能在压缩生效前就发出，导致客户端解析失败。
-            ctx.channel().writeAndFlush(new ClientboundSetCompressionPacket(threshold)).addListener(_ -> {
-                if (ctx.pipeline().get(InternalConfig.HANDLER_DECOMPRESS) == null) {
-                    ctx.pipeline().addBefore(InternalConfig.HANDLER_DECODER, InternalConfig.HANDLER_DECOMPRESS, new CompressionDecoder());
-                }
-                if (ctx.pipeline().get(InternalConfig.HANDLER_COMPRESS) == null) {
-                    ctx.pipeline().addBefore(InternalConfig.HANDLER_ENCODER, InternalConfig.HANDLER_COMPRESS, new CompressionEncoder(threshold));
-                }
-                log.debug("上游已启用压缩，阈值: {}", threshold);
+            int threshold = proxy.getConfig().getCompressThreshold();
+            if (threshold >= 0) {
+                // 等 SetCompression 写出完成后再安装 pipeline 并发 LoginSuccess，
+                // 否则 LoginSuccess 可能在压缩生效前就发出，导致客户端解析失败。
+                ctx.channel().writeAndFlush(new ClientboundSetCompressionPacket(threshold)).addListener(_ -> {
+                    if (ctx.pipeline().get(InternalConfig.HANDLER_DECOMPRESS) == null) {
+                        ctx.pipeline().addBefore(InternalConfig.HANDLER_DECODER, InternalConfig.HANDLER_DECOMPRESS, new CompressionDecoder());
+                    }
+                    if (ctx.pipeline().get(InternalConfig.HANDLER_COMPRESS) == null) {
+                        ctx.pipeline().addBefore(InternalConfig.HANDLER_ENCODER, InternalConfig.HANDLER_COMPRESS, new CompressionEncoder(threshold));
+                    }
+                    log.debug("上游已启用压缩，阈值: {}", threshold);
+                    sendLoginSuccess(ctx, player);
+                });
+            } else {
                 sendLoginSuccess(ctx, player);
-            });
-        } else {
-            sendLoginSuccess(ctx, player);
-        }
+            }
+        });
     }
 
     private static void sendLoginSuccess(ChannelHandlerContext ctx, ProxiedPlayer player) {
