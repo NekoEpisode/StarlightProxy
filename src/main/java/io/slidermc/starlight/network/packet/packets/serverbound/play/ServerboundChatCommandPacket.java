@@ -44,11 +44,7 @@ public class ServerboundChatCommandPacket implements IMinecraftPacket {
             ConnectionContext context = ctx.channel().attr(AttributeKeys.CONNECTION_CONTEXT).get();
 
             // 检查是否是代理命令
-            // ServerboundChatCommand 中 command 不含 '/'，但做防御性处理
             String normalizedCommand = packet.command.trim();
-            if (normalizedCommand.startsWith("/")) {
-                normalizedCommand = normalizedCommand.substring(1).trim();
-            }
             if (normalizedCommand.isEmpty()) {
                 context.getDownstreamChannel().writeAndFlush(packet);
                 return;
