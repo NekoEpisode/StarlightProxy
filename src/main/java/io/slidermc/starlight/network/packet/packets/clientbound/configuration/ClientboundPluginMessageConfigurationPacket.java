@@ -21,6 +21,13 @@ public class ClientboundPluginMessageConfigurationPacket implements IMinecraftPa
     private Key key;
     private byte[] data;
 
+    public ClientboundPluginMessageConfigurationPacket() {}
+
+    public ClientboundPluginMessageConfigurationPacket(Key key, byte[] data) {
+        this.key = key;
+        this.data = data;
+    }
+
     @Override
     public void encode(ByteBuf byteBuf, ProtocolVersion protocolVersion) {
         MinecraftCodecUtils.writeKey(byteBuf, key);

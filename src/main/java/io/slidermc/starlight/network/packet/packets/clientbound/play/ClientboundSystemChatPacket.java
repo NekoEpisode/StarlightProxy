@@ -11,11 +11,8 @@ import io.slidermc.starlight.network.packet.IMinecraftPacket;
 import io.slidermc.starlight.network.packet.listener.IPacketListener;
 import io.slidermc.starlight.network.protocolenum.ProtocolVersion;
 import net.kyori.adventure.text.Component;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class ClientboundSystemChatPacket implements IMinecraftPacket {
-    private static final Logger log = LoggerFactory.getLogger(ClientboundSystemChatPacket.class);
     private Component component;
     private boolean overlay;
 
