@@ -39,7 +39,7 @@ public abstract class PluginBase implements IPlugin {
 
     private final PluginDescription description;
     private final Logger logger;
-    private StarlightProxy proxy;
+    protected StarlightProxy proxy;
 
     private long currentId;
 

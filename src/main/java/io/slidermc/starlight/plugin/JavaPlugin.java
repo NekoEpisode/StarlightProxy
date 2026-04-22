@@ -21,7 +21,7 @@ public abstract class JavaPlugin implements IPlugin {
     private PluginDescription description;
     private Logger logger;
     private PluginManager pluginManager;
-    private StarlightProxy proxy;
+    protected StarlightProxy proxy;
 
     private long currentId;
 
@@ -51,7 +51,6 @@ public abstract class JavaPlugin implements IPlugin {
     protected final PluginManager getPluginManager() {
         return pluginManager;
     }
-
 
     @Override
     public void onLoad(TranslateManager translateManager) {}
