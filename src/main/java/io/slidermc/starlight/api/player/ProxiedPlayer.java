@@ -104,7 +104,7 @@ public class ProxiedPlayer implements IStarlightCommandSource {
 
     @Override
     public boolean hasPermission(String permission) {
-        return true; // TODO: 实现权限系统
+        throw new UnsupportedOperationException("Permission system not implemented yet"); // TODO: 实现权限系统
     }
 
     public CompletableFuture<Void> sendPluginMessage(Key key, byte[] data) {
