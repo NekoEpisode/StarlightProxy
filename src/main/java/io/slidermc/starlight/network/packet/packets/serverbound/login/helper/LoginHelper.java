@@ -2,7 +2,7 @@ package io.slidermc.starlight.network.packet.packets.serverbound.login.helper;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.slidermc.starlight.StarlightProxy;
-import io.slidermc.starlight.api.event.events.internal.PlayerJoinEvent;
+import io.slidermc.starlight.api.event.events.internal.PlayerLoginEvent;
 import io.slidermc.starlight.api.player.ProxiedPlayer;
 import io.slidermc.starlight.api.profile.GameProfile;
 import io.slidermc.starlight.config.InternalConfig;
@@ -37,8 +37,8 @@ public final class LoginHelper {
         log.debug("已创建ProxiedPlayer对象: {}", player);
         player.getConnectionContext().setPlayer(player);
         proxy.getPlayerManager().addPlayer(player);
-        PlayerJoinEvent playerJoinEvent = new PlayerJoinEvent(player);
-        proxy.getEventManager().fireAsync(playerJoinEvent).thenRun(() -> { // 异步call, 防止拖慢Netty
+        PlayerLoginEvent playerLoginEvent = new PlayerLoginEvent(player);
+        proxy.getEventManager().fireAsync(playerLoginEvent).thenRun(() -> { // 异步call, 防止拖慢Netty
             log.info(
                     proxy.getTranslateManager().translate("starlight.logging.info.player.join"),
                     player.getGameProfile().username(),
