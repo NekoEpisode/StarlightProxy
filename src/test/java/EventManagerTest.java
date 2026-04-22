@@ -1,6 +1,8 @@
 import io.slidermc.starlight.api.event.*;
 import io.slidermc.starlight.api.event.events.interfaces.ICancellableEvent;
 import io.slidermc.starlight.executor.ProxyExecutors;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -49,6 +51,11 @@ public class EventManagerTest {
                 proxyExecutors.getEventExecutor(),
                 new io.slidermc.starlight.api.translate.TranslateManager()
         );
+    }
+
+    @AfterEach
+    public void cleanUp() {
+        proxyExecutors.shutdown();
     }
 
     @Test
