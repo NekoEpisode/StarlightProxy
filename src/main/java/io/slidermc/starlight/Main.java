@@ -262,5 +262,8 @@ public class Main {
 
         registryPacketUtils.registerByAutoMapping(Key.key("minecraft:custom_payload"), ProtocolState.PLAY, ProtocolDirection.SERVERBOUND, ServerboundPluginMessagePlayPacket::new);
         r.registerListener(ServerboundPluginMessagePlayPacket.class, "default", new ServerboundPluginMessagePlayPacket.Listener());
+
+        registryPacketUtils.registerByAutoMapping(Key.key("minecraft:chat"), ProtocolState.PLAY, ProtocolDirection.SERVERBOUND, ServerboundChatPacket::new);
+        r.registerListener(ServerboundChatPacket.class, "default", new ServerboundChatPacket.Listener());
     }
 }
