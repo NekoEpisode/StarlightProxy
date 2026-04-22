@@ -73,6 +73,21 @@
     "starlight.logging.error.plugin.on_disable_failed": "插件 [{}] onDisable 发生异常",
     "starlight.logging.error.plugin.on_reload_failed": "插件 [{}] onReload 发生异常",
 
+    "starlight.logging.error.event.handler_threw": "事件处理器 [{}::{}] 在处理 {} 时抛出异常",
+    "starlight.logging.warn.event.handler_param_count_invalid": "监听器 [{}] 方法 [{}] 被 @EventHandler 标注但参数数量不为 1，已跳过",
+    "starlight.logging.warn.event.handler_param_type_invalid": "监听器 [{}] 方法 [{}] 的参数类型 [{}] 不是 IStarlightEvent 的子类型，已跳过",
+    "starlight.logging.warn.event.no_valid_handlers": "监听器 [{}] 在来源 [{}] 下没有任何有效的 @EventHandler 方法",
+    "starlight.logging.warn.event.unregister_nonexistent": "尝试注销不存在的监听器 [{}] (来源: {})",
+    "starlight.logging.error.event.listener_id_duplicate": "监听器 ID [{}] 已在来源 [{}] 下注册，请先注销再重新注册",
+
+    "starlight.logging.error.plugin.cannot_open_jar": "无法打开JAR文件: {}",
+    "starlight.logging.error.plugin.plugin_yml_missing": "JAR中未找到 plugin.yml: {}",
+    "starlight.logging.error.plugin.read_plugin_yml_failed": "读取 plugin.yml 失败: {}",
+    "starlight.logging.error.plugin.classloader_create_failed": "创建类加载器失败: {}",
+    "starlight.logging.error.plugin.main_class_not_found": "主类未找到: {} [{}]",
+    "starlight.logging.error.plugin.main_class_not_plugin": "主类 {} 未实现 IPlugin 接口",
+    "starlight.logging.error.plugin.instantiate_main_failed": "无法实例化主类 {}(确保存在无参构造器)",
+
     "starlight.unknown_error": "未知错误",
 
     "starlight.disconnect.failed_connect_default_server": "<red>无法连接到默认服务器 <server_name></red>\n<gray>请稍后再试</gray>",

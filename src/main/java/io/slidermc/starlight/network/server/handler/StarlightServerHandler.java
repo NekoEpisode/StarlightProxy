@@ -3,6 +3,7 @@ package io.slidermc.starlight.network.server.handler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.slidermc.starlight.StarlightProxy;
+import io.slidermc.starlight.api.event.events.internal.PlayerExitEvent;
 import io.slidermc.starlight.api.player.ProxiedPlayer;
 import io.slidermc.starlight.network.context.AttributeKeys;
 import io.slidermc.starlight.network.context.ConnectionContext;
@@ -40,6 +41,8 @@ public class StarlightServerHandler extends ChannelInboundHandlerAdapter {
                     downstream.close();
                 }
                 log.info(proxy.getTranslateManager().translate("starlight.logging.info.player.exit"), player.getGameProfile().username(), player.getGameProfile().uuid());
+                PlayerExitEvent playerExitEvent = new PlayerExitEvent(player);
+                proxy.getEventManager().fireAsync(playerExitEvent);
             }
         }
     }

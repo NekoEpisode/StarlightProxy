@@ -207,6 +207,9 @@ public class Main {
 
         registryPacketUtils.registerByAutoMapping(Key.key("minecraft:custom_payload"), ProtocolState.PLAY, ProtocolDirection.CLIENTBOUND, ClientboundPluginMessagePlayPacket::new);
         r.registerListener(ClientboundPluginMessagePlayPacket.class, "default", new ClientboundPluginMessagePlayPacket.Listener());
+
+        registryPacketUtils.registerByAutoMapping(Key.key("minecraft:login"), ProtocolState.PLAY, ProtocolDirection.CLIENTBOUND, ClientboundLoginPlayPacket::new);
+        r.registerListener(ClientboundLoginPlayPacket.class, "default", new ClientboundLoginPlayPacket.Listener());
     }
 
     private static void registerServerboundPackets(RegistryPacketUtils registryPacketUtils) {
