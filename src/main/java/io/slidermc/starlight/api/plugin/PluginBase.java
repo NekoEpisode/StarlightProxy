@@ -67,9 +67,16 @@ public abstract class PluginBase implements IPlugin {
     public void onLoad(TranslateManager translateManager) {}
 
     @Override
-    public void onEnable(StarlightProxy proxy) {
+    public final void onEnable(StarlightProxy proxy) {
         this.proxy = proxy;
+        onEnable$0();
     }
+
+    /**
+     * 请实现此方法而非onEnable
+     * 使用proxy字段来获得反代实例
+     */
+    abstract void onEnable$0();
 
     @Override
     public void onDisable() {}
@@ -82,7 +89,7 @@ public abstract class PluginBase implements IPlugin {
 
     @Override
     public void registerListener(String listenerId, io.slidermc.starlight.api.event.EventListener listener) {
-        if (proxy == null) throw new IllegalStateException("proxy field is null, do you forget to call super.onEnable in onEnable?");
+        if (proxy == null) throw new IllegalStateException("proxy field is null");
         proxy.getEventManager().register(this, listenerId, listener);
     }
 
@@ -93,7 +100,7 @@ public abstract class PluginBase implements IPlugin {
 
     @Override
     public void unregisterListener(String listenerId) {
-        if (proxy == null) return;
+        if (proxy == null) throw new IllegalStateException("proxy field is null");
         proxy.getEventManager().unregister(this, listenerId);
     }
 }
