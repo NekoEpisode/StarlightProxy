@@ -3,11 +3,11 @@ package io.slidermc.starlight.api.event.events.internal;
 import io.slidermc.starlight.api.event.events.helper.PluginMessageResult;
 import io.slidermc.starlight.api.event.events.interfaces.ICancellableEvent;
 import io.slidermc.starlight.api.event.events.interfaces.IDirectionEvent;
-import io.slidermc.starlight.api.event.events.interfaces.IResultableEvent;
+import io.slidermc.starlight.api.event.events.interfaces.IResultfulEvent;
 import io.slidermc.starlight.network.protocolenum.ProtocolDirection;
 import net.kyori.adventure.key.Key;
 
-public class ReceivePluginMessageEvent implements IDirectionEvent, ICancellableEvent, IResultableEvent {
+public class ReceivePluginMessageEvent implements IDirectionEvent, ICancellableEvent, IResultfulEvent {
     private Key key;
     private byte[] data;
 
