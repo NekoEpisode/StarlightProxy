@@ -4,6 +4,7 @@ import io.netty.channel.Channel;
 import io.slidermc.starlight.StarlightProxy;
 import io.slidermc.starlight.api.player.ProxiedPlayer;
 import io.slidermc.starlight.data.clientinformation.ClientInformation;
+import io.slidermc.starlight.network.packet.IMinecraftPacket;
 import io.slidermc.starlight.network.protocolenum.ProtocolState;
 
 import java.util.Optional;
@@ -115,5 +116,17 @@ public class ConnectionContext {
 
     public String getLocale() {
         return (getClientInformation().isPresent() ? getClientInformation().get().getLocale() : proxy.getTranslateManager().getActiveLocale());
+    }
+
+    public CompletableFuture<Void> toDownstream(IMinecraftPacket packet) {
+        CompletableFuture<Void> future = new CompletableFuture<>();
+        downstreamChannel.writeAndFlush(packet).addListener(ctx -> {
+            if (ctx.isSuccess()) {
+                future.complete(null);
+            } else {
+                future.completeExceptionally(ctx.cause());
+            }
+        });
+        return future;
     }
 }
