@@ -152,7 +152,7 @@ public class MinecraftCodecUtils {
     public static int[] readPosition(ByteBuf buf) {
         long val = buf.readLong();
         int x = (int) (val >> 38);
-        int y = (int) (val & 0xFFF);
+        int y = (int) ((val << 52) >> 52);
         int z = (int) ((val << 26 >> 38));
         return new int[]{x, y, z};
     }
