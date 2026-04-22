@@ -28,11 +28,15 @@ public class TestCommand extends StarlightCommand {
                             if (ctx.getSource().asProxiedPlayer().isPresent()) {
                                 String brand = StringArgumentType.getString(ctx, "brand");
                                 ByteBuf byteBuf = Unpooled.buffer();
-                                MinecraftCodecUtils.writeString(byteBuf, brand);
-                                byte[] data = new byte[byteBuf.readableBytes()];
-                                byteBuf.readBytes(data);
-                                ctx.getSource().asProxiedPlayer().get().sendPluginMessage(Key.key("minecraft:brand"), data);
-                                ctx.getSource().sendMessage(Component.text("已发送brand: " + brand));
+                                try {
+                                    MinecraftCodecUtils.writeString(byteBuf, brand);
+                                    byte[] data = new byte[byteBuf.readableBytes()];
+                                    byteBuf.readBytes(data);
+                                    ctx.getSource().asProxiedPlayer().get().sendPluginMessage(Key.key("minecraft:brand"), data);
+                                    ctx.getSource().sendMessage(Component.text("已发送brand: " + brand));
+                                } finally {
+                                    byteBuf.release();
+                                }
                             } else {
                                 ctx.getSource().sendMessage(Component.text("这个命令只能是玩家使用！"));
                             }
