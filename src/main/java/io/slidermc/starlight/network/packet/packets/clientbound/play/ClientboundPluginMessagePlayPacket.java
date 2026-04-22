@@ -53,6 +53,7 @@ public class ClientboundPluginMessagePlayPacket implements IMinecraftPacket {
     public static class Listener implements IPacketListener<ClientboundPluginMessagePlayPacket> {
         @Override
         public void handle(ClientboundPluginMessagePlayPacket packet, ChannelHandlerContext ctx, StarlightProxy proxy) {
+            // 能进入 Play 状态则所有下游上下文已初始化完成
             ctx.channel().attr(AttributeKeys.DOWNSTREAM_CONNECTION_CONTEXT).get().getClient().getPlayerChannel().writeAndFlush(packet);
         }
     }
