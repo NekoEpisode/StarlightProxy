@@ -6,6 +6,7 @@ import io.slidermc.starlight.commands.GlistCommand;
 import io.slidermc.starlight.commands.ServerCommand;
 import io.slidermc.starlight.commands.StarlightMainCommand;
 import io.slidermc.starlight.config.StarlightConfig;
+import io.slidermc.starlight.eventlisteners.PluginMessageEventListener;
 import io.slidermc.starlight.manager.ServerManager;
 import io.slidermc.starlight.network.packet.PacketRegistry;
 import io.slidermc.starlight.network.packet.RegistryPacketUtils;
@@ -18,15 +19,13 @@ import io.slidermc.starlight.network.packet.packets.clientbound.status.Clientbou
 import io.slidermc.starlight.network.packet.packets.clientbound.status.ClientboundStatusResponsePacket;
 import io.slidermc.starlight.network.packet.packets.serverbound.configuration.ServerboundClientInformationConfigurationPacket;
 import io.slidermc.starlight.network.packet.packets.serverbound.configuration.ServerboundFinishConfigurationAckPacket;
+import io.slidermc.starlight.network.packet.packets.serverbound.configuration.ServerboundPluginMessageConfigurationPacket;
 import io.slidermc.starlight.network.packet.packets.serverbound.handshake.ServerboundHandshakePacket;
 import io.slidermc.starlight.network.packet.packets.serverbound.login.ServerboundEncryptionResponsePacket;
 import io.slidermc.starlight.network.packet.packets.serverbound.login.ServerboundLoginAckPacket;
 import io.slidermc.starlight.network.packet.packets.serverbound.login.ServerboundLoginStartPacket;
 import io.slidermc.starlight.network.packet.packets.serverbound.login.ServerboundPluginResponsePacket;
-import io.slidermc.starlight.network.packet.packets.serverbound.play.ServerboundChatCommandPacket;
-import io.slidermc.starlight.network.packet.packets.serverbound.play.ServerboundClientInformationPlayPacket;
-import io.slidermc.starlight.network.packet.packets.serverbound.play.ServerboundCommandSuggestionPacket;
-import io.slidermc.starlight.network.packet.packets.serverbound.play.ServerboundConfigurationAckPacket;
+import io.slidermc.starlight.network.packet.packets.serverbound.play.*;
 import io.slidermc.starlight.network.packet.packets.serverbound.status.ServerboundPingRequestPacket;
 import io.slidermc.starlight.network.packet.packets.serverbound.status.ServerboundStatusRequestPacket;
 import io.slidermc.starlight.network.protocolenum.ProtocolDirection;
@@ -133,6 +132,9 @@ public class Main {
         proxy.getCommandManager().register(new StarlightMainCommand(proxy));
         proxy.getCommandManager().register(new GlistCommand(proxy));
         // proxy.getCommandManager().register(new TestCommand());
+
+        // 注册内置监听器
+        proxy.getEventManager().register("pluginmessage-1", new PluginMessageEventListener());
 
         // 开始监听
         proxy.start();
@@ -243,6 +245,9 @@ public class Main {
         registryPacketUtils.registerByAutoMapping(Key.key("minecraft:client_information"), ProtocolState.CONFIGURATION, ProtocolDirection.SERVERBOUND, ServerboundClientInformationConfigurationPacket::new);
         r.registerListener(ServerboundClientInformationConfigurationPacket.class, "default", new ServerboundClientInformationConfigurationPacket.Listener());
 
+        registryPacketUtils.registerByAutoMapping(Key.key("minecraft:custom_payload"), ProtocolState.CONFIGURATION, ProtocolDirection.SERVERBOUND, ServerboundPluginMessageConfigurationPacket::new);
+        r.registerListener(ServerboundPluginMessageConfigurationPacket.class, "default", new ServerboundPluginMessageConfigurationPacket.Listener());
+
         registryPacketUtils.registerByAutoMapping(Key.key("minecraft:configuration_acknowledged"), ProtocolState.PLAY, ProtocolDirection.SERVERBOUND, ServerboundConfigurationAckPacket::new);
         r.registerListener(ServerboundConfigurationAckPacket.class, "default", new ServerboundConfigurationAckPacket.Listener());
 
@@ -254,5 +259,8 @@ public class Main {
 
         registryPacketUtils.registerByAutoMapping(Key.key("minecraft:client_information"), ProtocolState.PLAY, ProtocolDirection.SERVERBOUND, ServerboundClientInformationPlayPacket::new);
         r.registerListener(ServerboundClientInformationPlayPacket.class, "default", new ServerboundClientInformationPlayPacket.Listener());
+
+        registryPacketUtils.registerByAutoMapping(Key.key("minecraft:custom_payload"), ProtocolState.PLAY, ProtocolDirection.SERVERBOUND, ServerboundPluginMessagePlayPacket::new);
+        r.registerListener(ServerboundPluginMessagePlayPacket.class, "default", new ServerboundPluginMessagePlayPacket.Listener());
     }
 }

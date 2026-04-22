@@ -1,4 +1,4 @@
-package io.slidermc.starlight.network.packet.packets.clientbound.play;
+package io.slidermc.starlight.network.packet.packets.serverbound.play;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
@@ -13,13 +13,13 @@ import io.slidermc.starlight.network.protocolenum.ProtocolVersion;
 import io.slidermc.starlight.utils.EventUtils;
 import net.kyori.adventure.key.Key;
 
-public class ClientboundPluginMessagePlayPacket implements IMinecraftPacket {
+public class ServerboundPluginMessagePlayPacket implements IMinecraftPacket {
     private Key key;
     private byte[] data;
 
-    public ClientboundPluginMessagePlayPacket() {}
+    public ServerboundPluginMessagePlayPacket() {}
 
-    public ClientboundPluginMessagePlayPacket(Key key, byte[] data) {
+    public ServerboundPluginMessagePlayPacket(Key key, byte[] data) {
         this.key = key;
         this.data = data;
     }
@@ -53,10 +53,10 @@ public class ClientboundPluginMessagePlayPacket implements IMinecraftPacket {
         this.data = data;
     }
 
-    public static class Listener implements IPacketListener<ClientboundPluginMessagePlayPacket> {
+    public static class Listener implements IPacketListener<ServerboundPluginMessagePlayPacket> {
         @Override
-        public void handle(ClientboundPluginMessagePlayPacket packet, ChannelHandlerContext ctx, StarlightProxy proxy) {
-            EventUtils.createPluginMessageEventAndAsyncFire(ProtocolDirection.CLIENTBOUND, packet.key, packet.data, proxy)
+        public void handle(ServerboundPluginMessagePlayPacket packet, ChannelHandlerContext ctx, StarlightProxy proxy) {
+            EventUtils.createPluginMessageEventAndAsyncFire(ProtocolDirection.SERVERBOUND, packet.key, packet.data, proxy)
                     .whenComplete((event, throwable) -> {
                         PluginMessageResult pluginMessageResult = PluginMessageResult.NONE;
 
@@ -75,8 +75,8 @@ public class ClientboundPluginMessagePlayPacket implements IMinecraftPacket {
                     });
         }
 
-        private void send(ChannelHandlerContext ctx, ClientboundPluginMessagePlayPacket packet) {
-            ctx.channel().attr(AttributeKeys.DOWNSTREAM_CONNECTION_CONTEXT).get().toUpstream(packet);
+        private void send(ChannelHandlerContext ctx, ServerboundPluginMessagePlayPacket packet) {
+            ctx.channel().attr(AttributeKeys.CONNECTION_CONTEXT).get().toDownstream(packet);
         }
     }
 }
