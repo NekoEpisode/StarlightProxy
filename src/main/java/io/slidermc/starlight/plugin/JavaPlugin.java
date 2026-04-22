@@ -66,7 +66,7 @@ public abstract class JavaPlugin implements IPlugin {
      * 请实现此方法而非onEnable
      * 使用proxy字段来获得反代实例
      */
-    abstract void onEnable$0();
+    public void onEnable$0() {}
 
     @Override
     public void onDisable() {}
