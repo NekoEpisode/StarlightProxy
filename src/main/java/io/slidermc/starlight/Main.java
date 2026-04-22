@@ -2,7 +2,9 @@ package io.slidermc.starlight;
 
 import io.slidermc.starlight.api.server.ProxiedServer;
 import io.slidermc.starlight.api.translate.TranslateManager;
+import io.slidermc.starlight.commands.GlistCommand;
 import io.slidermc.starlight.commands.ServerCommand;
+import io.slidermc.starlight.commands.StarlightMainCommand;
 import io.slidermc.starlight.config.StarlightConfig;
 import io.slidermc.starlight.manager.ServerManager;
 import io.slidermc.starlight.network.packet.PacketRegistry;
@@ -128,6 +130,8 @@ public class Main {
 
         // 注册内置代理命令
         proxy.getCommandManager().register(new ServerCommand(proxy));
+        proxy.getCommandManager().register(new StarlightMainCommand(proxy));
+        proxy.getCommandManager().register(new GlistCommand(proxy));
         // proxy.getCommandManager().register(new TestCommand());
 
         // 开始监听
