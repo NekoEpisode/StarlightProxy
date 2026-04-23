@@ -8,8 +8,6 @@ import io.slidermc.starlight.api.command.source.IStarlightCommandSource;
 import io.slidermc.starlight.api.player.ProxiedPlayer;
 import io.slidermc.starlight.network.context.ConnectionContext;
 import io.slidermc.starlight.utils.MiniMessageUtils;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 
 import java.util.Optional;
@@ -82,7 +80,9 @@ public class ServerCommand extends StarlightCommand {
                                 }
                             },
                             () -> ctx.getSource().sendMessage(
-                                    Component.text(proxy.getTranslateManager().translate("starlight.command.only_player_can_use_command"), NamedTextColor.RED)
+                                    MiniMessageUtils.MINI_MESSAGE.deserialize(
+                                            proxy.getTranslateManager().translate("starlight.command.only_player_can_use_command")
+                                    )
                             )
                     );
                     return 1;

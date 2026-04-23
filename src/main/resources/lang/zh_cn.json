@@ -108,7 +108,7 @@
     "starlight.command.server.already_on_target_server": "<red>你已经在服务器 <server_name> 上了</red>",
     "starlight.command.server.connecting": "<green>正在连接到 <server_name>...</green>",
 
-    "starlight.command.only_player_can_use_command": "<red>只有玩家才能使用此命令<red>",
+    "starlight.command.only_player_can_use_command": "<red>只有玩家才能使用此命令</red>",
     "starlight.command.usage": "<red>用法: <usage></red>",
 
     "starlight.command.starlight.brief": " <gray>— <version></gray>",
@@ -142,6 +142,8 @@
     "starlight.command.glist.help.summary": "<gray>  /glist</gray> <dark_gray>— 显示全局在线人数与服务器数量</dark_gray>",
     "starlight.command.glist.help.all": "<gray>  /glist all</gray> <dark_gray>— 列出所有有玩家在线的服务器</dark_gray>",
     "starlight.command.glist.help.all_force": "<gray>  /glist all force</gray> <dark_gray>— 列出所有服务器(包括空服务器)</dark_gray>",
-    "starlight.command.glist.help.server": "<gray>  /glist <服务器名></gray> <dark_gray>— 查看指定服务器的玩家列表</dark_gray>"
+    "starlight.command.glist.help.server": "<gray>  /glist <服务器名></gray> <dark_gray>— 查看指定服务器的玩家列表</dark_gray>",
+
+    "starlight.logging.warn.console.init_failed": "控制台初始化失败: {}，将在无交互控制台模式下运行"
   }
 }
