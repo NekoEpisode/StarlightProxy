@@ -16,6 +16,8 @@ import io.slidermc.starlight.network.protocolenum.ProtocolState;
 import io.slidermc.starlight.switcher.ModernServerSwitcher;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -24,20 +26,27 @@ import java.util.concurrent.ConcurrentLinkedDeque;
 
 public class ProxiedPlayer implements IStarlightCommandSource {
     private static final int RECONFIGURATION_MIN_VERSION = 764;
+    private static final Logger log = LoggerFactory.getLogger(ProxiedPlayer.class);
 
     private final GameProfile gameProfile;
     private final Channel channel;
     private final StarlightProxy proxy;
+
     private final ConcurrentLinkedDeque<InQueueMessage> pendingMessageQueue = new ConcurrentLinkedDeque<>();
+    private volatile boolean canSendMessages = false;
 
     private final Map<ContextKey<?>, Object> contextMap = new ConcurrentHashMap<>();
 
     private volatile ProxiedServer currentServer;
+    private volatile ProxiedServer previousServer;
 
-    public ProxiedPlayer(GameProfile gameProfile, Channel channel, StarlightProxy proxy) {
+    private volatile boolean isOnline;
+
+    public ProxiedPlayer(GameProfile gameProfile, Channel channel, StarlightProxy proxy, boolean isOnline) {
         this.gameProfile = gameProfile;
         this.channel = channel;
         this.proxy = proxy;
+        this.isOnline = isOnline;
     }
 
     public CompletableFuture<Void> connect(ProxiedServer target) {
@@ -72,6 +81,7 @@ public class ProxiedPlayer implements IStarlightCommandSource {
 
     public void setCurrentServer(ProxiedServer server) {
         this.currentServer = server;
+        log.debug("当前服务器设置到: {}", server);
     }
 
     /**
@@ -89,7 +99,7 @@ public class ProxiedPlayer implements IStarlightCommandSource {
     }
 
     private void doSendMessage(Component component) {
-        if (getConnectionContext().getOutboundState() != ProtocolState.PLAY) {
+        if (!canSendMessages) {
             pendingMessageQueue.addLast(new InQueueMessage(component, false));
             return;
         }
@@ -109,7 +119,7 @@ public class ProxiedPlayer implements IStarlightCommandSource {
     }
 
     private void doSendActionbar(Component component) {
-        if (getConnectionContext().getOutboundState() != ProtocolState.PLAY) {
+        if (!canSendMessages) {
             pendingMessageQueue.addLast(new InQueueMessage(component, true));
             return;
         }
@@ -197,16 +207,41 @@ public class ProxiedPlayer implements IStarlightCommandSource {
         return future;
     }
 
+    public Optional<ProxiedServer> getPreviousServer() {
+        return Optional.ofNullable(previousServer);
+    }
+
+    public void setPreviousServer(ProxiedServer previousServer) {
+        this.previousServer = previousServer;
+        log.debug("上一个服务器设置到: {}", previousServer);
+    }
+
+    public boolean isCanSendMessages() {
+        return canSendMessages;
+    }
+
+    public void setCanSendMessages(boolean canSendMessages) {
+        this.canSendMessages = canSendMessages;
+    }
+
+    public boolean isOnline() {
+        return isOnline;
+    }
+
+    public void setOnline(boolean online) {
+        isOnline = online;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;
         ProxiedPlayer player = (ProxiedPlayer) o;
-        return Objects.equals(gameProfile, player.gameProfile) && Objects.equals(channel, player.channel) && Objects.equals(proxy, player.proxy);
+        return Objects.equals(gameProfile.uuid(), player.gameProfile.uuid());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(gameProfile, channel, proxy);
+        return Objects.hash(gameProfile, channel, proxy, pendingMessageQueue, contextMap, currentServer, previousServer);
     }
 
     @Override
@@ -215,6 +250,10 @@ public class ProxiedPlayer implements IStarlightCommandSource {
                 "gameProfile=" + gameProfile +
                 ", channel=" + channel +
                 ", proxy=" + proxy +
+                ", pendingMessageQueue=" + pendingMessageQueue +
+                ", contextMap=" + contextMap +
+                ", currentServer=" + currentServer +
+                ", previousServer=" + previousServer +
                 '}';
     }
 

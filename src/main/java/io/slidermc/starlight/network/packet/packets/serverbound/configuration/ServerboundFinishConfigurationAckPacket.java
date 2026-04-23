@@ -3,6 +3,7 @@ package io.slidermc.starlight.network.packet.packets.serverbound.configuration;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.slidermc.starlight.StarlightProxy;
+import io.slidermc.starlight.api.event.events.internal.PlayerServerConnectedEvent;
 import io.slidermc.starlight.network.client.StarlightMinecraftClient;
 import io.slidermc.starlight.network.context.AttributeKeys;
 import io.slidermc.starlight.network.context.ConnectionContext;
@@ -34,6 +35,9 @@ public class ServerboundFinishConfigurationAckPacket implements IMinecraftPacket
                 StarlightMinecraftClient client = downstreamConnectionContext.getClient();
                 client.setOutboundState(ProtocolState.PLAY);
                 log.debug("下游Outbound设置为PLAY [4]");
+
+                PlayerServerConnectedEvent event = new PlayerServerConnectedEvent(context.getPlayer(), context.getPlayer().getPreviousServer().orElse(null), context.getPlayer().getCurrentServer().orElse(null));
+                proxy.getEventManager().fireAsync(event);
             });
         }
     }

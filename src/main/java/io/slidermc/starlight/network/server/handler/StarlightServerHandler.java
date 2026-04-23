@@ -1,5 +1,6 @@
 package io.slidermc.starlight.network.server.handler;
 
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.slidermc.starlight.StarlightProxy;
@@ -36,7 +37,8 @@ public class StarlightServerHandler extends ChannelInboundHandlerAdapter {
             ProxiedPlayer player = context.getPlayer();
             if (player != null) {
                 proxy.getPlayerManager().removePlayer(player.getGameProfile().uuid());
-                io.netty.channel.Channel downstream = player.getConnectionContext().getDownstreamChannel();
+                player.setOnline(false);
+                Channel downstream = player.getConnectionContext().getDownstreamChannel();
                 if (downstream != null) {
                     downstream.close();
                 }
@@ -45,6 +47,7 @@ public class StarlightServerHandler extends ChannelInboundHandlerAdapter {
                 proxy.getEventManager().fireAsync(playerExitEvent);
             }
         }
+        ctx.channel().close();
     }
 
     @Override

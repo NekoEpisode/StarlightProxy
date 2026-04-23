@@ -77,6 +77,7 @@ public class ServerboundLoginAckPacket implements IMinecraftPacket {
                         log.debug("设置上游和下游的连接");
                         context.setDownstreamChannel(client.getChannel());
                         context.getPlayer().setCurrentServer(proxy.getServerManager().getDefaultServer());
+                        context.getPlayer().setPreviousServer(null);
                         // 下游登录完成，恢复读取，之前 buffer 的 CONFIGURATION 包现在开始转发
                         ctx.channel().config().setAutoRead(true);
                     });

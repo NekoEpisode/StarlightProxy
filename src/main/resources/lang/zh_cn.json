@@ -92,6 +92,7 @@
 
     "starlight.disconnect.failed_connect_default_server": "<red>无法连接到默认服务器 <server_name></red>\n<gray>请稍后再试</gray>",
     "starlight.disconnect.login_failed": "<red>登录失败: <error_msg></red>",
+    "starlight.disconnect.backend_requires_online_mode": "<red>后端服务器需要正版模式(online-mode)</red>",
     "starlight.disconnect.downstream_requires_modern_forwarding": "<red>服务器要求Velocity Modern Forwarding，但代理未启用此功能</red>",
 
     "starlight.error.forwarding.non_inet_address": "<red>内部错误: 玩家远程地址格式错误</red>",
