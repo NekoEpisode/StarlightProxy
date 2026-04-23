@@ -14,6 +14,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.stream.Stream;
@@ -37,16 +38,16 @@ public class PluginManager {
     private final TranslateManager translateManager;
 
     /** 已排序的插件容器列表，顺序即为启用顺序。 */
-    private final List<PluginContainer> orderedPlugins = new ArrayList<>();
+    private final List<PluginContainer> orderedPlugins = new CopyOnWriteArrayList<>();
 
     /** 在加载阶段（loadPhase）期间通过 registerPlugin 注册的内存插件暂存队列。 */
-    private final List<PluginContainer> pendingMemoryPlugins = new ArrayList<>();
+    private final List<PluginContainer> pendingMemoryPlugins = new CopyOnWriteArrayList<>();
 
     /** 是否处于加载阶段（即正在执行 onLoad 回调期间）。 */
-    private boolean loadPhaseActive = false;
+    private volatile boolean loadPhaseActive = false;
 
     /** 已启动的代理实例，enableAll 后设置。 */
-    private StarlightProxy proxy = null;
+    private volatile StarlightProxy proxy = null;
 
     /**
      * 构造插件管理器。

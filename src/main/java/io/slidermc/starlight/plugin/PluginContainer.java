@@ -12,7 +12,7 @@ final class PluginContainer {
     private final PluginDescription description;
     private final IPlugin plugin;
     private final PluginClassLoader classLoader;
-    private boolean enabled = false;
+    private volatile boolean enabled = false;
 
     PluginContainer(PluginDescription description, IPlugin plugin, PluginClassLoader classLoader) {
         this.description = description;

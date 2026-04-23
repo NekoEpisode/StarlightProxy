@@ -8,6 +8,8 @@ import io.slidermc.starlight.api.translate.TranslateManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.atomic.AtomicLong;
+
 /**
  * JAR插件的抽象基类。
  *
@@ -23,7 +25,7 @@ public abstract class JavaPlugin implements IPlugin {
     private PluginManager pluginManager;
     protected StarlightProxy proxy;
 
-    private long currentId;
+    private final AtomicLong currentId = new AtomicLong(0);
 
     /**
      * 由 {@link PluginManager} 在实例化后立即调用，完成必要字段注入。
@@ -84,7 +86,7 @@ public abstract class JavaPlugin implements IPlugin {
 
     @Override
     public void registerListener(EventListener listener) {
-        registerListener("listener-" + currentId++, listener);
+        registerListener("listener-" + currentId.getAndIncrement(), listener);
     }
 
     @Override

@@ -40,9 +40,9 @@ public class StarlightMinecraftClient {
     private volatile boolean isConnected = false;
 
     /** Filled in by login() before the first non-HANDSHAKE packet is sent/received. */
-    private ProtocolVersion protocolVersion;
-    private ProtocolState outboundState;
-    private ProtocolState inboundState;
+    private volatile ProtocolVersion protocolVersion;
+    private volatile ProtocolState outboundState;
+    private volatile ProtocolState inboundState;
     /** The upstream player channel paired with this downstream connection. Set externally after login completes. */
     private volatile Channel playerChannel;
     /** True when this client is being used for a server switch; suppresses upstream player disconnect on login failure. */

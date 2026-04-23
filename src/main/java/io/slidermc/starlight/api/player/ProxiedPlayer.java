@@ -222,6 +222,13 @@ public class ProxiedPlayer implements IStarlightCommandSource {
 
     public void setCanSendMessages(boolean canSendMessages) {
         this.canSendMessages = canSendMessages;
+        if (canSendMessages) {
+            if (channel.eventLoop().inEventLoop()) {
+                sendAllPendingMessages();
+            } else {
+                channel.eventLoop().execute(this::sendAllPendingMessages);
+            }
+        }
     }
 
     public boolean isOnline() {
@@ -234,14 +241,14 @@ public class ProxiedPlayer implements IStarlightCommandSource {
 
     @Override
     public boolean equals(Object o) {
-        if (o == null || getClass() != o.getClass()) return false;
-        ProxiedPlayer player = (ProxiedPlayer) o;
-        return Objects.equals(gameProfile.uuid(), player.gameProfile.uuid());
+        if (this == o) return true;
+        if (!(o instanceof ProxiedPlayer other)) return false;
+        return gameProfile.uuid().equals(other.gameProfile.uuid());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(gameProfile, channel, proxy, pendingMessageQueue, contextMap, currentServer, previousServer);
+        return gameProfile.uuid().hashCode();
     }
 
     @Override

@@ -128,24 +128,29 @@ public class ServerboundChatPacket implements IMinecraftPacket {
             ProxiedPlayer player = ctx.channel().attr(AttributeKeys.CONNECTION_CONTEXT).get().getPlayer();
             PlayerChatEvent event = new PlayerChatEvent(player, packet.message);
             proxy.getEventManager().fireAsync(event).whenComplete((chatEvent, throwable) -> {
-                if (throwable != null) {
-                    log.warn("PlayerChatEvent dispatch failed for {}", player.getGameProfile().username(), throwable); // TODO: 改为使用翻译
-                    ctx.channel().attr(AttributeKeys.CONNECTION_CONTEXT).get().toDownstream(packet);
-                    return;
-                }
-
-                if (!chatEvent.isCancelled()) {
-                    String message = packet.message;
-
-                    if (!message.equals(chatEvent.getMessage())) {
-                        // 由于聊天签名机制，修改消息内容会导致签名验证失败
-                        // 在 online-mode 服务器上，这可能导致玩家被踢出
-                        log.debug("Chat message from {} was modified: {} -> {}", player.getGameProfile().username(), message, event.getMessage());
-                        packet.message = event.getMessage();
-                        packet.signature = null; // 清除签名，因为消息已被修改
+                Runnable action = () -> {
+                    if (throwable != null) {
+                        log.warn("PlayerChatEvent dispatch failed for {}", player.getGameProfile().username(), throwable); // TODO: 改为使用翻译
+                        ctx.channel().attr(AttributeKeys.CONNECTION_CONTEXT).get().toDownstream(packet);
+                        return;
                     }
 
-                    ctx.channel().attr(AttributeKeys.CONNECTION_CONTEXT).get().toDownstream(packet);
+                    if (!chatEvent.isCancelled()) {
+                        String message = packet.message;
+
+                        if (!message.equals(chatEvent.getMessage())) {
+                            log.debug("Chat message from {} was modified: {} -> {}", player.getGameProfile().username(), message, event.getMessage());
+                            packet.message = event.getMessage();
+                            packet.signature = null;
+                        }
+
+                        ctx.channel().attr(AttributeKeys.CONNECTION_CONTEXT).get().toDownstream(packet);
+                    }
+                };
+                if (ctx.channel().eventLoop().inEventLoop()) {
+                    action.run();
+                } else {
+                    ctx.channel().eventLoop().execute(action);
                 }
             });
         }
