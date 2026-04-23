@@ -236,7 +236,7 @@ public class ProxiedPlayer implements IStarlightCommandSource {
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;
         ProxiedPlayer player = (ProxiedPlayer) o;
-        return Objects.equals(gameProfile, player.gameProfile) && Objects.equals(channel, player.channel) && Objects.equals(proxy, player.proxy) && Objects.equals(pendingMessageQueue, player.pendingMessageQueue) && Objects.equals(contextMap, player.contextMap) && Objects.equals(currentServer, player.currentServer) && Objects.equals(previousServer, player.previousServer);
+        return Objects.equals(gameProfile.uuid(), player.gameProfile.uuid());
     }
 
     @Override
