@@ -19,7 +19,7 @@
 
 ## 项目要求
 1. 所有的**非'debug'级别日志(info/warn/error)都应该使用TranslateManager进行翻译**(获取不到TranslateManager的地方除外, 但可以通过注入来解决), 可以从StarlightProxy实例(Main里初始化)中获得TranslateManager实例  
-新翻译文件应放置在resources/lang目录下, 格式为JSON, 具体可以查看已有翻译文件进行参考, 文件名格式为"xx_xx.json", 应该遵循Minecraft语言文件格式, Starlight在启动时将会自动遍历并加载语言文件  
+新翻译文件应放置在resources/lang目录下, 格式为JSON, 具体可以查看已有翻译文件进行参考, 文件名格式为"xx_xx.json", 应该遵循Minecraft语言文件locale名称格式, Starlight在启动时将会自动遍历并加载语言文件  
 发送给玩家的消息应该使用ConnectionContext.getTranslation来进行针对玩家客户端语言的翻译, 可以使用MiniMessage进行翻译文件中的内容解析, 不要使用MiniMessage.minimessage()创建新实例, 请使用MiniMessageUtils.MINI_MESSAGE  
 翻译键必须在所有语言文件中相同  
 关于翻译键的具体格式, 可以查看现有的翻译文件进行参考
