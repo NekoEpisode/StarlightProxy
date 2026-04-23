@@ -1,4 +1,7 @@
+import com.mojang.brigadier.CommandDispatcher;
 import io.slidermc.starlight.api.command.CommandManager;
+import io.slidermc.starlight.api.command.StarlightCommand;
+import io.slidermc.starlight.api.command.source.IStarlightCommandSource;
 import io.slidermc.starlight.api.event.EventHandler;
 import io.slidermc.starlight.api.event.EventManager;
 import io.slidermc.starlight.api.event.IStarlightEvent;
@@ -17,9 +20,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -227,6 +228,7 @@ public class ThreadSafetyTest {
 
         int readerCount = 50;
         int writerCount = 10;
+        int translationsPerWriter = 20;
         CountDownLatch startLatch = new CountDownLatch(1);
         CountDownLatch doneLatch = new CountDownLatch(readerCount + writerCount);
         AtomicInteger errors = new AtomicInteger(0);
@@ -251,7 +253,7 @@ public class ThreadSafetyTest {
             Thread.startVirtualThread(() -> {
                 try {
                     startLatch.await();
-                    for (int j = 0; j < 20; j++) {
+                    for (int j = 0; j < translationsPerWriter; j++) {
                         tm.addTranslation("test_locale_" + idx, "key" + j, "value" + j);
                     }
                 } catch (Exception e) {
@@ -265,6 +267,17 @@ public class ThreadSafetyTest {
         startLatch.countDown();
         assertTrue(doneLatch.await(10, TimeUnit.SECONDS), "应在超时内完成");
         assertEquals(0, errors.get(), "不应有并发读写异常");
+
+        for (int i = 0; i < writerCount; i++) {
+            String locale = "test_locale_" + i;
+            assertTrue(tm.hasLocale(locale), "并发写入后 locale 应存在: " + locale);
+            for (int j = 0; j < translationsPerWriter; j++) {
+                String key = "key" + j;
+                String expected = "value" + j;
+                assertEquals(expected, tm.translate(locale, key),
+                        "并发写入后翻译应完整: locale=" + locale + " key=" + key);
+            }
+        }
     }
 
     @Test
@@ -348,6 +361,25 @@ public class ThreadSafetyTest {
     }
 
     @Test
+    public void testConnectionContextVerifyTokenDefensiveCopy() throws Exception {
+        var ctx = new ConnectionContext(null);
+        byte[] original = new byte[]{1, 2, 3, 4};
+        ctx.setVerifyToken(original);
+
+        byte[] got = ctx.getVerifyToken();
+        assertArrayEquals(original, got, "getVerifyToken 应返回相等内容");
+        assertNotSame(original, got, "getVerifyToken 应返回副本而非内部引用");
+
+        got[0] = 99;
+        byte[] gotAgain = ctx.getVerifyToken();
+        assertEquals(1, gotAgain[0], "外部修改 getVerifyToken 返回值不应影响内部状态");
+
+        original[0] = 88;
+        byte[] gotAfterMutateOriginal = ctx.getVerifyToken();
+        assertEquals(1, gotAfterMutateOriginal[0], "修改传入 setVerifyToken 的数组不应影响内部状态");
+    }
+
+    @Test
     public void testDownstreamConnectionContextVolatileClient() throws Exception {
         var field = DownstreamConnectionContext.class.getDeclaredField("client");
         assertTrue(Modifier.isVolatile(field.getModifiers()), "DownstreamConnectionContext.client 应为 volatile");
@@ -388,9 +420,101 @@ public class ThreadSafetyTest {
     }
 
     @Test
-    public void testCommandManagerHasLock() throws Exception {
-        var field = CommandManager.class.getDeclaredField("lock");
-        assertEquals(Object.class, field.getType(), "CommandManager 应有 Object lock");
+    public void testProxiedPlayerEqualsAndHashCodeContract() throws Exception {
+        UUID sharedUuid = UUID.randomUUID();
+        ProxiedPlayer p1 = new ProxiedPlayer(
+                new GameProfile("name1", sharedUuid, List.of()), null, null, true);
+        ProxiedPlayer p2 = new ProxiedPlayer(
+                new GameProfile("name2", sharedUuid, List.of()), null, null, true);
+
+        assertEquals(p1, p2, "相同 UUID 的 ProxiedPlayer 应 equals");
+        assertEquals(p1.hashCode(), p2.hashCode(), "相同 UUID 的 ProxiedPlayer hashCode 应一致");
+
+        ProxiedPlayer p3 = new ProxiedPlayer(
+                new GameProfile("name1", UUID.randomUUID(), List.of()), null, null, true);
+        assertNotEquals(p1, p3, "不同 UUID 的 ProxiedPlayer 不应 equals");
+    }
+
+    /**
+     * 行为级并发测试：验证 CommandManager 在多线程下并发 register/unregister/execute/hasCommand
+     * 不会出现 ConcurrentModificationException 或状态不一致。
+     */
+    @Test
+    public void testCommandManagerConcurrencyBehavior() throws Exception {
+        CommandDispatcher<IStarlightCommandSource> dispatcher = new CommandDispatcher<>();
+        CommandManager commandManager = new CommandManager(dispatcher, null);
+        String commandName = "concurrent-test";
+
+        class TestSource implements IStarlightCommandSource {
+            @Override public void sendMessage(net.kyori.adventure.text.Component message) {}
+            @Override public Optional<ProxiedPlayer> asProxiedPlayer() { return Optional.empty(); }
+            @Override public <T> void setContext(io.slidermc.starlight.api.command.source.ContextKey<T> key, T value) {}
+            @Override public <T> Optional<T> getContext(io.slidermc.starlight.api.command.source.ContextKey<T> key) { return Optional.empty(); }
+            @Override public Set<io.slidermc.starlight.api.command.source.ContextKey<?>> contextKeys() { return Set.of(); }
+            @Override public boolean hasPermission(String permission) { return true; }
+        }
+
+        commandManager.register(new StarlightCommand(commandName) {
+            @Override
+            public com.mojang.brigadier.builder.LiteralArgumentBuilder<IStarlightCommandSource> build() {
+                return com.mojang.brigadier.builder.LiteralArgumentBuilder.<IStarlightCommandSource>literal(commandName)
+                        .executes(ctx -> 1);
+            }
+        });
+
+        int threadCount = 8;
+        int iterations = 200;
+        ExecutorService executor = Executors.newFixedThreadPool(threadCount);
+        CountDownLatch startLatch = new CountDownLatch(1);
+        CountDownLatch doneLatch = new CountDownLatch(threadCount);
+        ConcurrentLinkedQueue<Throwable> errors = new ConcurrentLinkedQueue<>();
+
+        for (int i = 0; i < threadCount; i++) {
+            final int threadIdx = i;
+            executor.submit(() -> {
+                try {
+                    startLatch.await();
+                    TestSource source = new TestSource();
+                    for (int j = 0; j < iterations; j++) {
+                        try {
+                            String name = (threadIdx % 2 == 0) ? commandName : ("other-" + threadIdx);
+                            int op = j % 3;
+                            if (op == 0) {
+                                commandManager.register(new StarlightCommand(name) {
+                                    @Override
+                                    public com.mojang.brigadier.builder.LiteralArgumentBuilder<IStarlightCommandSource> build() {
+                                        return com.mojang.brigadier.builder.LiteralArgumentBuilder.<IStarlightCommandSource>literal(name)
+                                                .executes(ctx -> 1);
+                                    }
+                                });
+                            } else if (op == 1) {
+                                commandManager.unregister(name);
+                            } else {
+                                commandManager.hasCommand(name);
+                                try {
+                                    commandManager.execute(name, source);
+                                } catch (Exception ignored) {
+                                    // 命令可能已被并发注销，执行失败是合法的
+                                }
+                            }
+                        } catch (ConcurrentModificationException | IllegalStateException e) {
+                            errors.add(e);
+                        }
+                    }
+                } catch (Throwable t) {
+                    errors.add(t);
+                } finally {
+                    doneLatch.countDown();
+                }
+            });
+        }
+
+        startLatch.countDown();
+        assertTrue(doneLatch.await(15, TimeUnit.SECONDS), "应在超时内完成");
+        executor.shutdownNow();
+
+        assertTrue(errors.isEmpty(),
+                "并发访问 CommandManager 时不应出现并发相关异常: " + errors);
     }
 
     @Test
@@ -406,5 +530,17 @@ public class ThreadSafetyTest {
         field.setAccessible(true);
         Object value = field.get(instance);
         assertInstanceOf(ConcurrentHashMap.class, value, "TranslateManager.languages 实际类型应为 ConcurrentHashMap，但为 " + value.getClass().getName());
+    }
+
+    @Test
+    public void testTranslateManagerLocaleOrderPreserved() throws Exception {
+        TranslateManager tm = new TranslateManager();
+        tm.addTranslation("alpha", "test", "A");
+        tm.addTranslation("beta", "test", "B");
+        tm.addTranslation("gamma", "test", "C");
+
+        List<String> locales = new ArrayList<>(tm.getLocales());
+        assertEquals(List.of("alpha", "beta", "gamma"), locales,
+                "locale 插入顺序应被保留");
     }
 }

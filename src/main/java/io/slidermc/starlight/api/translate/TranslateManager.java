@@ -13,6 +13,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * 翻译管理器，支持加载内置语言文件和外部 JSON 语言文件。
@@ -43,8 +44,11 @@ public class TranslateManager {
     /** 内置语言文件所在的资源目录 */
     private static final String LANG_RESOURCE_DIR = "lang/";
 
-    /** locale → 语言条目 */
+    /** locale → 语言条目。使用 {@link ConcurrentHashMap} 保证并发读写安全，迭代顺序不保证。 */
     private final Map<String, LanguageEntry> languages = new ConcurrentHashMap<>();
+
+    /** 维护 locale 的插入顺序，供 {@link #getLocaleNames()} 等需要有序遍历的场景使用。 */
+    private final List<String> localeOrder = new CopyOnWriteArrayList<>();
 
     private volatile String activeLocale = "en_us";
 
@@ -171,7 +175,7 @@ public class TranslateManager {
      * @return 不可修改的内部名称集合
      */
     public Set<String> getLocales() {
-        return Collections.unmodifiableSet(languages.keySet());
+        return Collections.unmodifiableSet(new LinkedHashSet<>(localeOrder));
     }
 
     /**
@@ -192,8 +196,11 @@ public class TranslateManager {
      */
     public Map<String, String> getLocaleNames() {
         Map<String, String> result = new LinkedHashMap<>();
-        for (Map.Entry<String, LanguageEntry> e : languages.entrySet()) {
-            result.put(e.getKey(), e.getValue().getDisplayName());
+        for (String locale : localeOrder) {
+            LanguageEntry entry = languages.get(locale);
+            if (entry != null) {
+                result.put(locale, entry.getDisplayName());
+            }
         }
         return Collections.unmodifiableMap(result);
     }
@@ -216,8 +223,12 @@ public class TranslateManager {
      * @param value  翻译文本
      */
     public void addTranslation(String locale, String key, String value) {
+        boolean isNew = !languages.containsKey(locale);
         languages.computeIfAbsent(locale, LanguageEntry::new)
                  .merge(Map.of(key, value));
+        if (isNew && !localeOrder.contains(locale)) {
+            localeOrder.add(locale);
+        }
     }
 
     /**
@@ -259,7 +270,11 @@ public class TranslateManager {
             }
 
             final String resolvedDisplayName = displayName;
+            boolean isNew = !languages.containsKey(locale);
             LanguageEntry entry = languages.computeIfAbsent(locale, _ -> new LanguageEntry(resolvedDisplayName));
+            if (isNew && !localeOrder.contains(locale)) {
+                localeOrder.add(locale);
+            }
             entry.setDisplayName(resolvedDisplayName);
             entry.merge(translations);
 

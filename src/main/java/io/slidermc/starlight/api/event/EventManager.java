@@ -172,6 +172,8 @@ public class EventManager {
      */
     public void unregisterAll(IPlugin plugin) {
         String pluginId = plugin.getDescription().name();
+        String pluginIdForLog = null;
+
         registryLock.lock();
         try {
             Set<String> keys = pluginListenerKeys.remove(pluginId);
@@ -186,9 +188,13 @@ public class EventManager {
                     }
                 }
             }
-            log.debug("已注销插件 [{}] 的所有事件监听器", pluginId);
+            pluginIdForLog = pluginId;
         } finally {
             registryLock.unlock();
+        }
+
+        if (pluginIdForLog != null && log.isDebugEnabled()) {
+            log.debug("已注销插件 [{}] 的所有事件监听器", pluginIdForLog);
         }
     }
 

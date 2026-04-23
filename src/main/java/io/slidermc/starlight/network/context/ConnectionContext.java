@@ -10,6 +10,13 @@ import io.slidermc.starlight.network.protocolenum.ProtocolState;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
+/**
+ * 上游（玩家客户端）连接的上下文信息。
+ *
+ * <p>此类中的字段均为 {@code volatile}，因为可能从 Netty 上游 EventLoop、下游 EventLoop、
+ * 事件线程池等多个线程访问。对于引用可变对象（如 {@code byte[]}）的字段，getter/setter
+ * 使用防御性拷贝以确保发布后不会被外部修改。
+ */
 public class ConnectionContext {
     private volatile HandshakeInformation handshakeInformation;
     private volatile ProtocolState inboundState;
@@ -97,11 +104,12 @@ public class ConnectionContext {
     }
 
     public byte[] getVerifyToken() {
-        return verifyToken;
+        byte[] token = this.verifyToken;
+        return token != null ? token.clone() : null;
     }
 
     public void setVerifyToken(byte[] verifyToken) {
-        this.verifyToken = verifyToken;
+        this.verifyToken = verifyToken != null ? verifyToken.clone() : null;
     }
 
     public String getPendingUsername() {
