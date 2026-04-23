@@ -92,6 +92,7 @@
 
     "starlight.disconnect.failed_connect_default_server": "<red>Could not connect to the default server <server_name></red>\n<gray>Please try again later</gray>",
     "starlight.disconnect.login_failed": "<red>Login failed: <error_msg></red>",
+    "starlight.disconnect.backend_requires_online_mode": "<red>Backend server requires online-mode</red>",
     "starlight.disconnect.downstream_requires_modern_forwarding": "<red>The server requires Velocity Modern Forwarding, but this proxy is not configured for it.</red>",
 
     "starlight.error.forwarding.non_inet_address": "<red>Internal error: invalid player remote address format</red>",
