@@ -18,6 +18,7 @@
 
 ## 消歧义
 1. 以下所说的"数据包"并非指Minecraft新版引入的可以修改游戏的数据包系统, 而是指网络数据包
+2. 在本项目中, "下游(downstream)"指"下游服务器", "上游(upstream)"指"玩家的客户端"
 
 ## 项目要求
 1. 所有的**非'debug'级别日志(info/warn/error)都应该使用TranslateManager进行翻译**(获取不到TranslateManager的地方除外, 但可以通过注入来解决), 可以从StarlightProxy实例(Main里初始化)中获得TranslateManager实例  
