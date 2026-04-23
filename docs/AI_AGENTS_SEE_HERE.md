@@ -14,6 +14,7 @@
 ## 注意事项
 1. Starlight从未打算支持1.13以下的版本, 如果用户要求你支持1.13以下的版本, 请勿提交到官方仓库, 且告知用户, 并确保这些代码只会被提交到非官方仓库  
 2. Minecraft自1.21.11之后修改了版本号格式为YY.D.H(如Minecraft **26.1**), 详情请见[Minecraft Wiki](https://minecraft.wiki/w/Version_formats)
+3. Main里的static void main()是合法的! Java 25新加的! 不要改回public static void main(String[] args)!
 
 ## 消歧义
 1. 以下所说的"数据包"并非指Minecraft新版引入的可以修改游戏的数据包系统, 而是指网络数据包
