@@ -299,6 +299,7 @@ public class ClientboundLoginPlayPacket implements IMinecraftPacket {
             DownstreamConnectionContext downstreamConnectionContext = ctx.channel().attr(AttributeKeys.DOWNSTREAM_CONNECTION_CONTEXT).get();
             Channel playerChannel = downstreamConnectionContext.getClient().getPlayerChannel();
             playerChannel.writeAndFlush(packet).addListener(_ -> {
+                playerChannel.attr(AttributeKeys.CONNECTION_CONTEXT).get().getPlayer().setCanSendMessages(true);
                 playerChannel.attr(AttributeKeys.CONNECTION_CONTEXT).get().getPlayer().sendAllPendingMessages(); // 发送所有积压的消息
             });
         }

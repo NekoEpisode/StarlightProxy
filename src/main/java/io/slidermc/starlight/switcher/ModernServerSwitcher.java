@@ -78,6 +78,7 @@ public class ModernServerSwitcher {
                         );
 
                         newClient.getChannel().config().setAutoRead(true);
+                        player.setPreviousServer(player.getCurrentServer().orElse(null));
                         player.setCurrentServer(target);
                         log.debug("Switched {} to {}", player.getGameProfile().username(), target.getName());
                     });

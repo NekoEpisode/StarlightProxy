@@ -47,6 +47,10 @@ public class ConnectionContext {
 
     public void setOutboundState(ProtocolState outboundState) {
         this.outboundState = outboundState;
+
+        if (outboundState != ProtocolState.PLAY && player != null) {
+            player.setCanSendMessages(false);
+        }
     }
 
     public HandshakeInformation getHandshakeInformation() {
