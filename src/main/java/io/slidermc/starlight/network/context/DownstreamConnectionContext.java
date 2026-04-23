@@ -7,7 +7,7 @@ import io.slidermc.starlight.network.packet.IMinecraftPacket;
 import java.util.concurrent.CompletableFuture;
 
 public class DownstreamConnectionContext {
-    private StarlightMinecraftClient client;
+    private volatile StarlightMinecraftClient client;
 
     public StarlightMinecraftClient getClient() {
         return client;

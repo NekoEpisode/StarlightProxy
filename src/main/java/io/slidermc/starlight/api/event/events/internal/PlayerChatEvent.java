@@ -5,10 +5,10 @@ import io.slidermc.starlight.api.event.events.interfaces.IPlayerEvent;
 import io.slidermc.starlight.api.player.ProxiedPlayer;
 
 public class PlayerChatEvent implements ICancellableEvent, IPlayerEvent {
-    private boolean cancelled = false;
+    private volatile boolean cancelled = false;
     private final ProxiedPlayer player;
 
-    private String message;
+    private volatile String message;
 
     public PlayerChatEvent(ProxiedPlayer player, String message) {
         this.player = player;

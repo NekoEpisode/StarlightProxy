@@ -11,18 +11,18 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 public class ConnectionContext {
-    private HandshakeInformation handshakeInformation;
-    private ProtocolState inboundState;
-    private ProtocolState outboundState;
-    private ProxiedPlayer player;
+    private volatile HandshakeInformation handshakeInformation;
+    private volatile ProtocolState inboundState;
+    private volatile ProtocolState outboundState;
+    private volatile ProxiedPlayer player;
     /** The downstream server channel paired with this player connection. Set externally when the player is connected to a backend server. */
-    private Channel downstreamChannel;
+    private volatile Channel downstreamChannel;
     /** Set by ModernServerSwitcher before sending StartConfiguration; completed by ServerboundConfigurationAckPacket.Listener. */
     private volatile CompletableFuture<Void> pendingReconfiguration;
-    private ClientInformation clientInformation;
-    private byte[] verifyToken;
+    private volatile ClientInformation clientInformation;
+    private volatile byte[] verifyToken;
     /** 正版验证流程中暂存的用户名，EncryptionResponse.Listener 使用后可清除 */
-    private String pendingUsername;
+    private volatile String pendingUsername;
 
     private final StarlightProxy proxy;
 
@@ -48,8 +48,11 @@ public class ConnectionContext {
     public void setOutboundState(ProtocolState outboundState) {
         this.outboundState = outboundState;
 
-        if (outboundState != ProtocolState.PLAY && player != null) {
-            player.setCanSendMessages(false);
+        if (outboundState != ProtocolState.PLAY) {
+            ProxiedPlayer p = this.player;
+            if (p != null) {
+                p.setCanSendMessages(false);
+            }
         }
     }
 
@@ -124,13 +127,18 @@ public class ConnectionContext {
 
     public CompletableFuture<Void> toDownstream(IMinecraftPacket packet) {
         CompletableFuture<Void> future = new CompletableFuture<>();
-        downstreamChannel.writeAndFlush(packet).addListener(ctx -> {
-            if (ctx.isSuccess()) {
-                future.complete(null);
-            } else {
-                future.completeExceptionally(ctx.cause());
-            }
-        });
+        Channel downstream = this.downstreamChannel;
+        if (downstream != null) {
+            downstream.writeAndFlush(packet).addListener(ctx -> {
+                if (ctx.isSuccess()) {
+                    future.complete(null);
+                } else {
+                    future.completeExceptionally(ctx.cause());
+                }
+            });
+        } else {
+            future.completeExceptionally(new IllegalStateException("Downstream channel is null"));
+        }
         return future;
     }
 }

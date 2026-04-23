@@ -69,9 +69,12 @@ public class ServerboundPluginMessagePlayPacket implements IMinecraftPacket {
                         if (pluginMessageResult == PluginMessageResult.FORWARD ||
                                 pluginMessageResult == PluginMessageResult.NONE ||
                                 pluginMessageResult == PluginMessageResult.UNKNOWN) {
-                            send(ctx, packet);
+                            if (ctx.channel().eventLoop().inEventLoop()) {
+                                send(ctx, packet);
+                            } else {
+                                ctx.channel().eventLoop().execute(() -> send(ctx, packet));
+                            }
                         }
-                        // HANDLED/DROPPED不转发
                     });
         }
 

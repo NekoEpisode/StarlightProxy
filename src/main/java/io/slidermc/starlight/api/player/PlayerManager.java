@@ -8,6 +8,12 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * 玩家管理器，维护 UUID 和用户名双向索引。
+ *
+ * <p>所有对双 Map 的复合操作（add/remove）均使用 {@code synchronized} 保护原子性，
+ * 避免并发时两个 Map 之间出现不一致的中间状态。
+ */
 public class PlayerManager {
     private final Map<UUID, ProxiedPlayer> uuidToPlayer = new ConcurrentHashMap<>();
     private final Map<String, ProxiedPlayer> nameToPlayer = new ConcurrentHashMap<>();
@@ -20,20 +26,24 @@ public class PlayerManager {
         return nameToPlayer.get(name);
     }
 
-    public void addPlayer(ProxiedPlayer player) {
+    public synchronized void addPlayer(ProxiedPlayer player) {
         uuidToPlayer.put(player.getGameProfile().uuid(), player);
         nameToPlayer.put(player.getGameProfile().username(), player);
     }
 
-    public ProxiedPlayer removePlayer(UUID uuid) {
+    public synchronized ProxiedPlayer removePlayer(UUID uuid) {
         ProxiedPlayer player = uuidToPlayer.remove(uuid);
-        nameToPlayer.remove(player.getGameProfile().username());
+        if (player != null) {
+            nameToPlayer.remove(player.getGameProfile().username());
+        }
         return player;
     }
 
-    public ProxiedPlayer removePlayer(String name) {
+    public synchronized ProxiedPlayer removePlayer(String name) {
         ProxiedPlayer player = nameToPlayer.remove(name);
-        uuidToPlayer.remove(player.getGameProfile().uuid());
+        if (player != null) {
+            uuidToPlayer.remove(player.getGameProfile().uuid());
+        }
         return player;
     }
 

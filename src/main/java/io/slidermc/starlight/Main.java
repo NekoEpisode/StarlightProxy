@@ -31,8 +31,8 @@ import io.slidermc.starlight.network.packet.packets.serverbound.status.Serverbou
 import io.slidermc.starlight.network.protocolenum.ProtocolDirection;
 import io.slidermc.starlight.network.protocolenum.ProtocolState;
 import io.slidermc.starlight.network.protocolenum.ProtocolVersion;
-import io.slidermc.starlight.utils.AddressResolver;
 import io.slidermc.starlight.plugin.PluginManager;
+import io.slidermc.starlight.utils.AddressResolver;
 import net.kyori.adventure.key.Key;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

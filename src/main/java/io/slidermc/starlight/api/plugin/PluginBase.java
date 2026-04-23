@@ -6,6 +6,8 @@ import io.slidermc.starlight.api.translate.TranslateManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.atomic.AtomicLong;
+
 /**
  * 内存插件的抽象基类。
  *
@@ -41,7 +43,7 @@ public abstract class PluginBase implements IPlugin {
     private final Logger logger;
     protected StarlightProxy proxy;
 
-    private long currentId;
+    private final AtomicLong currentId = new AtomicLong(0);
 
     /**
      * 通过描述构造内存插件，Logger 名称自动设为 {@code plugin.<插件名>}。
@@ -95,7 +97,7 @@ public abstract class PluginBase implements IPlugin {
 
     @Override
     public void registerListener(EventListener listener) {
-        registerListener("listener-" + currentId++, listener);
+        registerListener("listener-" + currentId.getAndIncrement(), listener);
     }
 
     @Override

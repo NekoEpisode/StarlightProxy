@@ -39,29 +39,34 @@ public final class LoginHelper {
         proxy.getPlayerManager().addPlayer(player);
         PlayerLoginEvent playerLoginEvent = new PlayerLoginEvent(player);
         proxy.getEventManager().fireAsync(playerLoginEvent).thenRun(() -> { // 异步call, 防止拖慢Netty
-            log.info(
-                    proxy.getTranslateManager().translate("starlight.logging.info.player.join"),
-                    player.getGameProfile().username(),
-                    player.getGameProfile().uuid(),
-                    player.getChannel().remoteAddress()
-            );
+            Runnable loginAction = () -> {
+                log.info(
+                        proxy.getTranslateManager().translate("starlight.logging.info.player.join"),
+                        player.getGameProfile().username(),
+                        player.getGameProfile().uuid(),
+                        player.getChannel().remoteAddress()
+                );
 
-            int threshold = proxy.getConfig().getCompressThreshold();
-            if (threshold >= 0) {
-                // 等 SetCompression 写出完成后再安装 pipeline 并发 LoginSuccess，
-                // 否则 LoginSuccess 可能在压缩生效前就发出，导致客户端解析失败。
-                ctx.channel().writeAndFlush(new ClientboundSetCompressionPacket(threshold)).addListener(_ -> {
-                    if (ctx.pipeline().get(InternalConfig.HANDLER_DECOMPRESS) == null) {
-                        ctx.pipeline().addBefore(InternalConfig.HANDLER_DECODER, InternalConfig.HANDLER_DECOMPRESS, new CompressionDecoder());
-                    }
-                    if (ctx.pipeline().get(InternalConfig.HANDLER_COMPRESS) == null) {
-                        ctx.pipeline().addBefore(InternalConfig.HANDLER_ENCODER, InternalConfig.HANDLER_COMPRESS, new CompressionEncoder(threshold));
-                    }
-                    log.debug("上游已启用压缩，阈值: {}", threshold);
+                int threshold = proxy.getConfig().getCompressThreshold();
+                if (threshold >= 0) {
+                    ctx.channel().writeAndFlush(new ClientboundSetCompressionPacket(threshold)).addListener(_ -> {
+                        if (ctx.pipeline().get(InternalConfig.HANDLER_DECOMPRESS) == null) {
+                            ctx.pipeline().addBefore(InternalConfig.HANDLER_DECODER, InternalConfig.HANDLER_DECOMPRESS, new CompressionDecoder());
+                        }
+                        if (ctx.pipeline().get(InternalConfig.HANDLER_COMPRESS) == null) {
+                            ctx.pipeline().addBefore(InternalConfig.HANDLER_ENCODER, InternalConfig.HANDLER_COMPRESS, new CompressionEncoder(threshold));
+                        }
+                        log.debug("上游已启用压缩，阈值: {}", threshold);
+                        sendLoginSuccess(ctx, player);
+                    });
+                } else {
                     sendLoginSuccess(ctx, player);
-                });
+                }
+            };
+            if (ctx.channel().eventLoop().inEventLoop()) {
+                loginAction.run();
             } else {
-                sendLoginSuccess(ctx, player);
+                ctx.channel().eventLoop().execute(loginAction);
             }
         });
     }

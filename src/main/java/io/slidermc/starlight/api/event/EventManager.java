@@ -8,11 +8,8 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Method;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.*;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * 事件总线，负责监听器的注册、注销与事件派发。
@@ -44,6 +41,12 @@ public class EventManager {
 
     /** 内核注册使用的虚拟来源标识，与任何插件 ID 不冲突。 */
     private static final String KERNEL_SOURCE = "__starlight_kernel__";
+
+    /**
+     * 保护 {@link #handlerMap}、{@link #listenerIndex}、{@link #pluginListenerKeys} 复合操作的锁。
+     * 注册、注销、批量注销均需持有此锁，以保证 check-then-act 和多集合一致性。
+     */
+    private final ReentrantLock registryLock = new ReentrantLock();
 
     /**
      * 已注册处理器的内部记录，按事件类型分组，每组按优先级降序排列。
@@ -97,7 +100,12 @@ public class EventManager {
      * @throws IllegalArgumentException 若该 ID 已被注册
      */
     public void register(String listenerId, io.slidermc.starlight.api.event.EventListener listener) {
-        registerInternal(KERNEL_SOURCE, listenerId, listener);
+        registryLock.lock();
+        try {
+            registerInternal(KERNEL_SOURCE, listenerId, listener);
+        } finally {
+            registryLock.unlock();
+        }
     }
 
     /**
@@ -112,9 +120,14 @@ public class EventManager {
      */
     public void register(IPlugin plugin, String listenerId, io.slidermc.starlight.api.event.EventListener listener) {
         String pluginId = plugin.getDescription().name();
-        registerInternal(pluginId, listenerId, listener);
-        pluginListenerKeys.computeIfAbsent(pluginId, k -> ConcurrentHashMap.newKeySet())
-                .add(compositeKey(pluginId, listenerId));
+        registryLock.lock();
+        try {
+            registerInternal(pluginId, listenerId, listener);
+            pluginListenerKeys.computeIfAbsent(pluginId, k -> ConcurrentHashMap.newKeySet())
+                    .add(compositeKey(pluginId, listenerId));
+        } finally {
+            registryLock.unlock();
+        }
     }
 
     /**
@@ -123,7 +136,12 @@ public class EventManager {
      * @param listenerId 监听器 ID
      */
     public void unregister(String listenerId) {
-        unregisterInternal(KERNEL_SOURCE, listenerId);
+        registryLock.lock();
+        try {
+            unregisterInternal(KERNEL_SOURCE, listenerId);
+        } finally {
+            registryLock.unlock();
+        }
     }
 
     /**
@@ -134,10 +152,15 @@ public class EventManager {
      */
     public void unregister(IPlugin plugin, String listenerId) {
         String pluginId = plugin.getDescription().name();
-        unregisterInternal(pluginId, listenerId);
-        Set<String> keys = pluginListenerKeys.get(pluginId);
-        if (keys != null) {
-            keys.remove(compositeKey(pluginId, listenerId));
+        registryLock.lock();
+        try {
+            unregisterInternal(pluginId, listenerId);
+            Set<String> keys = pluginListenerKeys.get(pluginId);
+            if (keys != null) {
+                keys.remove(compositeKey(pluginId, listenerId));
+            }
+        } finally {
+            registryLock.unlock();
         }
     }
 
@@ -149,19 +172,24 @@ public class EventManager {
      */
     public void unregisterAll(IPlugin plugin) {
         String pluginId = plugin.getDescription().name();
-        Set<String> keys = pluginListenerKeys.remove(pluginId);
-        if (keys == null) return;
-        for (String key : keys) {
-            List<RegisteredHandler> handlers = listenerIndex.remove(key);
-            if (handlers == null) continue;
-            for (RegisteredHandler handler : handlers) {
-                List<RegisteredHandler> list = handlerMap.get(handler.eventType());
-                if (list != null) {
-                    list.remove(handler);
+        registryLock.lock();
+        try {
+            Set<String> keys = pluginListenerKeys.remove(pluginId);
+            if (keys == null) return;
+            for (String key : keys) {
+                List<RegisteredHandler> handlers = listenerIndex.remove(key);
+                if (handlers == null) continue;
+                for (RegisteredHandler handler : handlers) {
+                    List<RegisteredHandler> list = handlerMap.get(handler.eventType());
+                    if (list != null) {
+                        list.remove(handler);
+                    }
                 }
             }
+            log.debug("已注销插件 [{}] 的所有事件监听器", pluginId);
+        } finally {
+            registryLock.unlock();
         }
-        log.debug("已注销插件 [{}] 的所有事件监听器", pluginId);
     }
 
     /**
@@ -253,7 +281,8 @@ public class EventManager {
 
     private void registerInternal(String sourceId, String listenerId, io.slidermc.starlight.api.event.EventListener listener) {
         String key = compositeKey(sourceId, listenerId);
-        if (listenerIndex.containsKey(key)) {
+        List<RegisteredHandler> existing = listenerIndex.putIfAbsent(key, List.of());
+        if (existing != null) {
             String pattern = translateManager.translate("starlight.logging.error.event.listener_id_duplicate");
             throw new IllegalArgumentException(formatTranslated(pattern, listenerId, sourceId));
         }
@@ -284,6 +313,7 @@ public class EventManager {
         }
 
         if (discovered.isEmpty()) {
+            listenerIndex.remove(key);
             log.warn(translateManager.translate("starlight.logging.warn.event.no_valid_handlers"),
                     listener.getClass().getName(), sourceId);
             return;
@@ -291,11 +321,9 @@ public class EventManager {
 
         listenerIndex.put(key, discovered);
         for (RegisteredHandler handler : discovered) {
-            handlerMap.computeIfAbsent(handler.eventType(), k -> new CopyOnWriteArrayList<>())
-                    .add(handler);
-            // 按优先级降序保持有序（order 值越大越先执行）
-            handlerMap.get(handler.eventType())
-                    .sort(Comparator.comparingInt(h -> -h.priority().getOrder()));
+            List<RegisteredHandler> newList = handlerMap.computeIfAbsent(handler.eventType(), k -> new CopyOnWriteArrayList<>());
+            newList.add(handler);
+            replaceWithSortedCopy(handler.eventType(), newList);
         }
         log.debug("已注册监听器 [{}] 来自 [{}]，包含 {} 个处理器",
                 listenerId, sourceId, discovered.size());
@@ -315,6 +343,16 @@ public class EventManager {
             }
         }
         log.debug("已注销监听器 [{}] (来源: {})", listenerId, sourceId);
+    }
+
+    /**
+     * 将指定事件类型的处理器列表替换为按优先级降序排列的新 {@link CopyOnWriteArrayList}。
+     * 避免 COW 列表的 {@code sort()} 非线程安全问题。
+     */
+    private void replaceWithSortedCopy(Class<? extends IStarlightEvent> eventType, List<RegisteredHandler> currentList) {
+        List<RegisteredHandler> sorted = new ArrayList<>(currentList);
+        sorted.sort(Comparator.comparingInt(h -> -h.priority().getOrder()));
+        handlerMap.put(eventType, new CopyOnWriteArrayList<>(sorted));
     }
 
     private static String compositeKey(String sourceId, String listenerId) {

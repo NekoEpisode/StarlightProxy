@@ -18,11 +18,11 @@ import io.slidermc.starlight.config.StarlightConfig;
 import io.slidermc.starlight.executor.ProxyExecutors;
 import io.slidermc.starlight.manager.EncryptionManager;
 import io.slidermc.starlight.manager.ServerManager;
-import io.slidermc.starlight.plugin.PluginManager;
 import io.slidermc.starlight.network.codec.ServerPacketDecoder;
 import io.slidermc.starlight.network.codec.ServerPacketEncoder;
 import io.slidermc.starlight.network.packet.RegistryPacketUtils;
 import io.slidermc.starlight.network.server.handler.StarlightServerHandler;
+import io.slidermc.starlight.plugin.PluginManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

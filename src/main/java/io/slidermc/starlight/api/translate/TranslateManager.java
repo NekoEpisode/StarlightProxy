@@ -12,6 +12,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 翻译管理器，支持加载内置语言文件和外部 JSON 语言文件。
@@ -43,9 +44,9 @@ public class TranslateManager {
     private static final String LANG_RESOURCE_DIR = "lang/";
 
     /** locale → 语言条目 */
-    private final Map<String, LanguageEntry> languages = new LinkedHashMap<>();
+    private final Map<String, LanguageEntry> languages = new ConcurrentHashMap<>();
 
-    private String activeLocale = "en_us";
+    private volatile String activeLocale = "en_us";
 
     /**
      * 从 {@code resources/lang} 目录自动加载所有内置 JSON 语言文件。
@@ -271,8 +272,8 @@ public class TranslateManager {
     // ---------- 内部数据类 ----------
 
     private static final class LanguageEntry {
-        private String displayName;
-        private final Map<String, String> translations = new LinkedHashMap<>();
+        private volatile String displayName;
+        private final Map<String, String> translations = new ConcurrentHashMap<>();
 
         LanguageEntry(String displayName) {
             this.displayName = displayName;

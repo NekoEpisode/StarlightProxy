@@ -14,6 +14,9 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 代理命令管理器，封装 Brigadier {@link CommandDispatcher}。
+ *
+ * <p>Brigadier 的 {@code CommandDispatcher} 不是线程安全的，因此所有对 dispatcher 的
+ * 注册、注销与执行操作均通过 {@link #lock} 序列化，防止并发命令执行导致内部状态损坏。
  */
 public class CommandManager {
     private static final Logger log = LoggerFactory.getLogger(CommandManager.class);
@@ -24,6 +27,9 @@ public class CommandManager {
 
     private final StarlightProxy proxy;
 
+    /** 保护 Brigadier {@code CommandDispatcher} 的互斥锁，注册/注销/执行均需持有。 */
+    private final Object lock = new Object();
+
     public CommandManager(CommandDispatcher<IStarlightCommandSource> dispatcher, StarlightProxy proxy) {
         this.dispatcher = dispatcher;
         this.proxy = proxy;
@@ -33,7 +39,9 @@ public class CommandManager {
      * 注册一个命令。若同名命令已存在则覆盖。
      */
     public void register(StarlightCommand command) {
-        dispatcher.register(command.build());
+        synchronized (lock) {
+            dispatcher.register(command.build());
+        }
         commands.put(command.getName(), command);
         log.debug("已注册命令: /{}", command.getName());
     }
@@ -43,10 +51,12 @@ public class CommandManager {
      */
     public void unregister(String name) {
         String lower = name.toLowerCase();
-        if (commands.remove(lower) != null) {
-            dispatcher.getRoot().getChildren()
-                    .removeIf(node -> lower.equals(node.getName()));
-            log.debug("已注销命令: /{}", lower);
+        synchronized (lock) {
+            if (commands.remove(lower) != null) {
+                dispatcher.getRoot().getChildren()
+                        .removeIf(node -> lower.equals(node.getName()));
+                log.debug("已注销命令: /{}", lower);
+            }
         }
     }
 
@@ -54,7 +64,9 @@ public class CommandManager {
      * 是否已注册该命令名。
      */
     public boolean hasCommand(String name) {
-        return dispatcher.getRoot().getChild(name) != null;
+        synchronized (lock) {
+            return dispatcher.getRoot().getChild(name) != null;
+        }
     }
 
     /**
@@ -63,14 +75,16 @@ public class CommandManager {
      * @return Brigadier 返回值；执行失败时返回 0
      */
     public int execute(String input, IStarlightCommandSource source) {
-        try {
-            return dispatcher.execute(input, source);
-        } catch (CommandSyntaxException e) {
-            source.sendMessage(net.kyori.adventure.text.Component.text(e.getMessage()));
-            return 0;
-        } catch (Exception e) {
-            log.error(proxy.getTranslateManager().translate("starlight.logging.error.error_on_executing_command"), input, e);
-            return 0;
+        synchronized (lock) {
+            try {
+                return dispatcher.execute(input, source);
+            } catch (CommandSyntaxException e) {
+                source.sendMessage(net.kyori.adventure.text.Component.text(e.getMessage()));
+                return 0;
+            } catch (Exception e) {
+                log.error(proxy.getTranslateManager().translate("starlight.logging.error.error_on_executing_command"), input, e);
+                return 0;
+            }
         }
     }
 

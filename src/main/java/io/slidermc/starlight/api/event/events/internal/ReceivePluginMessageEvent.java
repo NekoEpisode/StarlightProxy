@@ -8,10 +8,10 @@ import io.slidermc.starlight.network.protocolenum.ProtocolDirection;
 import net.kyori.adventure.key.Key;
 
 public class ReceivePluginMessageEvent implements IDirectionEvent, ICancellableEvent, IResultfulEvent {
-    private Key key;
-    private byte[] data;
+    private volatile Key key;
+    private volatile byte[] data;
 
-    private int result = PluginMessageResult.NONE.getCode();
+    private volatile int result = PluginMessageResult.NONE.getCode();
 
     private final ProtocolDirection direction;
 
