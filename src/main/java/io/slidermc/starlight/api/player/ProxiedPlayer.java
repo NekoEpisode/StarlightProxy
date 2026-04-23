@@ -40,10 +40,13 @@ public class ProxiedPlayer implements IStarlightCommandSource {
     private volatile ProxiedServer currentServer;
     private volatile ProxiedServer previousServer;
 
-    public ProxiedPlayer(GameProfile gameProfile, Channel channel, StarlightProxy proxy) {
+    private volatile boolean isOnline;
+
+    public ProxiedPlayer(GameProfile gameProfile, Channel channel, StarlightProxy proxy, boolean isOnline) {
         this.gameProfile = gameProfile;
         this.channel = channel;
         this.proxy = proxy;
+        this.isOnline = isOnline;
     }
 
     public CompletableFuture<Void> connect(ProxiedServer target) {
@@ -219,6 +222,14 @@ public class ProxiedPlayer implements IStarlightCommandSource {
 
     public void setCanSendMessages(boolean canSendMessages) {
         this.canSendMessages = canSendMessages;
+    }
+
+    public boolean isOnline() {
+        return isOnline;
+    }
+
+    public void setOnline(boolean online) {
+        isOnline = online;
     }
 
     @Override

@@ -33,7 +33,7 @@ public final class LoginHelper {
      * @param profile 已确定的 GameProfile（离线或正版均可）
      */
     public static void completeLogin(ChannelHandlerContext ctx, StarlightProxy proxy, GameProfile profile) {
-        ProxiedPlayer player = new ProxiedPlayer(profile, ctx.channel(), proxy);
+        ProxiedPlayer player = new ProxiedPlayer(profile, ctx.channel(), proxy, true);
         log.debug("已创建ProxiedPlayer对象: {}", player);
         player.getConnectionContext().setPlayer(player);
         proxy.getPlayerManager().addPlayer(player);
