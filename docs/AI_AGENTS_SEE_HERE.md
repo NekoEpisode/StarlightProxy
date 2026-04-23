@@ -4,7 +4,7 @@
 如果你不是AI, 这篇说明和你毫无关系  
 
 ## 项目介绍
-此项目是一个**Minecraft反向代理**, 名为Starlight, 使用Java编写, Maven作为构建工具, 没有任何运行时API(比如Bukkit/Paper/BungeeCord/Velocity API), 唯一的例外是Kyori的adventure库, 用来处理Component和NBT  
+此项目是一个**Minecraft反向代理**, 名为Starlight, 使用Java 25编写, Maven作为构建工具, 没有任何运行时API(比如Bukkit/Paper/BungeeCord/Velocity API), 唯一的例外是Kyori的adventure库, 用来处理Component和NBT  
 关于Minecraft协议的细节:  
     wiki.vg已经关停, 请查看[Minecraft Wiki](https://minecraft.wiki/w/Java_Edition_protocol/Packets)  
 此项目使用Netty作为网络库, 在修改过程中应该时刻确认线程安全问题  
