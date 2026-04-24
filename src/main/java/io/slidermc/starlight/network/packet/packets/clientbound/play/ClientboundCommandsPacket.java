@@ -14,6 +14,7 @@ import io.slidermc.starlight.network.codec.utils.MinecraftCodecUtils;
 import io.slidermc.starlight.network.command.ArgumentTypeData;
 import io.slidermc.starlight.network.command.CommandNodeData;
 import io.slidermc.starlight.network.context.AttributeKeys;
+import io.slidermc.starlight.network.context.ConnectionContext;
 import io.slidermc.starlight.network.packet.IMinecraftPacket;
 import io.slidermc.starlight.network.packet.listener.IPacketListener;
 import io.slidermc.starlight.network.protocolenum.ProtocolVersion;
@@ -58,13 +59,15 @@ public class ClientboundCommandsPacket implements IMinecraftPacket {
 
     /**
      * 将代理自身的命令树合并进来（代理命令优先，覆盖同名后端命令）。
+     *
+     * @param source 命令来源，用于权限过滤（玩家或控制台）
      */
-    public void mergeProxyCommands(RootCommandNode<IStarlightCommandSource> proxyRoot, TranslateManager translateManager) {
+    public void mergeProxyCommands(RootCommandNode<IStarlightCommandSource> proxyRoot, TranslateManager translateManager, IStarlightCommandSource source) {
         this.translateManager = translateManager;
         try {
             if (nodes.isEmpty() || rootIndex < 0 || rootIndex >= nodes.size()) {
                 log.warn(translateManager.translate("starlight.logging.warn.downstream_command_tree_empty_or_root_index_invaild"));
-                buildFromRoot(proxyRoot);
+                buildFromRoot(proxyRoot, source);
                 return;
             }
 
@@ -72,6 +75,11 @@ public class ClientboundCommandsPacket implements IMinecraftPacket {
 
             for (CommandNode<IStarlightCommandSource> proxyChild : proxyRoot.getChildren()) {
                 String commandName = proxyChild.getName();
+
+                if (!proxyChild.canUse(source)) {
+                    log.debug("代理命令 '{}' 因权限不足，跳过合并", commandName);
+                    continue;
+                }
 
                 // 移除后端同名命令（代理优先）
                 backendRoot.getChildren().removeIf(childIndex -> {
@@ -85,7 +93,7 @@ public class ClientboundCommandsPacket implements IMinecraftPacket {
                     return false;
                 });
 
-                int newIndex = addNodeRecursively(proxyChild);
+                int newIndex = addNodeRecursively(proxyChild, source);
                 backendRoot.getChildren().add(newIndex);
                 log.debug("已添加代理命令: {}", commandName);
             }
@@ -97,7 +105,7 @@ public class ClientboundCommandsPacket implements IMinecraftPacket {
     /**
      * 从根节点重建整个节点列表（仅在后端树为空时使用）。
      */
-    private void buildFromRoot(RootCommandNode<IStarlightCommandSource> rootNode) {
+    private void buildFromRoot(RootCommandNode<IStarlightCommandSource> rootNode, IStarlightCommandSource source) {
         nodes = new ArrayList<>();
         Map<CommandNode<IStarlightCommandSource>, Integer> nodeIndices = new LinkedHashMap<>();
         List<CommandNode<IStarlightCommandSource>> nodeList = new ArrayList<>();
@@ -110,6 +118,7 @@ public class ClientboundCommandsPacket implements IMinecraftPacket {
         while (!queue.isEmpty()) {
             CommandNode<IStarlightCommandSource> node = queue.poll();
             for (CommandNode<IStarlightCommandSource> child : node.getChildren()) {
+                if (!child.canUse(source)) continue;
                 if (!nodeIndices.containsKey(child)) {
                     nodeIndices.put(child, nodeList.size());
                     nodeList.add(child);
@@ -127,12 +136,12 @@ public class ClientboundCommandsPacket implements IMinecraftPacket {
     /**
      * 递归将代理命令节点追加到 nodes 列表，返回当前节点的索引。
      */
-    private int addNodeRecursively(CommandNode<IStarlightCommandSource> node) {
+    private int addNodeRecursively(CommandNode<IStarlightCommandSource> node, IStarlightCommandSource source) {
         Map<CommandNode<IStarlightCommandSource>, Integer> allNodeIndices = new LinkedHashMap<>();
-        return addNodeRecursively(node, allNodeIndices);
+        return addNodeRecursively(node, source, allNodeIndices);
     }
 
-    private int addNodeRecursively(CommandNode<IStarlightCommandSource> node,
+    private int addNodeRecursively(CommandNode<IStarlightCommandSource> node, IStarlightCommandSource source,
                                    Map<CommandNode<IStarlightCommandSource>, Integer> allNodeIndices) {
         int currentIndex = nodes.size();
         allNodeIndices.put(node, currentIndex);
@@ -141,7 +150,8 @@ public class ClientboundCommandsPacket implements IMinecraftPacket {
 
         Map<CommandNode<IStarlightCommandSource>, Integer> childIndices = new LinkedHashMap<>();
         for (CommandNode<IStarlightCommandSource> child : node.getChildren()) {
-            int childIndex = addNodeRecursively(child, allNodeIndices);
+            if (!child.canUse(source)) continue;
+            int childIndex = addNodeRecursively(child, source, allNodeIndices);
             childIndices.put(child, childIndex);
         }
 
@@ -188,13 +198,28 @@ public class ClientboundCommandsPacket implements IMinecraftPacket {
     public List<CommandNodeData> getNodes() { return nodes; }
     public int getRootIndex() { return rootIndex; }
 
+    /**
+     * 从缓存的命令树数据恢复此包，用于权限更新后重建。
+     */
+    public void loadFromCache(List<CommandNodeData> cachedNodes, int cachedRootIndex) {
+        this.nodes = new ArrayList<>(cachedNodes.size());
+        for (CommandNodeData node : cachedNodes) {
+            this.nodes.add(new CommandNodeData(node));
+        }
+        this.rootIndex = cachedRootIndex;
+    }
+
     // -------------------------------------------------------------------------
 
     public static class Listener implements IPacketListener<ClientboundCommandsPacket> {
         @Override
         public void handle(ClientboundCommandsPacket packet, ChannelHandlerContext ctx, StarlightProxy proxy) {
             RootCommandNode<IStarlightCommandSource> proxyRoot = proxy.getCommandDispatcher().getRoot();
-            packet.mergeProxyCommands(proxyRoot, proxy.getTranslateManager());
+            ConnectionContext context = ctx.channel().attr(AttributeKeys.DOWNSTREAM_CONNECTION_CONTEXT).get().getClient().getPlayerChannel().attr(AttributeKeys.CONNECTION_CONTEXT).get();
+
+            context.cacheCommandTree(packet.getNodes(), packet.getRootIndex());
+
+            packet.mergeProxyCommands(proxyRoot, proxy.getTranslateManager(), context.getPlayer());
 
             StarlightMinecraftClient client = ctx.channel()
                     .attr(AttributeKeys.DOWNSTREAM_CONNECTION_CONTEXT)

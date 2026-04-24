@@ -2,6 +2,7 @@ package io.slidermc.starlight.executor;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 
 /**
  * 代理全局 Executor 管理器。
@@ -30,11 +31,23 @@ public class ProxyExecutors {
             );
 
     /**
+     * IO 写操作线程池。
+     * 单线程、守护模式，用于异步写入配置文件（如 permissions.yml）等非关键 IO。
+     */
+    private final ScheduledExecutorService ioExecutor =
+            Executors.newSingleThreadScheduledExecutor(r -> {
+                Thread t = new Thread(r, "starlight-io");
+                t.setDaemon(true);
+                return t;
+            });
+
+    /**
      * 关闭所有线程池，应在代理停止时调用。
      */
     public void shutdown() {
         commandExecutor.shutdown();
         eventExecutor.shutdown();
+        ioExecutor.shutdown();
     }
 
     public ExecutorService getCommandExecutor() {
@@ -46,6 +59,13 @@ public class ProxyExecutors {
      */
     public ExecutorService getEventExecutor() {
         return eventExecutor;
+    }
+
+    /**
+     * 返回 IO 写操作专用的 ScheduledExecutorService（单线程、守护模式）。
+     */
+    public ScheduledExecutorService getIoExecutor() {
+        return ioExecutor;
     }
 }
 

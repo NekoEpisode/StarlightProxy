@@ -4,11 +4,18 @@ import io.netty.channel.Channel;
 import io.slidermc.starlight.StarlightProxy;
 import io.slidermc.starlight.api.player.ProxiedPlayer;
 import io.slidermc.starlight.data.clientinformation.ClientInformation;
+import io.slidermc.starlight.network.command.CommandNodeData;
 import io.slidermc.starlight.network.packet.IMinecraftPacket;
+import io.slidermc.starlight.network.packet.packets.clientbound.play.ClientboundCommandsPacket;
 import io.slidermc.starlight.network.protocolenum.ProtocolState;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * 上游（玩家客户端）连接的上下文信息。
@@ -18,6 +25,8 @@ import java.util.concurrent.CompletableFuture;
  * 使用防御性拷贝以确保发布后不会被外部修改。
  */
 public class ConnectionContext {
+    private static final Logger log = LoggerFactory.getLogger(ConnectionContext.class);
+
     private volatile HandshakeInformation handshakeInformation;
     private volatile ProtocolState inboundState;
     private volatile ProtocolState outboundState;
@@ -30,6 +39,10 @@ public class ConnectionContext {
     private volatile byte[] verifyToken;
     /** 正版验证流程中暂存的用户名，EncryptionResponse.Listener 使用后可清除 */
     private volatile String pendingUsername;
+
+    /** 后端命令树的深拷贝缓存，用于权限更新后重建命令树 */
+    private volatile List<CommandNodeData> cachedCommandNodes;
+    private volatile int cachedCommandRootIndex;
 
     private final StarlightProxy proxy;
 
@@ -118,6 +131,42 @@ public class ConnectionContext {
 
     public void setPendingUsername(String pendingUsername) {
         this.pendingUsername = pendingUsername;
+    }
+
+    public void cacheCommandTree(List<CommandNodeData> nodes, int rootIndex) {
+        if (nodes == null) {
+            this.cachedCommandNodes = null;
+            return;
+        }
+        List<CommandNodeData> copy = new ArrayList<>(nodes.size());
+        for (CommandNodeData node : nodes) {
+            copy.add(new CommandNodeData(node));
+        }
+        this.cachedCommandNodes = copy;
+        this.cachedCommandRootIndex = rootIndex;
+    }
+
+    public void refreshCommands() {
+        List<CommandNodeData> cached = this.cachedCommandNodes;
+        if (cached == null || cached.isEmpty()) return;
+
+        ProxiedPlayer p = this.player;
+        if (p == null) return;
+
+        ClientboundCommandsPacket packet = new ClientboundCommandsPacket();
+        packet.loadFromCache(cached, this.cachedCommandRootIndex);
+        packet.mergeProxyCommands(
+                proxy.getCommandDispatcher().getRoot(),
+                proxy.getTranslateManager(),
+                p
+        );
+
+        Channel playerChannel = p.getChannel();
+        if (playerChannel != null) {
+            playerChannel.writeAndFlush(packet);
+        } else {
+            log.warn(proxy.getTranslateManager().translate("starlight.logging.warn.player_channel_null_for_command_refresh"));
+        }
     }
 
     public StarlightProxy getProxy() {

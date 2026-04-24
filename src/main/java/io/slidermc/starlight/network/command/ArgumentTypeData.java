@@ -90,6 +90,24 @@ public class ArgumentTypeData {
     public ArgumentTypeData(int parserId) {
         this.parserId = parserId;
     }
+
+    public ArgumentTypeData(ArgumentTypeData other) {
+        this.parserId = other.parserId;
+        this.numberFlags = other.numberFlags;
+        this.minFloat = other.minFloat;
+        this.maxFloat = other.maxFloat;
+        this.minDouble = other.minDouble;
+        this.maxDouble = other.maxDouble;
+        this.minInt = other.minInt;
+        this.maxInt = other.maxInt;
+        this.minLong = other.minLong;
+        this.maxLong = other.maxLong;
+        this.stringBehavior = other.stringBehavior;
+        this.entityFlags = other.entityFlags;
+        this.scoreHolderFlags = other.scoreHolderFlags;
+        this.minTime = other.minTime;
+        this.registry = other.registry;
+    }
     
     /**
      * 从Brigadier参数类型创建ArgumentTypeData

@@ -25,6 +25,7 @@
     "starlight.logging.warn.server_address_resolve_failed": "服务器 {} 地址解析失败，正在跳过中，错误信息: {}",
     "starlight.logging.warn.downstream_command_tree_empty_or_root_index_invaild": "后端命令树为空或根节点索引无效，只使用代理命令",
     "starlight.logging.warn.cannot_found_target_redirect_node": "命令节点 '{}' 的重定向目标未找到，已跳过重定向",
+    "starlight.logging.warn.player_channel_null_for_command_refresh": "无法刷新命令树: 玩家通道为空",
     "starlight.logging.warn.unknown_next_state": "未知Next State: {}，正在关闭连接",
     "starlight.logging.error.packet.load_failed": "从 {} 加载数据包映射失败",
     "starlight.logging.error.packet.parse_failed": "解析数据包映射JSON失败",
@@ -144,6 +145,22 @@
     "starlight.command.glist.help.all_force": "<gray>  /glist all force</gray> <dark_gray>— 列出所有服务器(包括空服务器)</dark_gray>",
     "starlight.command.glist.help.server": "<gray>  /glist <服务器名></gray> <dark_gray>— 查看指定服务器的玩家列表</dark_gray>",
 
-    "starlight.logging.warn.console.init_failed": "控制台初始化失败: {}，将在无交互控制台模式下运行"
+    "starlight.logging.warn.console.init_failed": "控制台初始化失败: {}，将在无交互控制台模式下运行",
+
+    "starlight.logging.warn.permission.load_failed": "权限文件加载失败: {}",
+    "starlight.logging.warn.permission.replaced": "权限服务已被替换: {} -> {}",
+
+    "starlight.command.perm.added": "<green>已为 <player> 添加权限 <permission></green>",
+    "starlight.command.perm.removed": "<green>已从 <player> 移除权限 <permission></green>",
+    "starlight.command.perm.list.header": "<gradient:#FFE100:#C8A200>— <player> 的权限列表 —</gradient>",
+    "starlight.command.perm.list.empty": "<gray>  未设置任何权限</gray>",
+    "starlight.command.perm.list.entry": "<gray>  · </gray><white><permission></white>",
+    "starlight.command.error": "<dark_gray>[<gradient:#FFE100:#C8A200>Starlight</gradient>]</dark_gray> <red><message></red>",
+    "starlight.command.perm.reloaded": "<green>权限已重载</green>",
+    "starlight.command.perm.help.header": "<gradient:#FFE100:#C8A200>— /sperm 帮助 —</gradient>",
+    "starlight.command.perm.help.reload": "<gray>  /sperm reload</gray> <dark_gray>— 从存储重载权限</dark_gray>",
+    "starlight.command.perm.help.user_add": "<gray>  /sperm user <target> add <permission></gray> <dark_gray>— 为玩家添加权限</dark_gray>",
+    "starlight.command.perm.help.user_remove": "<gray>  /sperm user <target> remove <permission></gray> <dark_gray>— 移除玩家的权限</dark_gray>",
+    "starlight.command.perm.help.user_list": "<gray>  /sperm user <target> list</gray> <dark_gray>— 列出玩家的所有权限</dark_gray>"
   }
 }

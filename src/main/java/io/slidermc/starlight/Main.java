@@ -3,11 +3,13 @@ package io.slidermc.starlight;
 import io.slidermc.starlight.api.server.ProxiedServer;
 import io.slidermc.starlight.api.translate.TranslateManager;
 import io.slidermc.starlight.commands.GlistCommand;
+import io.slidermc.starlight.commands.PermCommand;
 import io.slidermc.starlight.commands.ServerCommand;
 import io.slidermc.starlight.commands.StarlightMainCommand;
 import io.slidermc.starlight.config.StarlightConfig;
 import io.slidermc.starlight.eventlisteners.PluginMessageEventListener;
 import io.slidermc.starlight.manager.ServerManager;
+import io.slidermc.starlight.permission.SimplePermissionManager;
 import io.slidermc.starlight.network.packet.PacketRegistry;
 import io.slidermc.starlight.network.packet.RegistryPacketUtils;
 import io.slidermc.starlight.network.packet.packets.clientbound.configuration.ClientboundDisconnectConfigurationPacket;
@@ -129,10 +131,22 @@ public class Main {
         // onEnable 在代理完全创建后调用
         pluginManager.enableAll(proxy);
 
+        // 初始化权限服务
+        SimplePermissionManager permManager = new SimplePermissionManager(
+                Path.of("permissions.yml"), proxy.getExecutors().getIoExecutor());
+        try {
+            permManager.load();
+        } catch (IOException e) {
+            log.warn(translateManager.translate("starlight.logging.warn.permission.load_failed"), e.getMessage());
+        }
+        permManager.start();
+        proxy.setPermissionService(permManager);
+
         // 注册内置代理命令
         proxy.getCommandManager().register(new ServerCommand(proxy));
         proxy.getCommandManager().register(new StarlightMainCommand(proxy));
         proxy.getCommandManager().register(new GlistCommand(proxy));
+        proxy.getCommandManager().register(new PermCommand(proxy));
         // proxy.getCommandManager().register(new TestCommand());
 
         // 注册内置监听器

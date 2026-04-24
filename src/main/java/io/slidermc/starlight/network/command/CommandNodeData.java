@@ -38,6 +38,15 @@ public class CommandNodeData {
     public CommandNodeData() {
         this.children = new ArrayList<>();
     }
+
+    public CommandNodeData(CommandNodeData other) {
+        this.flags = other.flags;
+        this.children = new ArrayList<>(other.children);
+        this.redirectNode = other.redirectNode;
+        this.name = other.name;
+        this.suggestionsType = other.suggestionsType;
+        this.argumentType = other.argumentType != null ? new ArgumentTypeData(other.argumentType) : null;
+    }
     
     /**
      * 从Brigadier命令节点创建CommandNodeData

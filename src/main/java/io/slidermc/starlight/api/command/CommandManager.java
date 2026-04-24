@@ -5,6 +5,8 @@ import com.mojang.brigadier.ParseResults;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import io.slidermc.starlight.StarlightProxy;
 import io.slidermc.starlight.api.command.source.IStarlightCommandSource;
+import io.slidermc.starlight.utils.MiniMessageUtils;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -94,7 +96,9 @@ public class CommandManager {
         try {
             return dispatcher.execute(parse);
         } catch (CommandSyntaxException e) {
-            source.sendMessage(net.kyori.adventure.text.Component.text(e.getMessage()));
+            source.sendMessage(MiniMessageUtils.MINI_MESSAGE.deserialize(
+                    proxy.getTranslateManager().translate("starlight.command.error"),
+                    Placeholder.parsed("message", e.getMessage())));
             return 0;
         } catch (Exception e) {
             log.error(proxy.getTranslateManager().translate("starlight.logging.error.error_on_executing_command"), input, e);
