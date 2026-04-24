@@ -93,6 +93,15 @@ public class ConsoleManager implements AutoCloseable {
                 }
             }
 
+            @Override
+            public void flush() {
+                if (!buffer.isEmpty()) {
+                    String line = buffer.toString();
+                    buffer.setLength(0);
+                    reader.printAbove(line);
+                }
+            }
+
             private void flushLine() {
                 String line = buffer.toString();
                 buffer.setLength(0);
