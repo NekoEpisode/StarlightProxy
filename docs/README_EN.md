@@ -20,6 +20,7 @@ This project is currently a work in progress (W.I.P). Features implemented so fa
 6. Plugin system
 7. I18N support
 8. Velocity Modern Forwarding (V4 only) support
+9. Permission system
 
 ## How to Write a Plugin
 Warning: Starlight's API is extremely unstable, both now and in the future. We may later introduce a third-party plugin called Stable API to provide a relatively stable API for plugin developers, but we currently have no plans for this. Therefore, the current API may change frequently or even be completely deprecated in the future. If you want to write a plugin, be prepared to frequently modify your code to adapt to changes in the Starlight API.
