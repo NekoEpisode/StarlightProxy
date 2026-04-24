@@ -146,6 +146,7 @@ public class Main {
             new ConsoleManager(proxy);
         } catch (Exception e) {
             log.warn(translateManager.translate("starlight.logging.warn.console.init_failed"), e.getMessage());
+            log.debug("控制台命令初始化失败！", e);
         }
 
         log.info(translateManager.translate("starlight.logging.info.done"), (System.currentTimeMillis() - start));
