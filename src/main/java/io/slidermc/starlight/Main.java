@@ -131,16 +131,18 @@ public class Main {
         // onEnable 在代理完全创建后调用
         pluginManager.enableAll(proxy);
 
-        // 初始化权限服务
-        SimplePermissionManager permManager = new SimplePermissionManager(
-                Path.of("permissions.yml"), proxy.getExecutors().getIoExecutor());
-        try {
-            permManager.load();
-        } catch (IOException e) {
-            log.warn(translateManager.translate("starlight.logging.warn.permission.load_failed"), e.getMessage());
+        // 初始化权限服务（仅在插件未接管时设置默认实现）
+        if (proxy.getPermissionService() == null) {
+            SimplePermissionManager permManager = new SimplePermissionManager(
+                    Path.of("permissions.yml"), proxy.getExecutors().getIoExecutor());
+            try {
+                permManager.load();
+            } catch (IOException e) {
+                log.warn(translateManager.translate("starlight.logging.warn.permission.load_failed"), e.getMessage());
+            }
+            permManager.start();
+            proxy.setPermissionService(permManager);
         }
-        permManager.start();
-        proxy.setPermissionService(permManager);
 
         // 注册内置代理命令
         proxy.getCommandManager().register(new ServerCommand(proxy));
