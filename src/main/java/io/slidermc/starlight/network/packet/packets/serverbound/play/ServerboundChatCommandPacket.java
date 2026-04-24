@@ -3,6 +3,7 @@ package io.slidermc.starlight.network.packet.packets.serverbound.play;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.slidermc.starlight.StarlightProxy;
+import io.slidermc.starlight.api.command.source.IStarlightCommandSource;
 import io.slidermc.starlight.network.codec.utils.MinecraftCodecUtils;
 import io.slidermc.starlight.network.context.AttributeKeys;
 import io.slidermc.starlight.network.context.ConnectionContext;
@@ -13,6 +14,8 @@ import io.slidermc.starlight.utils.StringUtils;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.mojang.brigadier.tree.CommandNode;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -51,6 +54,12 @@ public class ServerboundChatCommandPacket implements IMinecraftPacket {
             }
             String commandName = normalizedCommand.split(" ")[0];
             if (proxy.getCommandManager().hasCommand(commandName)) {
+                CommandNode<IStarlightCommandSource> node = proxy.getCommandManager().getDispatcher().getRoot().getChild(commandName);
+                // 玩家用不了就直接转发到下游, 防止泄露
+                if (node != null && !node.canUse(context.getPlayer())) {
+                    context.getDownstreamChannel().writeAndFlush(packet);
+                    return;
+                }
                 if (proxy.getConfig().isLoggingCommand()) {
                     String logCommand = packet.command;
                     if (logCommand != null && logCommand.length() > 256) {

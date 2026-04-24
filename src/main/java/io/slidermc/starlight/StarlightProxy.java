@@ -11,6 +11,7 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.slidermc.starlight.api.command.CommandManager;
 import io.slidermc.starlight.api.command.source.IStarlightCommandSource;
 import io.slidermc.starlight.api.event.EventManager;
+import io.slidermc.starlight.api.permission.PermissionService;
 import io.slidermc.starlight.api.player.PlayerManager;
 import io.slidermc.starlight.api.translate.TranslateManager;
 import io.slidermc.starlight.config.InternalConfig;
@@ -44,6 +45,7 @@ public class StarlightProxy {
     private final ProxyExecutors executors = new ProxyExecutors();
     private final EventManager eventManager;
     private final PluginManager pluginManager;
+    private volatile PermissionService permissionService;
 
     public StarlightProxy(InetSocketAddress address, TranslateManager translateManager,
                           RegistryPacketUtils registryPacketUtils, StarlightConfig config,
@@ -163,5 +165,24 @@ public class StarlightProxy {
      */
     public EventManager getEventManager() {
         return eventManager;
+    }
+
+    /**
+     * 返回当前的权限服务。
+     */
+    public PermissionService getPermissionService() {
+        return permissionService;
+    }
+
+    /**
+     * 设置权限服务。插件可在 {@code onEnable} 中替换为自定义实现。
+     */
+    public void setPermissionService(PermissionService permissionService) {
+        if (this.permissionService != null && this.permissionService != permissionService) {
+            log.warn(translateManager.translate("starlight.logging.warn.permission.replaced"),
+                    this.permissionService.getClass().getName(),
+                    permissionService.getClass().getName());
+        }
+        this.permissionService = permissionService;
     }
 }

@@ -25,6 +25,7 @@
     "starlight.logging.warn.server_address_resolve_failed": "Failed to resolve server {} address, skipping. Error: {}",
     "starlight.logging.warn.downstream_command_tree_empty_or_root_index_invaild": "Backend command tree is empty or root node index is invalid — using proxy commands only",
     "starlight.logging.warn.cannot_found_target_redirect_node": "Redirect target for command node '{}' not found — skipping redirect",
+    "starlight.logging.warn.player_channel_null_for_command_refresh": "Cannot refresh command tree: player channel is null",
     "starlight.logging.warn.unknown_next_state": "Unknown Next State: {}, closing connection",
     "starlight.logging.error.packet.load_failed": "Failed to load packet mappings from {}",
     "starlight.logging.error.packet.parse_failed": "Failed to parse packet mapping JSON",
@@ -144,6 +145,22 @@
     "starlight.command.glist.help.all_force": "<gray>  /glist all force</gray> <dark_gray>— List all servers including empty ones</dark_gray>",
     "starlight.command.glist.help.server": "<gray>  /glist <server></gray> <dark_gray>— List players on a specific server</dark_gray>",
 
-    "starlight.logging.warn.console.init_failed": "Console initialization failed: {}, running without interactive console"
+    "starlight.logging.warn.console.init_failed": "Console initialization failed: {}, running without interactive console",
+
+    "starlight.logging.warn.permission.load_failed": "Failed to load permissions file: {}",
+    "starlight.logging.warn.permission.replaced": "PermissionService has been replaced: {} -> {}",
+
+    "starlight.command.perm.added": "<green>Added permission <permission> to <player></green>",
+    "starlight.command.perm.removed": "<green>Removed permission <permission> from <player></green>",
+    "starlight.command.perm.list.header": "<gradient:#FFE100:#C8A200>— Permissions for <player> —</gradient>",
+    "starlight.command.perm.list.empty": "<gray>  No permissions set.</gray>",
+    "starlight.command.perm.list.entry": "<gray>  · </gray><white><permission></white>",
+    "starlight.command.error": "<dark_gray>[<gradient:#FFE100:#C8A200>Starlight</gradient>]</dark_gray> <red><message></red>",
+    "starlight.command.perm.reloaded": "<green>Permissions reloaded</green>",
+    "starlight.command.perm.help.header": "<gradient:#FFE100:#C8A200>— /sperm Help —</gradient>",
+    "starlight.command.perm.help.reload": "<gray>  /sperm reload</gray> <dark_gray>— Reload permissions from storage</dark_gray>",
+    "starlight.command.perm.help.user_add": "<gray>  /sperm user <target> add <permission></gray> <dark_gray>— Add a permission for a player</dark_gray>",
+    "starlight.command.perm.help.user_remove": "<gray>  /sperm user <target> remove <permission></gray> <dark_gray>— Remove a permission from a player</dark_gray>",
+    "starlight.command.perm.help.user_list": "<gray>  /sperm user <target> list</gray> <dark_gray>— List all permissions for a player</dark_gray>"
   }
 }

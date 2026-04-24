@@ -18,6 +18,7 @@ Starlight是一个Minecraft反向代理(like [BungeeCord](https://github.com/Spi
 6. 插件系统
 7. I18N支持
 8. Velocity Modern Forwarding(仅V4)支持
+9. 权限系统
 
 ## 如何编写一个插件
 警告: Starlight的API极其不稳定, 无论是如今还是将来, 我们未来很可能会推出一个叫Stable API的第三方插件来提供一个相对稳定的API, 以供插件开发者使用, 但目前我们还没有这个计划, 因此目前的API可能会经常发生变化, 甚至在未来被完全废弃, 因此如果你想编写一个插件, 请务必做好频繁修改代码的准备, 以适应Starlight API的变化  

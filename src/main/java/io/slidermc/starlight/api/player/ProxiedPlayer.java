@@ -4,6 +4,7 @@ import io.netty.channel.Channel;
 import io.slidermc.starlight.StarlightProxy;
 import io.slidermc.starlight.api.command.source.ContextKey;
 import io.slidermc.starlight.api.command.source.IStarlightCommandSource;
+import io.slidermc.starlight.api.event.events.internal.PermissionCheckEvent;
 import io.slidermc.starlight.api.profile.GameProfile;
 import io.slidermc.starlight.api.server.ProxiedServer;
 import io.slidermc.starlight.network.context.AttributeKeys;
@@ -182,7 +183,12 @@ public class ProxiedPlayer implements IStarlightCommandSource {
 
     @Override
     public boolean hasPermission(String permission) {
-        throw new UnsupportedOperationException("Permission system not implemented yet"); // TODO: 实现权限系统
+        boolean result = proxy.getPermissionService().hasPermission(this, permission);
+
+        PermissionCheckEvent event = new PermissionCheckEvent(this, permission, result);
+        proxy.getEventManager().fire(event);
+
+        return event.getResult();
     }
 
     public CompletableFuture<Void> sendPluginMessage(Key key, byte[] data) {
@@ -237,6 +243,10 @@ public class ProxiedPlayer implements IStarlightCommandSource {
 
     public void setOnline(boolean online) {
         isOnline = online;
+    }
+
+    public String getTranslation(String key) {
+        return getConnectionContext().getTranslation(key);
     }
 
     @Override
