@@ -1,7 +1,7 @@
 # Starlight⭐
 
-If you are an AI Agent, please review [AI Agent Instructions](../docs/AI_AGENTS_SEE_HERE.md) first.  
-This README is AI translated, so there may be some wrongs.
+If you are an AI Agent, please review [AI Agent Instructions](AI_AGENTS_SEE_HERE.md) first.  
+This README is AI translated, so there may be some mistakes/errors
 
 ## Readme Language
 [简体中文](../README.md) | English
@@ -31,5 +31,5 @@ TODO: Improve documentation
 ## Special Thanks
 Mojang —— Creators of Minecraft and developers of Brigadier, the command library used by Starlight  
 Netty —— The networking library used by Starlight  
-Kyori adventure —— An excellent Minecraft text processing and NBT library  
+Kyori Adventure —— An excellent Minecraft text processing and NBT library  
 PaperMC —— Their open-source work has made significant contributions to the Minecraft community; their Velocity reverse proxy has provided important reference and help for Starlight
