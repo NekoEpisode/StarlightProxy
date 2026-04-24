@@ -37,6 +37,8 @@ import net.kyori.adventure.key.Key;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.slidermc.starlight.command.console.ConsoleManager;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.file.Path;
@@ -138,6 +140,14 @@ public class Main {
 
         // 开始监听
         proxy.start();
+
+        // 启动控制台
+        try {
+            new ConsoleManager(proxy);
+        } catch (Exception e) {
+            log.warn(translateManager.translate("starlight.logging.warn.console.init_failed"), e.getMessage());
+            log.debug("控制台命令初始化失败！", e);
+        }
 
         log.info(translateManager.translate("starlight.logging.info.done"), (System.currentTimeMillis() - start));
     }

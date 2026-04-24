@@ -42,3 +42,4 @@ logs
 plugins
 config.yml
 .idea/copilotDiffState.xml
+.console_history

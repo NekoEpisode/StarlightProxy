@@ -142,6 +142,8 @@
     "starlight.command.glist.help.summary": "<gray>  /glist</gray> <dark_gray>— Show total online players and server count</dark_gray>",
     "starlight.command.glist.help.all": "<gray>  /glist all</gray> <dark_gray>— List all servers with online players</dark_gray>",
     "starlight.command.glist.help.all_force": "<gray>  /glist all force</gray> <dark_gray>— List all servers including empty ones</dark_gray>",
-    "starlight.command.glist.help.server": "<gray>  /glist &lt;server&gt;</gray> <dark_gray>— List players on a specific server</dark_gray>"
+    "starlight.command.glist.help.server": "<gray>  /glist <server></gray> <dark_gray>— List players on a specific server</dark_gray>",
+
+    "starlight.logging.warn.console.init_failed": "Console initialization failed: {}, running without interactive console"
   }
 }
