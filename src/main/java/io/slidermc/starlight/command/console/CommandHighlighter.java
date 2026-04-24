@@ -31,37 +31,26 @@ public class CommandHighlighter implements Highlighter {
     public AttributedString highlight(LineReader reader, String buffer) {
         if (buffer.isEmpty()) return AttributedString.EMPTY;
 
-        String parseBuffer = buffer;
-        int slashLen = 0;
-        if (parseBuffer.charAt(0) == '/') {
-            parseBuffer = buffer.substring(1);
-            slashLen = 1;
-        }
-        if (parseBuffer.isEmpty()) return new AttributedString(buffer);
-
         try {
-            ParseResults<IStarlightCommandSource> parse = dispatcher.parse(parseBuffer, source);
+            ParseResults<IStarlightCommandSource> parse = dispatcher.parse(buffer, source);
             List<ParsedCommandNode<IStarlightCommandSource>> nodes = parse.getContext().getNodes();
 
-            int errorPos = parseBuffer.length();
+            int errorPos = buffer.length();
             for (CommandSyntaxException ex : parse.getExceptions().values()) {
                 errorPos = Math.min(errorPos, ex.getCursor());
             }
-            boolean hasError = errorPos < parseBuffer.length();
+            boolean hasError = errorPos < buffer.length();
 
             AttributedStringBuilder sb = new AttributedStringBuilder();
-            if (slashLen > 0) {
-                sb.append("/", AttributedStyle.DEFAULT.foreground(AttributedStyle.WHITE).faint());
-            }
 
             if (nodes.isEmpty()) {
                 if (hasError && errorPos > 0) {
-                    sb.append(parseBuffer.substring(0, errorPos), AttributedStyle.DEFAULT.foreground(AttributedStyle.GREEN));
-                    sb.append(parseBuffer.substring(errorPos), AttributedStyle.DEFAULT.foreground(AttributedStyle.RED));
+                    sb.append(buffer.substring(0, errorPos), AttributedStyle.DEFAULT.foreground(AttributedStyle.GREEN));
+                    sb.append(buffer.substring(errorPos), AttributedStyle.DEFAULT.foreground(AttributedStyle.RED));
                 } else if (hasError) {
-                    sb.append(parseBuffer, AttributedStyle.DEFAULT.foreground(AttributedStyle.RED));
+                    sb.append(buffer, AttributedStyle.DEFAULT.foreground(AttributedStyle.RED));
                 } else {
-                    sb.append(parseBuffer, AttributedStyle.DEFAULT.foreground(AttributedStyle.GREEN));
+                    sb.append(buffer, AttributedStyle.DEFAULT.foreground(AttributedStyle.GREEN));
                 }
                 return sb.toAttributedString();
             }
@@ -69,10 +58,10 @@ public class CommandHighlighter implements Highlighter {
             int pos = 0;
             for (ParsedCommandNode<IStarlightCommandSource> pcn : nodes) {
                 int nodeStart = pcn.getRange().getStart();
-                int segEnd = Math.min(pcn.getRange().getEnd(), parseBuffer.length());
+                int segEnd = Math.min(pcn.getRange().getEnd(), buffer.length());
 
                 if (nodeStart > pos) {
-                    sb.append(parseBuffer.substring(pos, nodeStart),
+                    sb.append(buffer.substring(pos, nodeStart),
                             AttributedStyle.DEFAULT.foreground(AttributedStyle.RED));
                     pos = nodeStart;
                 }
@@ -80,27 +69,27 @@ public class CommandHighlighter implements Highlighter {
                 AttributedStyle style = styleForNode(pcn.getNode());
                 if (pos < segEnd) {
                     if (hasError && pos >= errorPos) {
-                        sb.append(parseBuffer.substring(pos, segEnd),
+                        sb.append(buffer.substring(pos, segEnd),
                                 AttributedStyle.DEFAULT.foreground(AttributedStyle.RED));
                     } else if (hasError && errorPos < segEnd) {
-                        sb.append(parseBuffer.substring(pos, errorPos), style);
-                        sb.append(parseBuffer.substring(errorPos, segEnd),
+                        sb.append(buffer.substring(pos, errorPos), style);
+                        sb.append(buffer.substring(errorPos, segEnd),
                                 AttributedStyle.DEFAULT.foreground(AttributedStyle.RED));
                     } else {
-                        sb.append(parseBuffer.substring(pos, segEnd), style);
+                        sb.append(buffer.substring(pos, segEnd), style);
                     }
                     pos = segEnd;
                 }
             }
 
-            if (pos < parseBuffer.length()) {
+            if (pos < buffer.length()) {
                 AttributedStyle tailStyle;
                 if (hasError) {
                     tailStyle = AttributedStyle.DEFAULT.foreground(AttributedStyle.RED);
                 } else {
                     tailStyle = AttributedStyle.DEFAULT.foreground(AttributedStyle.WHITE).faint();
                 }
-                sb.append(parseBuffer.substring(pos), tailStyle);
+                sb.append(buffer.substring(pos), tailStyle);
             }
 
             return sb.toAttributedString();
@@ -108,7 +97,6 @@ public class CommandHighlighter implements Highlighter {
             return new AttributedString(buffer);
         }
     }
-
     private static AttributedStyle styleForNode(CommandNode<IStarlightCommandSource> node) {
         if (node instanceof LiteralCommandNode) {
             return AttributedStyle.DEFAULT.foreground(AttributedStyle.CYAN).bold();
