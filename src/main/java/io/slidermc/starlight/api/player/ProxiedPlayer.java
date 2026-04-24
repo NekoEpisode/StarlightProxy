@@ -188,9 +188,7 @@ public class ProxiedPlayer implements IStarlightCommandSource {
         PermissionCheckEvent event = new PermissionCheckEvent(this, permission, result);
         proxy.getEventManager().fire(event);
 
-        if (event.isCancelled()) return event.getResult();
-
-        return result;
+        return event.getResult();
     }
 
     public CompletableFuture<Void> sendPluginMessage(Key key, byte[] data) {

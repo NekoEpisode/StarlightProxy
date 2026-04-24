@@ -207,4 +207,77 @@ class PermissionServiceTest {
         assertTrue(mgr3.hasPermission(uuid, "test.keep"));
         assertFalse(mgr3.hasPermission(uuid, "test.remove"));
     }
+
+    @Test
+    void testPeriodicFlush(@TempDir Path tempDir) throws IOException, InterruptedException {
+        Path permFile = tempDir.resolve("periodic.yml");
+        UUID uuid = UUID.randomUUID();
+
+        SimplePermissionManager mgr = new SimplePermissionManager(permFile, exec);
+        mgr.load();
+        mgr.start();
+        mgr.setPermission(uuid, "test.periodic", true);
+
+        Thread.sleep(1500);
+
+        SimplePermissionManager mgr2 = new SimplePermissionManager(permFile, exec);
+        mgr2.load();
+        assertTrue(mgr2.hasPermission(uuid, "test.periodic"));
+
+        mgr.stop();
+    }
+
+    @Test
+    void testInvalidUuidKey(@TempDir Path tempDir) throws IOException {
+        Path permFile = tempDir.resolve("invalid_uuid.yml");
+        Files.writeString(permFile, """
+                permissions:
+                  "not-a-valid-uuid":
+                    - command.server
+                  "00000000-0000-0000-0000-000000000001":
+                    - command.test""");
+
+        SimplePermissionManager mgr = new SimplePermissionManager(permFile, exec);
+        mgr.load();
+
+        UUID uuid = UUID.fromString("00000000-0000-0000-0000-000000000001");
+        assertTrue(mgr.hasPermission(uuid, "command.test"));
+        assertFalse(mgr.hasPermission(uuid, "command.server"));
+    }
+
+    @Test
+    void testNonListPermissionsValue(@TempDir Path tempDir) throws IOException {
+        Path permFile = tempDir.resolve("nonlist.yml");
+        Files.writeString(permFile, """
+                permissions:
+                  "00000000-0000-0000-0000-000000000001": "just a string"
+                  "00000000-0000-0000-0000-000000000002":
+                    - command.test""");
+
+        SimplePermissionManager mgr = new SimplePermissionManager(permFile, exec);
+        mgr.load();
+
+        UUID uuid1 = UUID.fromString("00000000-0000-0000-0000-000000000001");
+        UUID uuid2 = UUID.fromString("00000000-0000-0000-0000-000000000002");
+        assertFalse(mgr.hasPermission(uuid1, "anything"));
+        assertTrue(mgr.hasPermission(uuid2, "command.test"));
+    }
+
+    @Test
+    void testNullValuesInPermissionList(@TempDir Path tempDir) throws IOException {
+        Path permFile = tempDir.resolve("null_values.yml");
+        Files.writeString(permFile, """
+                permissions:
+                  "00000000-0000-0000-0000-000000000001":
+                    - command.one
+                    -
+                    - command.two""");
+
+        SimplePermissionManager mgr = new SimplePermissionManager(permFile, exec);
+        mgr.load();
+
+        UUID uuid = UUID.fromString("00000000-0000-0000-0000-000000000001");
+        assertTrue(mgr.hasPermission(uuid, "command.one"));
+        assertTrue(mgr.hasPermission(uuid, "command.two"));
+    }
 }
