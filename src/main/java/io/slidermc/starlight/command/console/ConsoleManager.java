@@ -64,11 +64,43 @@ public class ConsoleManager implements AutoCloseable {
     }
 
     private void redirectLog4jOutput() {
-        OutputStream consoleStream = new OutputStream() {
+        PrintStream logStream = new PrintStream(printAboveStream(), true, StandardCharsets.UTF_8);
+        System.setOut(new PrintStream(printAboveStream(), true, StandardCharsets.UTF_8));
+        System.setErr(new PrintStream(printAboveStream(), true, StandardCharsets.UTF_8));
+
+        LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
+        Configuration config = ctx.getConfiguration();
+
+        PatternLayout layout = PatternLayout.newBuilder()
+                .withPattern("[%d{HH:mm:ss} %-5level]: %msg%n")
+                .build();
+
+        OutputStreamAppender appender = OutputStreamAppender.newBuilder()
+                .setName("JLineConsole")
+                .setLayout(layout)
+                .setTarget(logStream)
+                .build();
+        appender.start();
+        config.addAppender(appender);
+
+        for (LoggerConfig loggerConfig : config.getLoggers().values()) {
+            loggerConfig.removeAppender("Console");
+            loggerConfig.removeAppender("PluginConsole");
+            loggerConfig.addAppender(appender, null, null);
+        }
+        config.getRootLogger().removeAppender("Console");
+        config.getRootLogger().removeAppender("PluginConsole");
+        config.getRootLogger().addAppender(appender, null, null);
+
+        ctx.updateLoggers();
+    }
+
+    private OutputStream printAboveStream() {
+        return new OutputStream() {
             private final StringBuilder buffer = new StringBuilder();
 
             @Override
-            public void write(int b) {
+            public synchronized void write(int b) {
                 if (b == '\n') {
                     flushLine();
                 } else if (b != '\r') {
@@ -77,7 +109,7 @@ public class ConsoleManager implements AutoCloseable {
             }
 
             @Override
-            public void write(byte @NonNull [] b, int off, int len) {
+            public synchronized void write(byte @NonNull [] b, int off, int len) {
                 int start = off;
                 for (int i = off; i < off + len; i++) {
                     if (b[i] == '\n') {
@@ -94,7 +126,7 @@ public class ConsoleManager implements AutoCloseable {
             }
 
             @Override
-            public void flush() {
+            public synchronized void flush() {
                 if (!buffer.isEmpty()) {
                     String line = buffer.toString();
                     buffer.setLength(0);
@@ -108,35 +140,6 @@ public class ConsoleManager implements AutoCloseable {
                 reader.printAbove(line);
             }
         };
-
-        PrintStream ps = new PrintStream(consoleStream, true, StandardCharsets.UTF_8);
-        System.setOut(ps);
-
-        LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
-        Configuration config = ctx.getConfiguration();
-
-        PatternLayout layout = PatternLayout.newBuilder()
-                .withPattern("[%d{HH:mm:ss} %-5level]: %msg%n")
-                .build();
-
-        OutputStreamAppender appender = OutputStreamAppender.newBuilder()
-                .setName("JLineConsole")
-                .setLayout(layout)
-                .setTarget(ps)
-                .build();
-        appender.start();
-        config.addAppender(appender);
-
-        for (LoggerConfig loggerConfig : config.getLoggers().values()) {
-            loggerConfig.removeAppender("Console");
-            loggerConfig.removeAppender("PluginConsole");
-            loggerConfig.addAppender(appender, null, null);
-        }
-        config.getRootLogger().removeAppender("Console");
-        config.getRootLogger().removeAppender("PluginConsole");
-        config.getRootLogger().addAppender(appender, null, null);
-
-        ctx.updateLoggers();
     }
 
     private void readLoop() {
