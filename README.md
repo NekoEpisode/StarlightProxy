@@ -6,8 +6,7 @@
 简体中文 | [English](docs/README_EN.md)
 
 ## 介绍
-Starlight是一个Minecraft反向代理(like [BungeeCord](https://github.com/SpigotMC/BungeeCord)/[Velocity](https://github.com/PaperMC/Velocity/)), 为极高的API开放性所设计  
-效果展示: minigame.voidix.net (Minecraft服务器)
+Starlight是一个Minecraft反向代理(like [BungeeCord](https://github.com/SpigotMC/BungeeCord)/[Velocity](https://github.com/PaperMC/Velocity/)), 为极高的API开放性所设计
 
 ## 当前进展
 此项目目前还在开发阶段(W.I.P)中, 目前已实现的功能包括:
