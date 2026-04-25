@@ -362,7 +362,7 @@ public class ThreadSafetyTest {
 
     @Test
     public void testConnectionContextVerifyTokenDefensiveCopy() throws Exception {
-        var ctx = new ConnectionContext(null);
+        var ctx = new ConnectionContext(null, null);
         byte[] original = new byte[]{1, 2, 3, 4};
         ctx.setVerifyToken(original);
 

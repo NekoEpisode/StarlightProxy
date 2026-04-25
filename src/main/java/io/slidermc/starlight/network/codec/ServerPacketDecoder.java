@@ -54,7 +54,7 @@ public class ServerPacketDecoder extends ByteToMessageDecoder {
 
         ConnectionContext context = ctx.channel().attr(AttributeKeys.CONNECTION_CONTEXT).get();
         if (context == null) {
-            context = new ConnectionContext(proxy);
+            context = new ConnectionContext(proxy, ctx.channel());
             ctx.channel().attr(AttributeKeys.CONNECTION_CONTEXT).set(context);
         }
 

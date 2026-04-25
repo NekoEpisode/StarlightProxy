@@ -237,6 +237,10 @@ public class ProxiedPlayer implements IStarlightCommandSource {
         }
     }
 
+    public void kick(Component component) {
+        getConnectionContext().kick(component);
+    }
+
     public boolean isOnline() {
         return isOnline;
     }

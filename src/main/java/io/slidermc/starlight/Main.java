@@ -154,12 +154,15 @@ public class Main {
         // 注册内置监听器
         proxy.getEventManager().register("pluginmessage-1", new PluginMessageEventListener());
 
+        Runtime.getRuntime().addShutdownHook(new Thread(proxy::shutdown, "starlight-shutdown"));
+
         // 开始监听
         proxy.start();
 
         // 启动控制台
         try {
-            new ConsoleManager(proxy);
+            ConsoleManager consoleManager = new ConsoleManager(proxy);
+            proxy.setConsoleManager(consoleManager);
         } catch (Exception e) {
             log.warn(translateManager.translate("starlight.logging.warn.console.init_failed"), e.getMessage());
             log.debug("控制台命令初始化失败！", e);

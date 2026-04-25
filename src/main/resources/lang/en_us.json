@@ -58,6 +58,12 @@
     "starlight.logging.warn.forwarding.non_inet_address": "Player remote address is not InetSocketAddress — cannot build forwarding data, closing downstream",
     "starlight.logging.warn.forwarding.player_not_found": "ProxiedPlayer not found when handling velocity:player_info — closing downstream",
 
+    "starlight.logging.info.shutdown.stopping": "Shutting down Starlight proxy server...",
+    "starlight.logging.info.shutdown.complete": "Starlight proxy server has been shut down.",
+    "starlight.disconnect.shutdown": "<red>Server is shutting down</red>\n<gray>Please try again later</gray>",
+    "starlight.command.starlight.shutdown.stopping": "<green>Shutting down Starlight proxy server...</green>",
+    "starlight.command.starlight.shutdown.help": "<gray>  /starlight shutdown</gray> <dark_gray>— Gracefully shut down the Starlight proxy</dark_gray>",
+
     "starlight.logging.info.plugin.discovered": "Discovered plugin [{}] v{}",
     "starlight.logging.info.plugin.enabled": "Plugin [{}] v{} enabled",
     "starlight.logging.info.plugin.disabled": "Plugin [{}] disabled",
