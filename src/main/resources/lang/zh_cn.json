@@ -58,6 +58,12 @@
     "starlight.logging.warn.forwarding.non_inet_address": "玩家远程地址不是InetSocketAddress，无法构建转发数据，正在关闭下游连接",
     "starlight.logging.warn.forwarding.player_not_found": "处理velocity:player_info时未找到ProxiedPlayer，正在关闭下游连接",
 
+    "starlight.logging.info.shutdown.stopping": "正在关闭Starlight代理服务器...",
+    "starlight.logging.info.shutdown.complete": "Starlight代理服务器已关闭",
+    "starlight.disconnect.shutdown": "<red>服务器正在关闭</red>\n<gray>请稍后再试</gray>",
+    "starlight.command.starlight.shutdown.stopping": "<green>正在关闭Starlight代理服务器...</green>",
+    "starlight.command.starlight.shutdown.help": "<gray>  /starlight shutdown</gray> <dark_gray>— 优雅关闭Starlight代理服务器</dark_gray>",
+
     "starlight.logging.info.plugin.discovered": "已发现插件 [{}] v{}",
     "starlight.logging.info.plugin.enabled": "插件 [{}] v{} 已启用",
     "starlight.logging.info.plugin.disabled": "插件 [{}] 已禁用",

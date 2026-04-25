@@ -56,8 +56,6 @@ public class ConsoleManager implements AutoCloseable {
 
         redirectLog4jOutput();
 
-        Runtime.getRuntime().addShutdownHook(new Thread(this::shutdown, "console-shutdown"));
-
         Thread.ofVirtual()
                 .name("console-reader")
                 .start(this::readLoop);
@@ -152,7 +150,7 @@ public class ConsoleManager implements AutoCloseable {
                     if (trimmed.isEmpty()) continue;
                     proxy.getCommandManager().execute(trimmed, consoleSource);
                 } catch (UserInterruptException | EndOfFileException e) {
-                    shutdown();
+                    proxy.shutdown();
                     break;
                 }
             }

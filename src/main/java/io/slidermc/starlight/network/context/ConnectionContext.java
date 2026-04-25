@@ -6,7 +6,10 @@ import io.slidermc.starlight.api.player.ProxiedPlayer;
 import io.slidermc.starlight.data.clientinformation.ClientInformation;
 import io.slidermc.starlight.network.command.CommandNodeData;
 import io.slidermc.starlight.network.packet.IMinecraftPacket;
+import io.slidermc.starlight.network.packet.packets.clientbound.configuration.ClientboundDisconnectConfigurationPacket;
+import io.slidermc.starlight.network.packet.packets.clientbound.login.ClientboundDisconnectLoginPacket;
 import io.slidermc.starlight.network.packet.packets.clientbound.play.ClientboundCommandsPacket;
+import io.slidermc.starlight.network.packet.packets.clientbound.play.ClientboundDisconnectPlayPacket;
 import io.slidermc.starlight.network.protocolenum.ProtocolState;
 
 import java.util.ArrayList;
@@ -14,6 +17,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
+import net.kyori.adventure.text.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,13 +48,16 @@ public class ConnectionContext {
     private volatile List<CommandNodeData> cachedCommandNodes;
     private volatile int cachedCommandRootIndex;
 
+    private final Channel channel;
+
     private final StarlightProxy proxy;
 
-    public ConnectionContext(StarlightProxy proxy) {
+    public ConnectionContext(StarlightProxy proxy, Channel channel) {
         this.inboundState = ProtocolState.HANDSHAKE;
         this.outboundState = ProtocolState.HANDSHAKE;
         this.handshakeInformation = new HandshakeInformation();
         this.proxy = proxy;
+        this.channel = channel;
     }
 
     public ProtocolState getInboundState() {
@@ -197,5 +204,25 @@ public class ConnectionContext {
             future.completeExceptionally(new IllegalStateException("Downstream channel is null"));
         }
         return future;
+    }
+
+    public void kick(Component component) {
+        if (downstreamChannel != null && downstreamChannel.isActive()) {
+            downstreamChannel.close().addListener(_ -> closeUpstream(component));
+        } else {
+            closeUpstream(component);
+        }
+    }
+
+    private void closeUpstream(Component component) {
+        if (outboundState == ProtocolState.LOGIN) {
+            channel.writeAndFlush(new ClientboundDisconnectLoginPacket(component)).addListener(_ -> channel.close());
+        } else if (outboundState == ProtocolState.CONFIGURATION) {
+            channel.writeAndFlush(new ClientboundDisconnectConfigurationPacket(component)).addListener(_ -> channel.close());
+        } else if (outboundState == ProtocolState.PLAY) {
+            channel.writeAndFlush(new ClientboundDisconnectPlayPacket(component)).addListener(_ -> channel.close());
+        } else {
+            channel.close();
+        }
     }
 }

@@ -50,6 +50,15 @@ public class StarlightMainCommand extends StarlightCommand {
                         .executes(ctx -> {
                             sendHelp(ctx.getSource());
                             return 1;
+                        }))
+                .then(literal("shutdown")
+                        .requires(src -> src.hasPermission("starlight.shutdown"))
+                        .executes(ctx -> {
+                            ctx.getSource().sendMessage(
+                                    MiniMessageUtils.MINI_MESSAGE.deserialize(
+                                            t(ctx.getSource(), "starlight.command.starlight.shutdown.stopping")));
+                            proxy.shutdown();
+                            return 1;
                         }));
     }
 
@@ -142,6 +151,8 @@ public class StarlightMainCommand extends StarlightCommand {
                     Placeholder.parsed("usage", cmd.getUsage()),
                     Placeholder.parsed("description", cmd.getDescription())));
         }
+        src.sendMessage(MiniMessageUtils.MINI_MESSAGE.deserialize(
+                t(src, "starlight.command.starlight.shutdown.help")));
     }
 
     /**
