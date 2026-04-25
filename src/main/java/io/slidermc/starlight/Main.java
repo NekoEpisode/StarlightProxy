@@ -154,11 +154,10 @@ public class Main {
         // 注册内置监听器
         proxy.getEventManager().register("pluginmessage-1", new PluginMessageEventListener());
 
+        Runtime.getRuntime().addShutdownHook(new Thread(proxy::shutdown, "starlight-shutdown"));
+
         // 开始监听
         proxy.start();
-
-        // 注册 JVM 关闭钩子，确保优雅关闭
-        Runtime.getRuntime().addShutdownHook(new Thread(proxy::shutdown, "starlight-shutdown"));
 
         // 启动控制台
         try {

@@ -144,9 +144,11 @@ public class StarlightProxy {
             player.kick(reason);
         }
 
-        // 3. Shutdown Netty event loop groups (must be after all channel I/O completes)
-        if (bossGroup != null) bossGroup.shutdownGracefully();
-        if (workerGroup != null) workerGroup.shutdownGracefully();
+        // 3. Shutdown Netty event loop groups synchronously (must be after all channel I/O completes)
+        //    syncUninterruptibly() ensures pending writes (disconnect packets, etc.) are flushed
+        //    before the JVM can exit, preventing "connection lost" on the client side.
+        if (bossGroup != null) bossGroup.shutdownGracefully().syncUninterruptibly();
+        if (workerGroup != null) workerGroup.shutdownGracefully().syncUninterruptibly();
 
         // 4. Disable all plugins (reverse order)
         pluginManager.disableAll();
