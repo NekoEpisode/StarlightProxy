@@ -207,8 +207,9 @@ public class ConnectionContext {
     }
 
     public void kick(Component component) {
-        if (downstreamChannel != null && downstreamChannel.isActive()) {
-            downstreamChannel.close().addListener(_ -> closeUpstream(component));
+        Channel dc = this.downstreamChannel;
+        if (dc != null && dc.isActive()) {
+            dc.close().addListener(_ -> closeUpstream(component));
         } else {
             closeUpstream(component);
         }

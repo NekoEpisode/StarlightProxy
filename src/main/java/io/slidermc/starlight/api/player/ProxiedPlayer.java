@@ -194,18 +194,19 @@ public class ProxiedPlayer implements IStarlightCommandSource {
     public CompletableFuture<Void> sendPluginMessage(Key key, byte[] data) {
         CompletableFuture<Void> future = new CompletableFuture<>();
         try {
-            if (getConnectionContext().getOutboundState() == ProtocolState.LOGIN) {
+            ProtocolState state = getConnectionContext().getOutboundState();
+            if (state == ProtocolState.LOGIN) {
                 throw new IllegalStateException("Cannot send plugin message during login phase");
-            } else if (getConnectionContext().getOutboundState() == ProtocolState.HANDSHAKE) {
+            } else if (state == ProtocolState.HANDSHAKE) {
                 throw new IllegalStateException("Cannot send plugin message during handshake phase");
-            } else if (getConnectionContext().getOutboundState() == ProtocolState.CONFIGURATION) {
+            } else if (state == ProtocolState.CONFIGURATION) {
                 channel.writeAndFlush(new ClientboundPluginMessageConfigurationPacket(key, data)).addListener(_ ->
                         future.complete(null));
-            } else if (getConnectionContext().getOutboundState() == ProtocolState.PLAY) {
+            } else if (state == ProtocolState.PLAY) {
                 channel.writeAndFlush(new ClientboundPluginMessagePlayPacket(key, data)).addListener(_ ->
                         future.complete(null));
             } else {
-                throw new IllegalStateException("Unknown protocol state: " + getConnectionContext().getOutboundState());
+                throw new IllegalStateException("Unknown protocol state: " + state);
             }
         } catch (Exception e) {
             future.completeExceptionally(e);

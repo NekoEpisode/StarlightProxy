@@ -48,8 +48,8 @@ public class CommandManager {
     public void register(StarlightCommand command) {
         synchronized (lock) {
             dispatcher.register(command.build());
+            commands.put(command.getName(), command);
         }
-        commands.put(command.getName(), command);
         log.debug("已注册命令: /{}", command.getName());
     }
 
