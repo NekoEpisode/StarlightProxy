@@ -35,6 +35,7 @@ public class PacketRegistry {
     private final ReentrantReadWriteLock registryLock = new ReentrantReadWriteLock();
 
     public void registerPacket(int protocolVersion, ProtocolState state, ProtocolDirection direction, int packetId, Supplier<? extends IMinecraftPacket> factory) {
+        Class<? extends IMinecraftPacket> packetClass = factory.get().getClass();
         registryLock.writeLock().lock();
         try {
             packetFactoryMap
@@ -46,7 +47,7 @@ public class PacketRegistry {
                     .computeIfAbsent(protocolVersion, k -> new ConcurrentHashMap<>())
                     .computeIfAbsent(state, k -> new ConcurrentHashMap<>())
                     .computeIfAbsent(direction, k -> new ConcurrentHashMap<>())
-                    .put(factory.get().getClass(), packetId);
+                    .put(packetClass, packetId);
         } finally {
             registryLock.writeLock().unlock();
         }
@@ -86,8 +87,11 @@ public class PacketRegistry {
                     reverseStateMap.remove(direction);
                     if (reverseStateMap.isEmpty()) {
                         Map<ProtocolState, Map<ProtocolDirection, Map<Class<? extends IMinecraftPacket>, Integer>>> revVersionMap = reverseMap.get(protocolVersion);
-                        if (revVersionMap != null && revVersionMap.isEmpty()) {
-                            reverseMap.remove(protocolVersion);
+                        if (revVersionMap != null) {
+                            revVersionMap.remove(state);
+                            if (revVersionMap.isEmpty()) {
+                                reverseMap.remove(protocolVersion);
+                            }
                         }
                     }
                 }
