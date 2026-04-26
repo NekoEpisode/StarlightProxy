@@ -155,12 +155,13 @@
         <dependency>
             <groupId>org.jline</groupId>
             <artifactId>jline-reader</artifactId>
-            <version>3.29.0</version>
+            <version>4.0.12</version>
         </dependency>
         <dependency>
             <groupId>org.jline</groupId>
-            <artifactId>jline-terminal-jansi</artifactId>
-            <version>3.29.0</version>
+            <artifactId>jline-terminal-ffm</artifactId>
+            <version>4.0.12</version>
+            <scope>compile</scope>
         </dependency>
     </dependencies>
 </project>

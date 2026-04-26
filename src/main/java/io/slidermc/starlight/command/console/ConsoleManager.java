@@ -165,10 +165,21 @@ public class ConsoleManager implements AutoCloseable {
 
     public void shutdown() {
         if (!running.compareAndSet(true, false)) return;
+        removeJLineAppender();
         try {
             terminal.close();
         } catch (Exception ignored) {
         }
+    }
+
+    private void removeJLineAppender() {
+        LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
+        Configuration config = ctx.getConfiguration();
+        for (LoggerConfig loggerConfig : config.getLoggers().values()) {
+            loggerConfig.removeAppender("JLineConsole");
+        }
+        config.getRootLogger().removeAppender("JLineConsole");
+        ctx.updateLoggers();
     }
 
     private void cleanup() {
