@@ -37,16 +37,19 @@ public class StarlightMainCommand extends StarlightCommand {
                     return 1;
                 })
                 .then(literal("version")
+                        .requires(commandSource -> commandSource.hasPermission("starlight.version"))
                         .executes(ctx -> {
                             sendVersion(ctx.getSource());
                             return 1;
                         }))
                 .then(literal("plugins")
+                        .requires(commandSource -> commandSource.hasPermission("starlight.plugins"))
                         .executes(ctx -> {
                             sendPlugins(ctx.getSource());
                             return 1;
                         }))
                 .then(literal("help")
+                        .requires(commandSource -> commandSource.hasPermission("starlight.help"))
                         .executes(ctx -> {
                             sendHelp(ctx.getSource());
                             return 1;

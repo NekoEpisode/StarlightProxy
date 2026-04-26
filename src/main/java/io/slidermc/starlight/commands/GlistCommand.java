@@ -37,6 +37,7 @@ public class GlistCommand extends StarlightCommand {
     @Override
     public LiteralArgumentBuilder<IStarlightCommandSource> build() {
         return literal(getName())
+                .requires(commandSource -> commandSource.hasPermission("starlight.glist"))
                 .executes(ctx -> {
                     sendSummary(ctx.getSource());
                     return 1;
