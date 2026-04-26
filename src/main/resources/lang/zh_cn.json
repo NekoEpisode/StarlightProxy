@@ -47,6 +47,7 @@
     "starlight.logging.warn.encryption.verify_token_mismatch": "verifyToken不匹配(可能存在中间人攻击)，踢出玩家",
     "starlight.logging.warn.encryption.mojang_auth_failed": "Mojang验证失败(HTTP {})，踢出玩家: {}",
     "starlight.logging.warn.encryption.downstream_sent_encryption_request": "下游服务器发送了EncryptionRequest，后端服务器可能处于正版验证模式，正在断开玩家连接",
+    "starlight.logging.warn.encryption.downstream_sent_encryption_request_switch": "下游在切换服务器时发送了EncryptionRequest，后端服务器可能处于正版验证模式，正在中止切换",
     "starlight.logging.error.encryption.pipeline_install_failed": "安装加密Pipeline Handler失败",
     "starlight.logging.error.encryption.hash_compute_failed": "计算serverId hash失败",
     "starlight.logging.error.encryption.mojang_response_parse_failed": "解析Mojang Session响应失败",
@@ -101,6 +102,7 @@
     "starlight.disconnect.login_failed": "<red>登录失败: <error_msg></red>",
     "starlight.disconnect.backend_requires_online_mode": "<red>后端服务器需要正版模式(online-mode)</red>",
     "starlight.disconnect.downstream_requires_modern_forwarding": "<red>服务器要求Velocity Modern Forwarding，但代理未启用此功能</red>",
+    "starlight.disconnect.reconfiguration_timeout": "<red>重配置超时 — 客户端未在限定时间内确认配置开始</red>",
 
     "starlight.error.forwarding.non_inet_address": "<red>内部错误: 玩家远程地址格式错误</red>",
     "starlight.error.forwarding.player_not_found": "<red>内部错误: 玩家信息获取失败</red>",
@@ -155,6 +157,7 @@
 
     "starlight.logging.warn.permission.load_failed": "权限文件加载失败: {}",
     "starlight.logging.warn.permission.replaced": "权限服务已被替换: {} -> {}",
+    "starlight.logging.warn.client.complete_login_before_login": "completeLogin 在 login() 之前被调用 — loginFuture 为 null，已忽略。调用方: {}",
 
     "starlight.command.perm.added": "<green>已为 <player> 添加权限 <permission></green>",
     "starlight.command.perm.removed": "<green>已从 <player> 移除权限 <permission></green>",

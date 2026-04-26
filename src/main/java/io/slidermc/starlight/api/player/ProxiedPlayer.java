@@ -152,6 +152,13 @@ public class ProxiedPlayer implements IStarlightCommandSource {
         }
     }
 
+    /**
+     * 丢弃所有积压消息，在玩家断线时调用以释放引用。
+     */
+    public void clearPendingMessages() {
+        pendingMessageQueue.clear();
+    }
+
     public CompletableFuture<Void> sendPacket(IMinecraftPacket packet) {
         CompletableFuture<Void> completableFuture = new CompletableFuture<>();
         channel.writeAndFlush(packet).addListener(future -> {

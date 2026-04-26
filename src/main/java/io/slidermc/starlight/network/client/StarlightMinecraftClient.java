@@ -35,8 +35,8 @@ public class StarlightMinecraftClient {
 
     private volatile Channel channel;
 
-    private volatile CompletableFuture<Void> loginFuture;
-    private volatile boolean isLoggingIn = false;
+    private volatile CompletableFuture<LoginResult> loginFuture;
+
     private volatile boolean isConnected = false;
 
     /** Filled in by login() before the first non-HANDSHAKE packet is sent/received. */
@@ -99,21 +99,37 @@ public class StarlightMinecraftClient {
         if (channel != null) {
             channel.close();
         }
-        CompletableFuture<Void> f = loginFuture;
-        if (f != null && !f.isDone()) {
-            f.cancel(true);
-        }
     }
 
-    public CompletableFuture<Void> login(ProtocolVersion protocolVersion, String name, UUID uuid) {
+    /**
+     * 原子性完成登录。若 loginFuture 尚未完成则填入 result 并返回 true；
+     * 若已由其他路径完成则返回 false。
+     */
+    public boolean completeLogin(LoginResult result) {
+        CompletableFuture<LoginResult> f = loginFuture;
+        if (f == null) {
+            log.warn(proxy.getTranslateManager().translate("starlight.logging.warn.client.complete_login_before_login"),
+                    StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE).getCallerClass().getName());
+            return false;
+        }
+        return f.complete(result);
+    }
+
+    /**
+     * 登录是否仍在进行中（未成功也未失败）。
+     */
+    public boolean isLoginPending() {
+        CompletableFuture<LoginResult> f = loginFuture;
+        return f != null && !f.isDone();
+    }
+
+    public CompletableFuture<LoginResult> login(ProtocolVersion protocolVersion, String name, UUID uuid) {
         if (channel == null) {
-            CompletableFuture<Void> failed = new CompletableFuture<>();
-            failed.completeExceptionally(new IllegalStateException("Channel not connected"));
-            return failed;
+            return CompletableFuture.completedFuture(new LoginResult.Error(
+                    new IllegalStateException("Channel not connected")));
         }
         loginFuture = new CompletableFuture<>();
         try {
-            isLoggingIn = true;
             channel.writeAndFlush(new ServerboundHandshakePacket(
                     protocolVersion.getProtocolVersionCode(),
                     address.getHostName(),
@@ -126,7 +142,7 @@ public class StarlightMinecraftClient {
                 channel.writeAndFlush(new ServerboundLoginStartPacket(name, uuid));
             });
         } catch (Exception e) {
-            loginFuture.completeExceptionally(e);
+            completeLogin(new LoginResult.Error(e));
         }
         return loginFuture;
     }
@@ -145,29 +161,6 @@ public class StarlightMinecraftClient {
 
     public Channel getChannel() {
         return channel;
-    }
-
-    public void callLoginComplete() {
-        loginFuture.complete(null);
-        isLoggingIn = false;
-    }
-
-    public void callLoginCompleteExceptionally(Throwable e) {
-        loginFuture.completeExceptionally(e);
-        isLoggingIn = false;
-    }
-
-    /**
-     * 以指定原因失败登录并关闭连接。
-     * 先完成 future 再关 channel，确保 channelInactive 不会用通用消息覆盖原因。
-     */
-    public void failLogin(net.kyori.adventure.text.Component reason) {
-        callLoginCompleteExceptionally(new io.slidermc.starlight.switcher.ServerSwitchKickedException(reason));
-        disconnect();
-    }
-
-    public boolean isLoggingIn() {
-        return isLoggingIn;
     }
 
     public boolean isConnected() {

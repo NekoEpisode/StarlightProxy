@@ -38,6 +38,7 @@ public class StarlightServerHandler extends ChannelInboundHandlerAdapter {
             if (player != null) {
                 proxy.getPlayerManager().removePlayer(player.getGameProfile().uuid());
                 player.setOnline(false);
+                player.clearPendingMessages();
                 Channel downstream = player.getConnectionContext().getDownstreamChannel();
                 if (downstream != null) {
                     downstream.close();

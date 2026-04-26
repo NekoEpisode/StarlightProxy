@@ -4,6 +4,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.slidermc.starlight.StarlightProxy;
 import io.slidermc.starlight.api.profile.GameProfile;
+import io.slidermc.starlight.network.client.LoginResult;
 import io.slidermc.starlight.network.client.StarlightMinecraftClient;
 import io.slidermc.starlight.network.codec.utils.MinecraftCodecUtils;
 import io.slidermc.starlight.network.context.AttributeKeys;
@@ -51,7 +52,7 @@ public class ClientboundLoginSuccessPacket implements IMinecraftPacket {
             client.setInboundState(ProtocolState.CONFIGURATION);
             ctx.channel().writeAndFlush(new ServerboundLoginAckPacket()).addListener(_ -> {
                 client.setOutboundState(ProtocolState.CONFIGURATION);
-                client.callLoginComplete();
+                client.completeLogin(new LoginResult.Success());
             });
         }
     }

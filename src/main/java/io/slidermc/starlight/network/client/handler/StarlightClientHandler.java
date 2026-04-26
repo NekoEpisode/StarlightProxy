@@ -3,6 +3,7 @@ package io.slidermc.starlight.network.client.handler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.slidermc.starlight.StarlightProxy;
+import io.slidermc.starlight.network.client.LoginResult;
 import io.slidermc.starlight.network.client.StarlightMinecraftClient;
 import io.slidermc.starlight.network.packet.IMinecraftPacket;
 import io.slidermc.starlight.network.packet.PacketRegistry;
@@ -29,9 +30,9 @@ public class StarlightClientHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-        if (client.isLoggingIn()) {
-            // 只有在 future 未完成时才填充通用原因，避免覆盖 failLogin() 已设置的具体原因
-            client.callLoginCompleteExceptionally(new RuntimeException("Disconnected from server during login"));
+        if (client.isLoginPending()) {
+            client.completeLogin(new LoginResult.Error(
+                    new RuntimeException("Disconnected from server during login")));
         }
     }
 
@@ -54,8 +55,8 @@ public class StarlightClientHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        if (client.isLoggingIn()) {
-            client.callLoginCompleteExceptionally(cause);
+        if (client.isLoginPending()) {
+            client.completeLogin(new LoginResult.Error(cause));
             client.disconnect();
             log.debug("Exceptionally disconnected from server", cause);
         }
