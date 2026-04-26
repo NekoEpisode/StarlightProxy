@@ -4,6 +4,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.slidermc.starlight.StarlightProxy;
+import io.slidermc.starlight.network.client.LoginResult;
 import io.slidermc.starlight.network.client.StarlightMinecraftClient;
 import io.slidermc.starlight.network.context.AttributeKeys;
 import io.slidermc.starlight.network.context.ConnectionContext;
@@ -12,7 +13,6 @@ import io.slidermc.starlight.network.packet.listener.IPacketListener;
 import io.slidermc.starlight.network.packet.packets.clientbound.configuration.ClientboundDisconnectConfigurationPacket;
 import io.slidermc.starlight.network.protocolenum.ProtocolState;
 import io.slidermc.starlight.network.protocolenum.ProtocolVersion;
-import io.slidermc.starlight.switcher.ServerSwitchKickedException;
 import io.slidermc.starlight.utils.MiniMessageUtils;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
@@ -60,26 +60,47 @@ public class ServerboundLoginAckPacket implements IMinecraftPacket {
                             context.getHandshakeInformation().getProtocolVersion(),
                             context.getPlayer().getGameProfile().username(),
                             context.getPlayer().getGameProfile().uuid()
-                    ).whenComplete((_, loginThrowable) -> {
+                    ).whenComplete((result, loginThrowable) -> {
                         if (loginThrowable != null) {
                             log.error(proxy.getTranslateManager().translate("starlight.logging.error.downstream_login_failed"), loginThrowable);
                             ctx.channel().config().setAutoRead(true);
-                            Throwable cause = loginThrowable.getCause() != null ? loginThrowable.getCause() : loginThrowable;
-                            Component reason = cause instanceof ServerSwitchKickedException kicked
-                                    ? kicked.getReason()
-                                    : MiniMessageUtils.MINI_MESSAGE.deserialize(
+                            Component reason = MiniMessageUtils.MINI_MESSAGE.deserialize(
                                     context.getTranslation("starlight.disconnect.login_failed"),
-                                    Placeholder.parsed("error_msg", cause.getMessage() != null ? cause.getMessage() : context.getTranslation("starlight.unknown_error"))
+                                    Placeholder.parsed("error_msg",
+                                            loginThrowable.getMessage() != null ? loginThrowable.getMessage()
+                                                    : context.getTranslation("starlight.unknown_error"))
                             );
                             kickWithConfigDisconnect(ctx, reason);
                             return;
                         }
-                        log.debug("设置上游和下游的连接");
-                        context.setDownstreamChannel(client.getChannel());
-                        context.getPlayer().setCurrentServer(proxy.getServerManager().getDefaultServer());
-                        context.getPlayer().setPreviousServer(null);
-                        // 下游登录完成，恢复读取，之前 buffer 的 CONFIGURATION 包现在开始转发
-                        ctx.channel().config().setAutoRead(true);
+                        switch (result) {
+                            case LoginResult.Success() -> {
+                                log.debug("设置上游和下游的连接");
+                                context.setDownstreamChannel(client.getChannel());
+                                context.getPlayer().setCurrentServer(proxy.getServerManager().getDefaultServer());
+                                context.getPlayer().setPreviousServer(null);
+                                // 下游登录完成，恢复读取，之前 buffer 的 CONFIGURATION 包现在开始转发
+                                ctx.channel().config().setAutoRead(true);
+                            }
+                            case LoginResult.Kicked(Component reason) -> {
+                                log.warn(proxy.getTranslateManager().translate("starlight.logging.error.downstream_login_failed"),
+                                        reason);
+                                ctx.channel().config().setAutoRead(true);
+                                kickWithConfigDisconnect(ctx, reason);
+                            }
+                            case LoginResult.Error(Throwable cause) -> {
+                                log.error(proxy.getTranslateManager().translate("starlight.logging.error.downstream_login_failed"),
+                                        cause);
+                                ctx.channel().config().setAutoRead(true);
+                                Component reason = MiniMessageUtils.MINI_MESSAGE.deserialize(
+                                        context.getTranslation("starlight.disconnect.login_failed"),
+                                        Placeholder.parsed("error_msg",
+                                                cause.getMessage() != null ? cause.getMessage()
+                                                        : context.getTranslation("starlight.unknown_error"))
+                                );
+                                kickWithConfigDisconnect(ctx, reason);
+                            }
+                        }
                     });
                 });
             } catch (Exception e) {

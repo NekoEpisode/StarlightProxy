@@ -3,13 +3,13 @@ package io.slidermc.starlight.network.packet.packets.clientbound.login;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.slidermc.starlight.StarlightProxy;
+import io.slidermc.starlight.network.client.LoginResult;
 import io.slidermc.starlight.network.client.StarlightMinecraftClient;
 import io.slidermc.starlight.network.codec.utils.MinecraftCodecUtils;
 import io.slidermc.starlight.network.context.AttributeKeys;
 import io.slidermc.starlight.network.packet.IMinecraftPacket;
 import io.slidermc.starlight.network.packet.listener.IPacketListener;
 import io.slidermc.starlight.network.protocolenum.ProtocolVersion;
-import io.slidermc.starlight.switcher.ServerSwitchKickedException;
 import io.slidermc.starlight.utils.DisconnectUtils;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
@@ -53,8 +53,9 @@ public class ClientboundDisconnectLoginPacket implements IMinecraftPacket {
                 // Initial login: forward the disconnect reason to the player and close their connection.
                 DisconnectUtils.forwardAndClose(client, packet.getReason(), proxy);
             }
-            // Preserve the kick reason so ModernServerSwitcher can relay it to the player.
-            client.callLoginCompleteExceptionally(new ServerSwitchKickedException(packet.getReason()));
+            // Preserve the kick reason so ModernServerSwitcher (or initial-login caller)
+            // can relay it to the player.
+            client.completeLogin(new LoginResult.Kicked(packet.getReason()));
             client.disconnect();
         }
     }

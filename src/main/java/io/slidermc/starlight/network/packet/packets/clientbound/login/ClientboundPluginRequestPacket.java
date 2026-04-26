@@ -5,6 +5,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.slidermc.starlight.StarlightProxy;
 import io.slidermc.starlight.api.player.ProxiedPlayer;
 import io.slidermc.starlight.api.profile.GameProfile;
+import io.slidermc.starlight.network.client.LoginResult;
 import io.slidermc.starlight.network.codec.utils.MinecraftCodecUtils;
 import io.slidermc.starlight.network.context.AttributeKeys;
 import io.slidermc.starlight.network.context.ConnectionContext;
@@ -78,13 +79,13 @@ public class ClientboundPluginRequestPacket implements IMinecraftPacket {
             if (!"modern".equals(proxy.getConfig().getForwardType())) {
                 // 下游要求 Modern Forwarding，但代理未启用
                 if (downstreamCtx.getClient().isSwitching()) {
-                    // 切换服务器场景：用具体原因失败登录，由 ModernServerSwitcher.exceptionally 展示给玩家
+                    // 切换服务器场景：通过 Kicked result 让调用方(ModernServerSwitcher)展示原因给玩家
                     log.warn(proxy.getTranslateManager().translate("starlight.logging.warn.forwarding.downstream_requires_modern_switch"));
-                    downstreamCtx.getClient().failLogin(
+                    downstreamCtx.getClient().completeLogin(new LoginResult.Kicked(
                             MiniMessageUtils.MINI_MESSAGE.deserialize(
                                     context.getTranslation("starlight.switching.error.downstream_requires_modern_forwarding")
                             )
-                    );
+                    ));
                 } else {
                     // 初始登录场景：踢出玩家
                     log.warn(proxy.getTranslateManager().translate("starlight.logging.warn.forwarding.downstream_requires_modern_login"));
@@ -107,22 +108,22 @@ public class ClientboundPluginRequestPacket implements IMinecraftPacket {
 
             if (!(downstreamCtx.getClient().getPlayerChannel().remoteAddress() instanceof InetSocketAddress remoteAddr)) {
                 log.warn(proxy.getTranslateManager().translate("starlight.logging.warn.forwarding.non_inet_address"));
-                downstreamCtx.getClient().failLogin(
+                downstreamCtx.getClient().completeLogin(new LoginResult.Kicked(
                         MiniMessageUtils.MINI_MESSAGE.deserialize(
                                 context.getTranslation("starlight.error.forwarding.non_inet_address")
                         )
-                );
+                ));
                 return;
             }
 
             ProxiedPlayer player = context.getPlayer().asProxiedPlayer().orElse(null);
             if (player == null) {
                 log.warn(proxy.getTranslateManager().translate("starlight.logging.warn.forwarding.player_not_found"));
-                downstreamCtx.getClient().failLogin(
+                downstreamCtx.getClient().completeLogin(new LoginResult.Kicked(
                         MiniMessageUtils.MINI_MESSAGE.deserialize(
                                 context.getTranslation("starlight.error.forwarding.player_not_found")
                         )
-                );
+                ));
                 return;
             }
 
@@ -149,11 +150,11 @@ public class ClientboundPluginRequestPacket implements IMinecraftPacket {
                     String forwardSecret = proxy.getConfig().getForwardSecret();
                     if (forwardSecret == null || forwardSecret.isEmpty()) {
                         log.error(proxy.getTranslateManager().translate("starlight.logging.error.forwarding_secret_not_configured"));
-                        downstreamCtx.getClient().failLogin(
+                        downstreamCtx.getClient().completeLogin(new LoginResult.Kicked(
                                 MiniMessageUtils.MINI_MESSAGE.deserialize(
                                         context.getTranslation("starlight.error.forwarding.secret_not_configured")
                                 )
-                        );
+                        ));
                         return;
                     }
                     hmac = proxy.getEncryptionManager().computeVelocityHmac(
@@ -162,11 +163,11 @@ public class ClientboundPluginRequestPacket implements IMinecraftPacket {
                     );
                 } catch (Exception e) {
                     log.error(proxy.getTranslateManager().translate("starlight.logging.error.compute_velocity_hmac_failed"), e);
-                    downstreamCtx.getClient().failLogin(
+                    downstreamCtx.getClient().completeLogin(new LoginResult.Kicked(
                             MiniMessageUtils.MINI_MESSAGE.deserialize(
                                     context.getTranslation("starlight.error.forwarding.hmac_computation_failed")
                             )
-                    );
+                    ));
                     return;
                 }
 

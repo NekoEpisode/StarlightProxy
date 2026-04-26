@@ -47,6 +47,7 @@
     "starlight.logging.warn.encryption.verify_token_mismatch": "verifyToken mismatch (possible MITM), kicking player",
     "starlight.logging.warn.encryption.mojang_auth_failed": "Mojang auth failed (HTTP {}), kicking player: {}",
     "starlight.logging.warn.encryption.downstream_sent_encryption_request": "Downstream sent EncryptionRequest — backend server may be in online-mode. Disconnecting player",
+    "starlight.logging.warn.encryption.downstream_sent_encryption_request_switch": "Downstream sent EncryptionRequest during server switch — backend server may be in online-mode. Aborting switch",
     "starlight.logging.error.encryption.pipeline_install_failed": "Failed to install encryption pipeline handlers",
     "starlight.logging.error.encryption.hash_compute_failed": "Failed to compute serverId hash",
     "starlight.logging.error.encryption.mojang_response_parse_failed": "Failed to parse Mojang session response",
@@ -101,6 +102,7 @@
     "starlight.disconnect.login_failed": "<red>Login failed: <error_msg></red>",
     "starlight.disconnect.backend_requires_online_mode": "<red>Backend server requires online-mode</red>",
     "starlight.disconnect.downstream_requires_modern_forwarding": "<red>The server requires Velocity Modern Forwarding, but this proxy is not configured for it.</red>",
+    "starlight.disconnect.reconfiguration_timeout": "<red>Reconfiguration timed out — the client did not acknowledge the configuration start in time.</red>",
 
     "starlight.error.forwarding.non_inet_address": "<red>Internal error: invalid player remote address format</red>",
     "starlight.error.forwarding.player_not_found": "<red>Internal error: player information retrieval failed</red>",
