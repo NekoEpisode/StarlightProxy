@@ -25,7 +25,7 @@ public class StarlightMainCommand extends StarlightCommand {
             MiniMessageUtils.MINI_MESSAGE.deserialize("<gradient:#FFE100:#C8A200>Starlight</gradient>");
 
     public StarlightMainCommand(StarlightProxy proxy) {
-        super("starlight", "StarlightProxy main command", "/starlight <version|plugins|help>");
+        super("starlight", "StarlightProxy main command", "/starlight <version|plugins|help|shutdown>");
         this.proxy = proxy;
     }
 
@@ -151,8 +151,6 @@ public class StarlightMainCommand extends StarlightCommand {
                     Placeholder.parsed("usage", cmd.getUsage()),
                     Placeholder.parsed("description", cmd.getDescription())));
         }
-        src.sendMessage(MiniMessageUtils.MINI_MESSAGE.deserialize(
-                t(src, "starlight.command.starlight.shutdown.help")));
     }
 
     /**
