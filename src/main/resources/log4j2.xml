@@ -4,17 +4,21 @@
         <Property name="LOG_PATH">logs</Property>
         <!-- 主日志格式: [HH:mm:ss INFO]: 消息 -->
         <Property name="LOG_PATTERN">[%d{HH:mm:ss} %-5level]: %msg%n</Property>
+        <!-- 主日志格式(带颜色): INFO/DEBUG=白色, WARN=黄色, ERROR=红色 -->
+        <Property name="LOG_PATTERN_COLOR">%highlight{[%d{HH:mm:ss} %-5level]: %msg%n}{FATAL=red, ERROR=red, WARN=yellow, INFO=white, DEBUG=white, TRACE=white}</Property>
         <!-- 插件日志格式: [HH:mm:ss INFO] [插件名]: 消息 -->
         <Property name="PLUGIN_PATTERN">[%d{HH:mm:ss} %-5level] [%logger{1}]: %msg%n</Property>
+        <!-- 插件日志格式(带颜色) -->
+        <Property name="PLUGIN_PATTERN_COLOR">%highlight{[%d{HH:mm:ss} %-5level] [%logger{1}]: %msg%n}{FATAL=red, ERROR=red, WARN=yellow, INFO=white, DEBUG=white, TRACE=white}</Property>
     </Properties>
 
     <Appenders>
         <Console name="Console" target="SYSTEM_OUT">
-            <PatternLayout pattern="${LOG_PATTERN}" />
+            <PatternLayout pattern="${LOG_PATTERN_COLOR}" />
         </Console>
 
         <Console name="PluginConsole" target="SYSTEM_OUT">
-            <PatternLayout pattern="${PLUGIN_PATTERN}" />
+            <PatternLayout pattern="${PLUGIN_PATTERN_COLOR}" />
         </Console>
 
         <RollingFile name="FileLogger"

@@ -7,16 +7,21 @@ import io.slidermc.starlight.api.command.source.IStarlightCommandSource;
 import io.slidermc.starlight.api.event.events.internal.PermissionCheckEvent;
 import io.slidermc.starlight.api.profile.GameProfile;
 import io.slidermc.starlight.api.server.ProxiedServer;
+import io.slidermc.starlight.network.client.StarlightMinecraftClient;
 import io.slidermc.starlight.network.context.AttributeKeys;
 import io.slidermc.starlight.network.context.ConnectionContext;
+import io.slidermc.starlight.network.context.DownstreamConnectionContext;
 import io.slidermc.starlight.network.packet.IMinecraftPacket;
 import io.slidermc.starlight.network.packet.packets.clientbound.configuration.ClientboundPluginMessageConfigurationPacket;
 import io.slidermc.starlight.network.packet.packets.clientbound.play.ClientboundPluginMessagePlayPacket;
 import io.slidermc.starlight.network.packet.packets.clientbound.play.ClientboundSystemChatPacket;
+import io.slidermc.starlight.network.packet.packets.serverbound.configuration.ServerboundPluginMessageConfigurationPacket;
+import io.slidermc.starlight.network.packet.packets.serverbound.play.ServerboundPluginMessagePlayPacket;
 import io.slidermc.starlight.network.protocolenum.ProtocolState;
 import io.slidermc.starlight.switcher.ModernServerSwitcher;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
+import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -212,6 +217,49 @@ public class ProxiedPlayer implements IStarlightCommandSource {
             future.completeExceptionally(e);
         }
         return future;
+    }
+
+    public CompletableFuture<Void> sendPluginMessageToDownstream(Key key, byte[] data) {
+        CompletableFuture<Void> future = new CompletableFuture<>();
+        try {
+            Channel channel1 = getConnectionContext().getDownstreamChannel();
+            if (channel1 == null) {
+                throw new IllegalStateException("Downstream channel is null");
+            }
+            DownstreamConnectionContext downstreamConnectionContext = channel1.attr(AttributeKeys.DOWNSTREAM_CONNECTION_CONTEXT).get();
+            ProtocolState state = getDownstreamProtocolState(downstreamConnectionContext);
+            if (state == ProtocolState.LOGIN) {
+                throw new IllegalStateException("Cannot send plugin message during login phase");
+            } else if (state == ProtocolState.HANDSHAKE) {
+                throw new IllegalStateException("Cannot send plugin message during handshake phase");
+            } else if (state == ProtocolState.CONFIGURATION) {
+                channel1.writeAndFlush(new ServerboundPluginMessageConfigurationPacket(key, data)).addListener(_ ->
+                        future.complete(null));
+            } else if (state == ProtocolState.PLAY) {
+                channel1.writeAndFlush(new ServerboundPluginMessagePlayPacket(key, data)).addListener(_ ->
+                        future.complete(null));
+            } else {
+                throw new IllegalStateException("Unknown protocol state: " + state);
+            }
+        } catch (Exception e) {
+            future.completeExceptionally(e);
+        }
+        return future;
+    }
+
+    private @NonNull ProtocolState getDownstreamProtocolState(DownstreamConnectionContext downstreamConnectionContext) {
+        if (downstreamConnectionContext == null) {
+            throw new IllegalStateException("Downstream context is null");
+        }
+        StarlightMinecraftClient client = downstreamConnectionContext.getClient();
+        if (client == null) {
+            throw new IllegalStateException("Downstream client is null");
+        }
+        ProtocolState state = client.getOutboundState();
+        if (state == null) {
+            throw new IllegalStateException("Downstream Outbound state is null");
+        }
+        return state;
     }
 
     public Optional<ProxiedServer> getPreviousServer() {

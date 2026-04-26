@@ -75,7 +75,7 @@ public class ConsoleManager implements AutoCloseable {
         Configuration config = ctx.getConfiguration();
 
         PatternLayout layout = PatternLayout.newBuilder()
-                .withPattern("[%d{HH:mm:ss} %-5level]: %msg%n")
+                .withPattern("%highlight{[%d{HH:mm:ss} %-5level]: %msg%n}{FATAL=red, ERROR=red, WARN=yellow, INFO=white, DEBUG=white, TRACE=white}")
                 .build();
 
         OutputStreamAppender appender = OutputStreamAppender.newBuilder()
@@ -185,7 +185,7 @@ public class ConsoleManager implements AutoCloseable {
         Configuration config = ctx.getConfiguration();
 
         PatternLayout layout = PatternLayout.newBuilder()
-                .withPattern("[%d{HH:mm:ss} %-5level]: %msg%n")
+                .withPattern("%highlight{[%d{HH:mm:ss} %-5level]: %msg%n}{FATAL=red, ERROR=red, WARN=yellow, INFO=white, DEBUG=white, TRACE=white}")
                 .build();
 
         OutputStreamAppender directAppender = OutputStreamAppender.newBuilder()
