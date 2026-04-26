@@ -158,20 +158,21 @@ public class StarlightProxy {
             spm.stop();
         }
 
-        // 6. Close console terminal
-        if (consoleManager != null) {
-            consoleManager.close();
-        }
-
-        // 7. Shutdown proxy thread pools
+        // 6. Shutdown proxy thread pools
         executors.shutdown();
 
         log.info(translateManager.translate("starlight.logging.info.shutdown.complete"));
 
-        // 8. Stop Log4j2 manually (shutdownHook="disable" in log4j2.xml,
+        // 7. Stop Log4j2 manually (shutdownHook="disable" in log4j2.xml,
         //    so we own the lifecycle and avoid races with JVM shutdown hook)
         LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
         ctx.stop();
+
+        // 8. Close console terminal LAST — releasing the terminal to the parent shell
+        //    earlier would cause the PowerShell prompt to appear before all log output finishes.
+        if (consoleManager != null) {
+            consoleManager.close();
+        }
     }
 
     /**

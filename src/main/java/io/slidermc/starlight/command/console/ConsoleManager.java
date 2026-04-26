@@ -34,6 +34,8 @@ public class ConsoleManager implements AutoCloseable {
     private final Terminal terminal;
     private final LineReader reader;
     private final AtomicBoolean running = new AtomicBoolean(true);
+    private PrintStream originalOut;
+    private PrintStream originalErr;
 
     public ConsoleManager(StarlightProxy proxy) throws IOException {
         this.proxy = proxy;
@@ -56,12 +58,15 @@ public class ConsoleManager implements AutoCloseable {
 
         redirectLog4jOutput();
 
-        Thread.ofVirtual()
+        Thread.ofPlatform()
                 .name("console-reader")
                 .start(this::readLoop);
     }
 
     private void redirectLog4jOutput() {
+        originalOut = System.out;
+        originalErr = System.err;
+
         PrintStream logStream = new PrintStream(printAboveStream(), true, StandardCharsets.UTF_8);
         System.setOut(new PrintStream(printAboveStream(), true, StandardCharsets.UTF_8));
         System.setErr(new PrintStream(printAboveStream(), true, StandardCharsets.UTF_8));
@@ -165,20 +170,39 @@ public class ConsoleManager implements AutoCloseable {
 
     public void shutdown() {
         if (!running.compareAndSet(true, false)) return;
-        removeJLineAppender();
+        replaceJLineWithDirectAppender();
+        if (originalOut != null) System.setOut(originalOut);
+        if (originalErr != null) System.setErr(originalErr);
         try {
             terminal.close();
         } catch (Exception ignored) {
         }
     }
 
-    private void removeJLineAppender() {
+    private void replaceJLineWithDirectAppender() {
+        if (originalOut == null) return;
         LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
         Configuration config = ctx.getConfiguration();
+
+        PatternLayout layout = PatternLayout.newBuilder()
+                .withPattern("[%d{HH:mm:ss} %-5level]: %msg%n")
+                .build();
+
+        OutputStreamAppender directAppender = OutputStreamAppender.newBuilder()
+                .setName("DirectConsole")
+                .setLayout(layout)
+                .setTarget(originalOut)
+                .build();
+        directAppender.start();
+        config.addAppender(directAppender);
+
         for (LoggerConfig loggerConfig : config.getLoggers().values()) {
             loggerConfig.removeAppender("JLineConsole");
+            loggerConfig.addAppender(directAppender, null, null);
         }
         config.getRootLogger().removeAppender("JLineConsole");
+        config.getRootLogger().addAppender(directAppender, null, null);
+
         ctx.updateLoggers();
     }
 
