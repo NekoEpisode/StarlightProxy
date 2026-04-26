@@ -7,6 +7,7 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.math.BigInteger;
 import java.security.*;
+import java.security.spec.X509EncodedKeySpec;
 
 public class EncryptionManager {
     private final KeyPair keyPair;
@@ -37,6 +38,27 @@ public class EncryptionManager {
         byte[] token = new byte[4];
         secureRandom.nextBytes(token);
         return token;
+    }
+
+    /** 生成 16 字节随机 sharedSecret（AES 密钥） */
+    public byte[] generateSharedSecret() {
+        byte[] secret = new byte[16];
+        secureRandom.nextBytes(secret);
+        return secret;
+    }
+
+    /**
+     * 用指定的 RSA 公钥加密数据（用于向下游服务器发送 EncryptionResponse）。
+     *
+     * @param data      明文数据
+     * @param publicKey 下游服务器的 RSA 公钥（DER/X.509 编码的字节数组）
+     */
+    public static byte[] encryptRSA(byte[] data, byte[] publicKey) throws GeneralSecurityException {
+        KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+        PublicKey key = keyFactory.generatePublic(new X509EncodedKeySpec(publicKey));
+        Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
+        cipher.init(Cipher.ENCRYPT_MODE, key);
+        return cipher.doFinal(data);
     }
 
     /**
