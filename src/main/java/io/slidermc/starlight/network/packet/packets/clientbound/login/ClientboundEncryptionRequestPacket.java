@@ -168,7 +168,7 @@ public class ClientboundEncryptionRequestPacket implements IMinecraftPacket {
                             }
                         });
             } catch (Exception e) {
-                log.error(proxy.getTranslateManager().translate("starlight.logging.error.encryption.pipeline_install_failed"), e);
+                log.error(proxy.getTranslateManager().translate("starlight.logging.error.encryption.downstream_rsa_encrypt_failed"), e);
                 ctx.channel().close();
             }
         }
