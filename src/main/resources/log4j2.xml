@@ -42,7 +42,7 @@
 
     <Loggers>
         <!-- 主包日志 -->
-        <Logger name="io.slidermc.starlight" level="debug" additivity="false">
+        <Logger name="io.slidermc.starlight" level="info" additivity="false">
             <AppenderRef ref="Console"/>
             <AppenderRef ref="FileLogger"/>
         </Logger>
