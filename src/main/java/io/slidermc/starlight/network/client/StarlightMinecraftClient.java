@@ -107,7 +107,12 @@ public class StarlightMinecraftClient {
      */
     public boolean completeLogin(LoginResult result) {
         CompletableFuture<LoginResult> f = loginFuture;
-        return f != null && f.complete(result);
+        if (f == null) {
+            log.warn("completeLogin called before login() — loginFuture is null. Caller: {}",
+                    StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE).getCallerClass().getName());
+            return false;
+        }
+        return f.complete(result);
     }
 
     /**
