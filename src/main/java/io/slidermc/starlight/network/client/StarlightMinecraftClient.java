@@ -108,7 +108,7 @@ public class StarlightMinecraftClient {
     public boolean completeLogin(LoginResult result) {
         CompletableFuture<LoginResult> f = loginFuture;
         if (f == null) {
-            log.warn("completeLogin called before login() — loginFuture is null. Caller: {}",
+            log.warn(proxy.getTranslateManager().translate("starlight.logging.warn.client.complete_login_before_login"),
                     StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE).getCallerClass().getName());
             return false;
         }
