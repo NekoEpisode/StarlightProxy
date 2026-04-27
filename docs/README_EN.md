@@ -10,7 +10,7 @@ This README is AI translated, so there may be some mistakes/errors
 Starlight is a Minecraft reverse proxy (like [BungeeCord](https://github.com/SpigotMC/BungeeCord)/[Velocity](https://github.com/PaperMC/Velocity/)), designed for extremely high API openness.
 
 ## Current Progress
-This project is currently a work in progress (W.I.P). Features implemented so far include:
+This project is currently alpha. Features implemented so far include:
 
 1. Allow players to connect to downstream servers
 2. Allow players to switch servers
