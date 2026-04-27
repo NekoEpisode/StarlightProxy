@@ -126,7 +126,7 @@
     "starlight.command.server.usage": "/server <target_name>",
 
     "starlight.command.starlight.brief": " <gray>— <version></gray>",
-    "starlight.command.starlight.hint": "<dark_gray>Use /starlight help for a list of commands  ·  By SliderMC</dark_gray>",
+    "starlight.command.starlight.hint": "<dark_gray>Use '/starlight help' for help  ·  By SliderMC</dark_gray>",
 
     "starlight.command.starlight.version.header": "<gradient:#FFE100:#C8A200>— StarlightProxy —</gradient>",
     "starlight.command.starlight.version.version": " <gray>Version  </gray><white><version></white>",
@@ -142,11 +142,24 @@
     "starlight.command.starlight.plugins.hover.soft_depends": "<gray>Soft Depends: </gray><white><soft_depends></white>",
 
     "starlight.command.starlight.desc": "StarlightProxy main command",
-    "starlight.command.starlight.usage": "/starlight <version|plugins|help|shutdown>",
+    "starlight.command.starlight.usage": "/starlight help",
 
     "starlight.command.starlight.help.header": "<gradient:#FFE100:#C8A200>— Help —</gradient>",
     "starlight.command.starlight.help.entry": "<gray>  <usage></gray> <dark_gray>— <description></dark_gray>",
     "starlight.command.starlight.help.footer": "<dark_gray>By SliderMC</dark_gray>",
+    "starlight.command.starlight.help.desc.version": "Show Starlight version info",
+    "starlight.command.starlight.help.desc.plugins": "List loaded plugins",
+    "starlight.command.starlight.help.desc.commands": "List all available commands",
+    "starlight.command.starlight.help.desc.help": "Show this help",
+    "starlight.command.starlight.help.desc.shutdown": "Shut down the proxy",
+
+    "starlight.command.starlight.commands.header": "<gradient:#FFE100:#C8A200>— Commands —</gradient>",
+    "starlight.command.starlight.commands.entry": "<gray>  <usage></gray> <dark_gray>— <description></dark_gray>",
+    "starlight.command.starlight.commands.entry_no_desc": "<gray>  <usage></gray>",
+    "starlight.command.starlight.commands.not_found": "<red>Command not found: <name></red>",
+    "starlight.command.starlight.commands.detail.header": "<gradient:#FFE100:#C8A200>— Command: <name> —</gradient>",
+    "starlight.command.starlight.commands.detail.desc": "<gray>  Description: </gray><white><description></white>",
+    "starlight.command.starlight.commands.detail.usage": "<gray>  Usage: </gray><white><usage></white>",
 
     "starlight.command.glist.summary": "<gradient:#FFE100:#C8A200>Online:</gradient> <white><players></white> <gray>player(s) across</gray> <white><servers></white> <gray>server(s)</gray>",
     "starlight.command.glist.all.header": "<gradient:#FFE100:#C8A200>— Server List (<servers> servers) —</gradient>",

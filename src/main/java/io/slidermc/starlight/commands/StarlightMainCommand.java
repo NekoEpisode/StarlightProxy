@@ -1,6 +1,8 @@
 package io.slidermc.starlight.commands;
 
+import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import io.slidermc.starlight.StarlightProxy;
 import io.slidermc.starlight.api.command.StarlightCommand;
 import io.slidermc.starlight.api.command.source.IStarlightCommandSource;
@@ -29,6 +31,14 @@ public class StarlightMainCommand extends StarlightCommand {
         this.proxy = proxy;
     }
 
+    private static final String[][] HELP_ENTRIES = {
+            {"version", "starlight.command.starlight.help.desc.version"},
+            {"plugins", "starlight.command.starlight.help.desc.plugins"},
+            {"commands", "starlight.command.starlight.help.desc.commands"},
+            {"help", "starlight.command.starlight.help.desc.help"},
+            {"shutdown", "starlight.command.starlight.help.desc.shutdown"},
+    };
+
     @Override
     public LiteralArgumentBuilder<IStarlightCommandSource> build() {
         return literal(getName())
@@ -54,6 +64,23 @@ public class StarlightMainCommand extends StarlightCommand {
                             sendHelp(ctx.getSource());
                             return 1;
                         }))
+                .then(literal("commands")
+                        .requires(src -> src.hasPermission("starlight.commands"))
+                        .executes(ctx -> {
+                            sendCommands(ctx.getSource());
+                            return 1;
+                        })
+                        .then(RequiredArgumentBuilder.<IStarlightCommandSource, String>argument("name", StringArgumentType.word())
+                                .suggests((ctx, builder) -> {
+                                    proxy.getCommandManager().getCommands()
+                                            .forEach(cmd -> builder.suggest(cmd.getName()));
+                                    return builder.buildFuture();
+                                })
+                                .executes(ctx -> {
+                                    String name = StringArgumentType.getString(ctx, "name");
+                                    sendCommandDetail(ctx.getSource(), name);
+                                    return 1;
+                                })))
                 .then(literal("shutdown")
                         .requires(src -> src.hasPermission("starlight.shutdown"))
                         .executes(ctx -> {
@@ -145,17 +172,54 @@ public class StarlightMainCommand extends StarlightCommand {
     }
 
     private void sendHelp(IStarlightCommandSource src) {
-        Collection<StarlightCommand> commands = proxy.getCommandManager().getCommands();
         src.sendMessage(MiniMessageUtils.MINI_MESSAGE.deserialize(
                 t(src, "starlight.command.starlight.help.header")));
+        for (String[] entry : HELP_ENTRIES) {
+            src.sendMessage(MiniMessageUtils.MINI_MESSAGE.deserialize(
+                    t(src, "starlight.command.starlight.help.entry"),
+                    Placeholder.parsed("usage", "/starlight " + entry[0]),
+                    Placeholder.parsed("description", t(src, entry[1]))));
+        }
+    }
+
+    private void sendCommands(IStarlightCommandSource src) {
+        Collection<StarlightCommand> commands = proxy.getCommandManager().getCommands();
+        src.sendMessage(MiniMessageUtils.MINI_MESSAGE.deserialize(
+                t(src, "starlight.command.starlight.commands.header")));
         for (StarlightCommand cmd : commands) {
             String usage = cmd.isUsageKey() ? t(src, cmd.getUsage()) : cmd.getUsage();
             String desc = cmd.isDescriptionKey() ? t(src, cmd.getDescription()) : cmd.getDescription();
+            String entryKey = desc.isEmpty()
+                    ? "starlight.command.starlight.commands.entry_no_desc"
+                    : "starlight.command.starlight.commands.entry";
             src.sendMessage(MiniMessageUtils.MINI_MESSAGE.deserialize(
-                    t(src, "starlight.command.starlight.help.entry"),
+                    t(src, entryKey),
                     Placeholder.parsed("usage", usage),
                     Placeholder.parsed("description", desc)));
         }
+    }
+
+    private void sendCommandDetail(IStarlightCommandSource src, String name) {
+        StarlightCommand cmd = proxy.getCommandManager().getCommand(name);
+        if (cmd == null) {
+            src.sendMessage(MiniMessageUtils.MINI_MESSAGE.deserialize(
+                    t(src, "starlight.command.starlight.commands.not_found"),
+                    Placeholder.parsed("name", name)));
+            return;
+        }
+        String usage = cmd.isUsageKey() ? t(src, cmd.getUsage()) : cmd.getUsage();
+        String desc = cmd.isDescriptionKey() ? t(src, cmd.getDescription()) : cmd.getDescription();
+        src.sendMessage(MiniMessageUtils.MINI_MESSAGE.deserialize(
+                t(src, "starlight.command.starlight.commands.detail.header"),
+                Placeholder.parsed("name", cmd.getName())));
+        if (!desc.isEmpty()) {
+            src.sendMessage(MiniMessageUtils.MINI_MESSAGE.deserialize(
+                    t(src, "starlight.command.starlight.commands.detail.desc"),
+                    Placeholder.parsed("description", desc)));
+        }
+        src.sendMessage(MiniMessageUtils.MINI_MESSAGE.deserialize(
+                t(src, "starlight.command.starlight.commands.detail.usage"),
+                Placeholder.parsed("usage", usage)));
     }
 
     /**

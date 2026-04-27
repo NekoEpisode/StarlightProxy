@@ -119,6 +119,13 @@ public class CommandManager {
     public Collection<StarlightCommand> getCommands() {
         return Collections.unmodifiableCollection(commands.values());
     }
+
+    /**
+     * 根据名称查找已注册的命令，未找到返回 {@code null}。
+     */
+    public StarlightCommand getCommand(String name) {
+        return commands.get(name.toLowerCase());
+    }
 }
 
 

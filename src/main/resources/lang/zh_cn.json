@@ -126,7 +126,7 @@
     "starlight.command.server.usage": "/server <target_name>",
 
     "starlight.command.starlight.brief": " <gray>— <version></gray>",
-    "starlight.command.starlight.hint": "<dark_gray>使用 /starlight help 查看命令列表  ·  By SliderMC</dark_gray>",
+    "starlight.command.starlight.hint": "<dark_gray>使用 /starlight help 查看帮助  ·  By SliderMC</dark_gray>",
 
     "starlight.command.starlight.version.header": "<gradient:#FFE100:#C8A200>— StarlightProxy —</gradient>",
     "starlight.command.starlight.version.version": " <gray>版本  </gray><white><version></white>",
@@ -142,11 +142,24 @@
     "starlight.command.starlight.plugins.hover.soft_depends": "<gray>软依赖: </gray><white><soft_depends></white>",
 
     "starlight.command.starlight.desc": "StarlightProxy 主命令",
-    "starlight.command.starlight.usage": "/starlight <version|plugins|help|shutdown>",
+    "starlight.command.starlight.usage": "/starlight help",
 
     "starlight.command.starlight.help.header": "<gradient:#FFE100:#C8A200>— 帮助 —</gradient>",
     "starlight.command.starlight.help.entry": "<gray>  <usage></gray> <dark_gray>— <description></dark_gray>",
     "starlight.command.starlight.help.footer": "<dark_gray>By SliderMC</dark_gray>",
+    "starlight.command.starlight.help.desc.version": "显示 Starlight 版本信息",
+    "starlight.command.starlight.help.desc.plugins": "列出已加载的插件",
+    "starlight.command.starlight.help.desc.commands": "列出所有可用命令",
+    "starlight.command.starlight.help.desc.help": "显示此帮助",
+    "starlight.command.starlight.help.desc.shutdown": "关闭代理服务器",
+
+    "starlight.command.starlight.commands.header": "<gradient:#FFE100:#C8A200>— 命令列表 —</gradient>",
+    "starlight.command.starlight.commands.entry": "<gray>  <usage></gray> <dark_gray>— <description></dark_gray>",
+    "starlight.command.starlight.commands.entry_no_desc": "<gray>  <usage></gray>",
+    "starlight.command.starlight.commands.not_found": "<red>未找到命令: <name></red>",
+    "starlight.command.starlight.commands.detail.header": "<gradient:#FFE100:#C8A200>— 命令: <name> —</gradient>",
+    "starlight.command.starlight.commands.detail.desc": "<gray>  描述: </gray><white><description></white>",
+    "starlight.command.starlight.commands.detail.usage": "<gray>  用法: </gray><white><usage></white>",
 
     "starlight.command.glist.summary": "<gradient:#FFE100:#C8A200>在线人数: </gradient><white><players></white> <gray>名玩家，共</gray> <white><servers></white> <gray>个服务器</gray>",
     "starlight.command.glist.all.header": "<gradient:#FFE100:#C8A200>— 服务器列表(共 <servers> 个)—</gradient>",
