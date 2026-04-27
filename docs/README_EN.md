@@ -25,7 +25,7 @@ This project is currently a work in progress (W.I.P). Features implemented so fa
 ## How to Write a Plugin
 Warning: Starlight's API is extremely unstable, both now and in the future. We may later introduce a third-party plugin called Stable API to provide a relatively stable API for plugin developers, but we currently have no plans for this. Therefore, the current API may change frequently or even be completely deprecated in the future. If you want to write a plugin, be prepared to frequently modify your code to adapt to changes in the Starlight API.
 
-You can use the currently available API of Starlight to write plugins, but the API is currently very limited (especially regarding the event system).  
+You can use the currently available API of Starlight to write plugins.
 Since Starlight is still in development, you need to manually clone the Starlight repository and compile a runnable JAR, then import it into your local Maven repository for development.  
 TODO: Improve documentation
 
