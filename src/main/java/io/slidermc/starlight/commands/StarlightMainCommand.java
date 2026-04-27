@@ -192,10 +192,15 @@ public class StarlightMainCommand extends StarlightCommand {
             String entryKey = desc.isEmpty()
                     ? "starlight.command.starlight.commands.entry_no_desc"
                     : "starlight.command.starlight.commands.entry";
-            src.sendMessage(MiniMessageUtils.MINI_MESSAGE.deserialize(
+            Component entry = MiniMessageUtils.MINI_MESSAGE.deserialize(
                     t(src, entryKey),
-                    Placeholder.parsed("usage", usage),
-                    Placeholder.parsed("description", desc)));
+                    Placeholder.parsed("name", cmd.getName()),
+                    Placeholder.parsed("description", desc))
+                    .hoverEvent(HoverEvent.showText(
+                            MiniMessageUtils.MINI_MESSAGE.deserialize(
+                                    t(src, "starlight.command.starlight.commands.hover_usage"),
+                                    Placeholder.parsed("usage", usage))));
+            src.sendMessage(entry);
         }
     }
 

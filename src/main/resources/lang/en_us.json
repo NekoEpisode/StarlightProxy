@@ -154,9 +154,10 @@
     "starlight.command.starlight.help.desc.shutdown": "Shut down the proxy",
 
     "starlight.command.starlight.commands.header": "<gradient:#FFE100:#C8A200>— Commands —</gradient>",
-    "starlight.command.starlight.commands.entry": "<gray>  <usage></gray> <dark_gray>— <description></dark_gray>",
-    "starlight.command.starlight.commands.entry_no_desc": "<gray>  <usage></gray>",
+    "starlight.command.starlight.commands.entry": "<gray>  /<name></gray> <dark_gray>— <description></dark_gray>",
+    "starlight.command.starlight.commands.entry_no_desc": "<gray>  /<name></gray>",
     "starlight.command.starlight.commands.not_found": "<red>Command not found: <name></red>",
+    "starlight.command.starlight.commands.hover_usage": "<gray>Usage: <usage></gray>",
     "starlight.command.starlight.commands.detail.header": "<gradient:#FFE100:#C8A200>— Command: <name> —</gradient>",
     "starlight.command.starlight.commands.detail.desc": "<gray>  Description: </gray><white><description></white>",
     "starlight.command.starlight.commands.detail.usage": "<gray>  Usage: </gray><white><usage></white>",

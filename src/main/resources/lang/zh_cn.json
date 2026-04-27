@@ -154,9 +154,10 @@
     "starlight.command.starlight.help.desc.shutdown": "关闭代理服务器",
 
     "starlight.command.starlight.commands.header": "<gradient:#FFE100:#C8A200>— 命令列表 —</gradient>",
-    "starlight.command.starlight.commands.entry": "<gray>  <usage></gray> <dark_gray>— <description></dark_gray>",
-    "starlight.command.starlight.commands.entry_no_desc": "<gray>  <usage></gray>",
+    "starlight.command.starlight.commands.entry": "<gray>  /<name></gray> <dark_gray>— <description></dark_gray>",
+    "starlight.command.starlight.commands.entry_no_desc": "<gray>  /<name></gray>",
     "starlight.command.starlight.commands.not_found": "<red>未找到命令: <name></red>",
+    "starlight.command.starlight.commands.hover_usage": "<gray>用法: <usage></gray>",
     "starlight.command.starlight.commands.detail.header": "<gradient:#FFE100:#C8A200>— 命令: <name> —</gradient>",
     "starlight.command.starlight.commands.detail.desc": "<gray>  描述: </gray><white><description></white>",
     "starlight.command.starlight.commands.detail.usage": "<gray>  用法: </gray><white><usage></white>",
