@@ -75,7 +75,7 @@ public class StarlightMainCommand extends StarlightCommand {
                                 .then(RequiredArgumentBuilder.<IStarlightCommandSource, String>argument("name", StringArgumentType.greedyString())
                                         .suggests((ctx, builder) -> {
                                             proxy.getPluginManager().getLoadedPlugins()
-                                                    .forEach(desc -> builder.suggest(desc.name()));
+                                                    .forEach(desc -> builder.suggest(desc.id()));
                                             return builder.buildFuture();
                                         })
                                         .executes(ctx -> {
@@ -187,7 +187,7 @@ public class StarlightMainCommand extends StarlightCommand {
 
     private void sendPluginDetail(IStarlightCommandSource src, String name) {
         PluginDescription desc = proxy.getPluginManager().getLoadedPlugins().stream()
-                .filter(d -> d.name().equalsIgnoreCase(name))
+                .filter(d -> d.id().equalsIgnoreCase(name) || d.name().equalsIgnoreCase(name))
                 .findFirst()
                 .orElse(null);
 
@@ -207,8 +207,19 @@ public class StarlightMainCommand extends StarlightCommand {
                 Placeholder.parsed("version", desc.version())));
 
         src.sendMessage(MiniMessageUtils.MINI_MESSAGE.deserialize(
-                t(src, "starlight.command.starlight.plugins.detail.main"),
-                Placeholder.parsed("main", desc.main())));
+                t(src, "starlight.command.starlight.plugins.detail.id"),
+                Placeholder.parsed("id", desc.id())));
+
+        src.sendMessage(MiniMessageUtils.MINI_MESSAGE.deserialize(
+                        t(src, "starlight.command.starlight.plugins.detail.type"))
+                .append(MiniMessageUtils.MINI_MESSAGE.deserialize(
+                        t(src, desc.type().displayKey()))));
+
+        if (desc.type() != io.slidermc.starlight.api.plugin.PluginType.MEMORY) {
+            src.sendMessage(MiniMessageUtils.MINI_MESSAGE.deserialize(
+                    t(src, "starlight.command.starlight.plugins.detail.main"),
+                    Placeholder.parsed("main", desc.main())));
+        }
 
         if (desc.description() != null && !desc.description().isBlank()) {
             src.sendMessage(MiniMessageUtils.MINI_MESSAGE.deserialize(
@@ -234,7 +245,7 @@ public class StarlightMainCommand extends StarlightCommand {
                     Placeholder.parsed("soft_depends", String.join(", ", desc.softDepends()))));
         }
 
-        boolean enabled = proxy.getPluginManager().isPluginEnabled(name).orElse(false);
+        boolean enabled = proxy.getPluginManager().isPluginEnabled(desc.id()).orElse(false);
         src.sendMessage(MiniMessageUtils.MINI_MESSAGE.deserialize(
                 t(src, enabled
                         ? "starlight.command.starlight.plugins.detail.status_enabled"
@@ -245,7 +256,7 @@ public class StarlightMainCommand extends StarlightCommand {
         List<PluginDescription> plugins = proxy.getPluginManager().getLoadedPlugins();
         String lower = keyword.toLowerCase();
         List<PluginDescription> matches = plugins.stream()
-                .filter(d -> d.name().toLowerCase().contains(lower))
+                .filter(d -> d.id().toLowerCase().contains(lower) || d.name().toLowerCase().contains(lower))
                 .toList();
 
         src.sendMessage(MiniMessageUtils.MINI_MESSAGE.deserialize(
@@ -265,7 +276,7 @@ public class StarlightMainCommand extends StarlightCommand {
     }
 
     private Component buildPluginEntry(PluginDescription desc, IStarlightCommandSource src) {
-        boolean enabled = proxy.getPluginManager().isPluginEnabled(desc.name()).orElse(false);
+        boolean enabled = proxy.getPluginManager().isPluginEnabled(desc.id()).orElse(false);
         String entryKey = enabled
                 ? "starlight.command.starlight.plugins.entry"
                 : "starlight.command.starlight.plugins.entry_disabled";
@@ -274,12 +285,12 @@ public class StarlightMainCommand extends StarlightCommand {
                         t(src, entryKey),
                         Placeholder.parsed("name", desc.name()),
                         Placeholder.parsed("version", desc.version()))
-                .clickEvent(ClickEvent.runCommand("/starlight plugins show " + desc.name()))
+                .clickEvent(ClickEvent.runCommand("/starlight plugins show " + desc.id()))
                 .hoverEvent(HoverEvent.showText(hover));
     }
 
     private Component buildPluginHover(PluginDescription desc, IStarlightCommandSource src) {
-        boolean enabled = proxy.getPluginManager().isPluginEnabled(desc.name()).orElse(false);
+        boolean enabled = proxy.getPluginManager().isPluginEnabled(desc.id()).orElse(false);
 
         Component result = MiniMessageUtils.MINI_MESSAGE.deserialize(
                 enabled
@@ -289,6 +300,12 @@ public class StarlightMainCommand extends StarlightCommand {
         result = result.append(Component.newline())
                 .append(MiniMessageUtils.MINI_MESSAGE.deserialize(
                         "<white><bold>" + desc.name() + "</bold></white> <dark_gray>v" + desc.version() + "</dark_gray>"));
+
+        result = result.append(Component.newline())
+                .append(MiniMessageUtils.MINI_MESSAGE.deserialize(
+                        t(src, "starlight.command.starlight.plugins.hover.type")))
+                .append(MiniMessageUtils.MINI_MESSAGE.deserialize(
+                        t(src, desc.type().displayKey())));
 
         if (desc.description() != null && !desc.description().isBlank()) {
             result = result.append(Component.newline())

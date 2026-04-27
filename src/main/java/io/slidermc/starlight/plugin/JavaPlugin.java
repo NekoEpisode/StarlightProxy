@@ -35,7 +35,7 @@ public abstract class JavaPlugin implements IPlugin {
      */
     final void init(PluginDescription description, PluginManager pluginManager) {
         this.description = description;
-        this.logger = LoggerFactory.getLogger("plugin." + description.name());
+        this.logger = LoggerFactory.getLogger("plugin." + description.id());
         this.pluginManager = pluginManager;
     }
 
@@ -105,6 +105,6 @@ public abstract class JavaPlugin implements IPlugin {
 
     /** 创建预填本插件 namespace 的 CommandMeta.Builder。 */
     protected CommandMeta.Builder commandBuilder(String name) {
-        return CommandMeta.builder(getDescription().name(), name);
+        return CommandMeta.builder(getDescription().id(), name);
     }
 }
