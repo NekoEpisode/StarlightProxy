@@ -83,6 +83,7 @@ public class CommandManager {
                 if (dispatcher.getRoot().getChild(alias) != null) {
                     log.warn(t("starlight.logging.warn.command.alias_conflict"), alias, fullName);
                 } else {
+                    shortNames.put(alias, fullName);
                     registerRedirect(alias, mainNode);
                 }
             }
@@ -110,6 +111,7 @@ public class CommandManager {
                 dispatcher.getRoot().getChildren().removeIf(n -> shortName.equals(n.getName()));
             }
             for (String alias : cmd.getAliases()) {
+                shortNames.remove(alias);
                 dispatcher.getRoot().getChildren().removeIf(n -> alias.equals(n.getName()));
             }
 

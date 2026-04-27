@@ -63,8 +63,11 @@ public record CommandMeta(
         public Builder aliases(String... aliases) {
             if (aliases != null) {
                 for (String alias : aliases) {
-                    if (alias != null && !alias.isBlank()) {
-                        this.aliases.add(alias.toLowerCase());
+                    if (alias != null) {
+                        alias = alias.trim();
+                        if (!alias.isBlank()) {
+                            this.aliases.add(alias.toLowerCase());
+                        }
                     }
                 }
             }
