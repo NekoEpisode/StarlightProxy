@@ -149,7 +149,6 @@ public class Main {
         proxy.getCommandManager().register(new StarlightMainCommand(proxy));
         proxy.getCommandManager().register(new GlistCommand(proxy));
         proxy.getCommandManager().register(new PermCommand(proxy));
-        // proxy.getCommandManager().register(new TestCommand());
 
         // 注册内置监听器
         proxy.getEventManager().register("pluginmessage-1", new PluginMessageEventListener());

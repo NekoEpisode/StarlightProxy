@@ -3,6 +3,7 @@ package io.slidermc.starlight.commands;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import io.slidermc.starlight.StarlightProxy;
+import io.slidermc.starlight.api.command.CommandMeta;
 import io.slidermc.starlight.api.command.StarlightCommand;
 import io.slidermc.starlight.api.command.source.IStarlightCommandSource;
 import io.slidermc.starlight.api.player.ProxiedPlayer;
@@ -16,7 +17,10 @@ public class ServerCommand extends StarlightCommand {
     private final StarlightProxy proxy;
 
     public ServerCommand(StarlightProxy proxy) {
-        super("server", "starlight.command.server.desc", "starlight.command.server.usage", true, true);
+        super(CommandMeta.builder("server")
+                .description("starlight.command.server.desc", true)
+                .usage("starlight.command.server.usage", true)
+                .build());
         this.proxy = proxy;
     }
 

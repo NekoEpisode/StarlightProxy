@@ -2,6 +2,7 @@ package io.slidermc.starlight.api.command;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.ParseResults;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import io.slidermc.starlight.StarlightProxy;
 import io.slidermc.starlight.api.command.source.IStarlightCommandSource;
@@ -32,6 +33,9 @@ public class CommandManager {
     /** 已注册的命令，key 为命令名（小写）。 */
     private final Map<String, StarlightCommand> commands = new ConcurrentHashMap<>();
 
+    /** 别名 → 真实命令名，key/value 均为小写。 */
+    private final Map<String, String> aliasToName = new ConcurrentHashMap<>();
+
     private final StarlightProxy proxy;
 
     /** 保护 Brigadier {@code CommandDispatcher} 的互斥锁，注册/注销/解析均需持有。 */
@@ -49,21 +53,35 @@ public class CommandManager {
         synchronized (lock) {
             dispatcher.register(command.build());
             commands.put(command.getName(), command);
+            for (String alias : command.getAliases()) {
+                aliasToName.put(alias, command.getName());
+                var mainNode = dispatcher.getRoot().getChild(command.getName());
+                dispatcher.register(
+                        LiteralArgumentBuilder.<IStarlightCommandSource>literal(alias)
+                                .requires(mainNode.getRequirement())
+                                .redirect(mainNode));
+            }
         }
         log.debug("已注册命令: /{}", command.getName());
     }
 
     /**
-     * 注销一个命令（从代理命令树中移除）。
+     * 注销一个命令（从代理命令树中移除）。同时清理其所有别名。
      */
     public void unregister(String name) {
         String lower = name.toLowerCase();
         boolean removed;
         synchronized (lock) {
-            removed = commands.remove(lower) != null;
+            StarlightCommand cmd = commands.remove(lower);
+            removed = cmd != null;
             if (removed) {
                 dispatcher.getRoot().getChildren()
                         .removeIf(node -> lower.equals(node.getName()));
+                for (String alias : cmd.getAliases()) {
+                    aliasToName.remove(alias);
+                    dispatcher.getRoot().getChildren()
+                            .removeIf(node -> alias.equals(node.getName()));
+                }
             }
         }
         if (removed) {
@@ -121,10 +139,14 @@ public class CommandManager {
     }
 
     /**
-     * 根据名称查找已注册的命令，未找到返回 {@code null}。
+     * 根据名称或别名查找已注册的命令，未找到返回 {@code null}。
      */
     public StarlightCommand getCommand(String name) {
-        return commands.get(name.toLowerCase());
+        String lower = name.toLowerCase();
+        StarlightCommand cmd = commands.get(lower);
+        if (cmd != null) return cmd;
+        String realName = aliasToName.get(lower);
+        return realName != null ? commands.get(realName) : null;
     }
 }
 

@@ -4,6 +4,7 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import io.slidermc.starlight.StarlightProxy;
+import io.slidermc.starlight.api.command.CommandMeta;
 import io.slidermc.starlight.api.command.StarlightCommand;
 import io.slidermc.starlight.api.command.source.IStarlightCommandSource;
 import io.slidermc.starlight.api.plugin.PluginDescription;
@@ -27,7 +28,10 @@ public class StarlightMainCommand extends StarlightCommand {
             MiniMessageUtils.MINI_MESSAGE.deserialize("<gradient:#FFE100:#C8A200>Starlight</gradient>");
 
     public StarlightMainCommand(StarlightProxy proxy) {
-        super("starlight", "starlight.command.starlight.desc", "starlight.command.starlight.usage", true, true);
+        super(CommandMeta.builder("starlight")
+                .description("starlight.command.starlight.desc", true)
+                .usage("starlight.command.starlight.usage", true)
+                .build());
         this.proxy = proxy;
     }
 

@@ -9,6 +9,7 @@ import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import io.slidermc.starlight.StarlightProxy;
+import io.slidermc.starlight.api.command.CommandMeta;
 import io.slidermc.starlight.api.command.StarlightCommand;
 import io.slidermc.starlight.api.command.source.IStarlightCommandSource;
 import io.slidermc.starlight.api.player.ProxiedPlayer;
@@ -29,7 +30,10 @@ public class PermCommand extends StarlightCommand {
     private final StarlightProxy proxy;
 
     public PermCommand(StarlightProxy proxy) {
-        super("sperm", "starlight.command.perm.desc", "starlight.command.perm.usage", true, true);
+        super(CommandMeta.builder("sperm")
+                .description("starlight.command.perm.desc", true)
+                .usage("starlight.command.perm.usage", true)
+                .build());
         this.proxy = proxy;
     }
 

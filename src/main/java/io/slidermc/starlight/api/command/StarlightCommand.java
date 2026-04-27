@@ -3,6 +3,10 @@ package io.slidermc.starlight.api.command;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import io.slidermc.starlight.api.command.source.IStarlightCommandSource;
 
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.Set;
+
 /**
  * 代理命令的抽象基类。
  *
@@ -29,31 +33,19 @@ import io.slidermc.starlight.api.command.source.IStarlightCommandSource;
  */
 public abstract class StarlightCommand {
     private final String name;
-    private String description = "";
-    private String usage = "";
-    private boolean descriptionAsKey;
-    private boolean usageAsKey;
+    private final String description;
+    private final String usage;
+    private final boolean descriptionAsKey;
+    private final boolean usageAsKey;
+    private final Set<String> aliases = new LinkedHashSet<>();
 
-    protected StarlightCommand(String name) {
-        if (name == null || name.isBlank()) throw new IllegalArgumentException("Command name must not be blank");
-        this.name = name.toLowerCase();
-    }
-
-    protected StarlightCommand(String name, String description) {
-        this(name);
-        this.description = description;
-    }
-
-    protected StarlightCommand(String name, String description, String usage) {
-        this(name, description);
-        this.usage = usage;
-    }
-
-    protected StarlightCommand(String name, String description, String usage,
-                               boolean descriptionAsKey, boolean usageAsKey) {
-        this(name, description, usage);
-        this.descriptionAsKey = descriptionAsKey;
-        this.usageAsKey = usageAsKey;
+    protected StarlightCommand(CommandMeta meta) {
+        this.name = meta.name();
+        this.description = meta.description();
+        this.usage = meta.usage();
+        this.descriptionAsKey = meta.descriptionAsKey();
+        this.usageAsKey = meta.usageAsKey();
+        this.aliases.addAll(meta.aliases());
     }
 
     /**
@@ -74,6 +66,9 @@ public abstract class StarlightCommand {
 
     /** 若为 {@code true}，{@link #getUsage()} 返回的是翻译键而非原文。 */
     public boolean isUsageKey() { return usageAsKey; }
+
+    /** 命令别名列表，不可修改。 */
+    public Set<String> getAliases() { return Collections.unmodifiableSet(aliases); }
 
     /** 便捷方法，减少 import 负担。 */
     protected static LiteralArgumentBuilder<IStarlightCommandSource> literal(String name) {

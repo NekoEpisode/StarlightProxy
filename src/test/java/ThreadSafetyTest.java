@@ -1,5 +1,6 @@
 import com.mojang.brigadier.CommandDispatcher;
 import io.slidermc.starlight.api.command.CommandManager;
+import io.slidermc.starlight.api.command.CommandMeta;
 import io.slidermc.starlight.api.command.StarlightCommand;
 import io.slidermc.starlight.api.command.source.IStarlightCommandSource;
 import io.slidermc.starlight.api.event.EventHandler;
@@ -454,7 +455,7 @@ public class ThreadSafetyTest {
             @Override public boolean hasPermission(String permission) { return true; }
         }
 
-        commandManager.register(new StarlightCommand(commandName) {
+        commandManager.register(new StarlightCommand(CommandMeta.builder(commandName).build()) {
             @Override
             public com.mojang.brigadier.builder.LiteralArgumentBuilder<IStarlightCommandSource> build() {
                 return com.mojang.brigadier.builder.LiteralArgumentBuilder.<IStarlightCommandSource>literal(commandName)
@@ -480,7 +481,7 @@ public class ThreadSafetyTest {
                             String name = (threadIdx % 2 == 0) ? commandName : ("other-" + threadIdx);
                             int op = j % 3;
                             if (op == 0) {
-                                commandManager.register(new StarlightCommand(name) {
+                                commandManager.register(new StarlightCommand(CommandMeta.builder(name).build()) {
                                     @Override
                                     public com.mojang.brigadier.builder.LiteralArgumentBuilder<IStarlightCommandSource> build() {
                                         return com.mojang.brigadier.builder.LiteralArgumentBuilder.<IStarlightCommandSource>literal(name)
