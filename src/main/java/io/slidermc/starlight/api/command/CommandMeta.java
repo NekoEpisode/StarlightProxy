@@ -1,34 +1,41 @@
 package io.slidermc.starlight.api.command;
 
+import net.kyori.adventure.key.Key;
+
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
 public record CommandMeta(
-        String name,
+        Key key,
         String description,
         String usage,
         boolean descriptionAsKey,
         boolean usageAsKey,
         Set<String> aliases) {
 
-    public static Builder builder(String name) {
-        return new Builder(name);
+    public String name() {
+        return key.value();
+    }
+
+    public String namespace() {
+        return key.namespace();
+    }
+
+    public static Builder builder(String namespace, String name) {
+        return new Builder(namespace, name);
     }
 
     public static class Builder {
-        private final String name;
+        private final Key key;
         private String description = "";
         private String usage = "";
         private boolean descriptionAsKey;
         private boolean usageAsKey;
         private final Set<String> aliases = new LinkedHashSet<>();
 
-        private Builder(String name) {
-            if (name == null || name.isBlank()) {
-                throw new IllegalArgumentException("Command name must not be blank");
-            }
-            this.name = name.toLowerCase();
+        private Builder(String namespace, String name) {
+            this.key = Key.key(namespace, name.toLowerCase());
         }
 
         public Builder description(String desc) {
@@ -65,7 +72,7 @@ public record CommandMeta(
         }
 
         public CommandMeta build() {
-            return new CommandMeta(name, description, usage,
+            return new CommandMeta(key, description, usage,
                     descriptionAsKey, usageAsKey,
                     Collections.unmodifiableSet(new LinkedHashSet<>(aliases)));
         }

@@ -17,7 +17,7 @@ public class ServerCommand extends StarlightCommand {
     private final StarlightProxy proxy;
 
     public ServerCommand(StarlightProxy proxy) {
-        super(CommandMeta.builder("server")
+        super(CommandMeta.builder("starlight", "server")
                 .description("starlight.command.server.desc", true)
                 .usage("starlight.command.server.usage", true)
                 .build());

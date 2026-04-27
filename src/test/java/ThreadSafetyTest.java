@@ -455,7 +455,7 @@ public class ThreadSafetyTest {
             @Override public boolean hasPermission(String permission) { return true; }
         }
 
-        commandManager.register(new StarlightCommand(CommandMeta.builder(commandName).build()) {
+        commandManager.register(new StarlightCommand(CommandMeta.builder("test", commandName).build()) {
             @Override
             public com.mojang.brigadier.builder.LiteralArgumentBuilder<IStarlightCommandSource> build() {
                 return com.mojang.brigadier.builder.LiteralArgumentBuilder.<IStarlightCommandSource>literal(commandName)
@@ -481,7 +481,7 @@ public class ThreadSafetyTest {
                             String name = (threadIdx % 2 == 0) ? commandName : ("other-" + threadIdx);
                             int op = j % 3;
                             if (op == 0) {
-                                commandManager.register(new StarlightCommand(CommandMeta.builder(name).build()) {
+                                commandManager.register(new StarlightCommand(CommandMeta.builder("test", name).build()) {
                                     @Override
                                     public com.mojang.brigadier.builder.LiteralArgumentBuilder<IStarlightCommandSource> build() {
                                         return com.mojang.brigadier.builder.LiteralArgumentBuilder.<IStarlightCommandSource>literal(name)

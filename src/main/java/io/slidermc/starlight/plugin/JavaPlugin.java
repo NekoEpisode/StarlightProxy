@@ -1,6 +1,7 @@
 package io.slidermc.starlight.plugin;
 
 import io.slidermc.starlight.StarlightProxy;
+import io.slidermc.starlight.api.command.StarlightCommand;
 import io.slidermc.starlight.api.event.EventListener;
 import io.slidermc.starlight.api.plugin.IPlugin;
 import io.slidermc.starlight.api.plugin.PluginDescription;
@@ -93,5 +94,11 @@ public abstract class JavaPlugin implements IPlugin {
     public void unregisterListener(String listenerId) {
         if (proxy == null) throw new IllegalStateException("proxy field is null");
         proxy.getEventManager().unregister(this, listenerId);
+    }
+
+    @Override
+    public void registerCommand(StarlightCommand command) {
+        if (proxy == null) throw new IllegalStateException("proxy field is null");
+        proxy.getCommandManager().register(command);
     }
 }

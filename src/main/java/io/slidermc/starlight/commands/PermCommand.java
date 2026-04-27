@@ -30,7 +30,7 @@ public class PermCommand extends StarlightCommand {
     private final StarlightProxy proxy;
 
     public PermCommand(StarlightProxy proxy) {
-        super(CommandMeta.builder("sperm")
+        super(CommandMeta.builder("starlight", "sperm")
                 .description("starlight.command.perm.desc", true)
                 .usage("starlight.command.perm.usage", true)
                 .build());

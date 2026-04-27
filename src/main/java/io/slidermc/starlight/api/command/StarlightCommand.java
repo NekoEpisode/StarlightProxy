@@ -2,6 +2,7 @@ package io.slidermc.starlight.api.command;
 
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import io.slidermc.starlight.api.command.source.IStarlightCommandSource;
+import net.kyori.adventure.key.Key;
 
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -13,7 +14,7 @@ import java.util.Set;
  * <p>插件继承此类并实现 {@link #build()} 来定义命令结构：
  * <pre>{@code
  * public class HubCommand extends StarlightCommand {
- *     public HubCommand() { super("hub"); }
+ *     public HubCommand() { super(CommandMeta.builder("myplugin", "hub").build()); }
  *
  *     @Override
  *     public LiteralArgumentBuilder<IStarlightCommandSource> build() {
@@ -32,7 +33,7 @@ import java.util.Set;
  * }</pre>
  */
 public abstract class StarlightCommand {
-    private final String name;
+    private final Key key;
     private final String description;
     private final String usage;
     private final boolean descriptionAsKey;
@@ -40,7 +41,7 @@ public abstract class StarlightCommand {
     private final Set<String> aliases = new LinkedHashSet<>();
 
     protected StarlightCommand(CommandMeta meta) {
-        this.name = meta.name();
+        this.key = meta.key();
         this.description = meta.description();
         this.usage = meta.usage();
         this.descriptionAsKey = meta.descriptionAsKey();
@@ -53,13 +54,21 @@ public abstract class StarlightCommand {
      */
     public abstract LiteralArgumentBuilder<IStarlightCommandSource> build();
 
-    public String getName() { return name; }
+    public Key getKey() { return key; }
+
+    /** 全名（namespace:name），用于 Brigadier 根字面量。 */
+    public String getName() { return key.asString(); }
+
+    /** 短名（仅 name 部分），用于显示。 */
+    public String getDisplayName() { return key.value(); }
+
+    public String getNamespace() { return key.namespace(); }
 
     /** 命令简介，显示在 /help 列表中。若 {@link #isDescriptionKey()} 为 {@code true}，则该值是一个翻译键。 */
     public String getDescription() { return description; }
 
     /** 用法说明，如 {@code "/hub"} 或 {@code "/server <name>"}。若 {@link #isUsageKey()} 为 {@code true}，则该值是一个翻译键。 */
-    public String getUsage() { return usage.isEmpty() ? "/" + name : usage; }
+    public String getUsage() { return usage.isEmpty() ? "/" + getDisplayName() : usage; }
 
     /** 若为 {@code true}，{@link #getDescription()} 返回的是翻译键而非原文。 */
     public boolean isDescriptionKey() { return descriptionAsKey; }

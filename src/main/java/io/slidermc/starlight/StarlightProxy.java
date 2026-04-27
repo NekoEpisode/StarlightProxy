@@ -10,6 +10,7 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.slidermc.starlight.api.command.CommandManager;
+import io.slidermc.starlight.api.command.StarlightCommand;
 import io.slidermc.starlight.api.command.source.IStarlightCommandSource;
 import io.slidermc.starlight.api.event.EventManager;
 import io.slidermc.starlight.api.permission.PermissionService;
@@ -223,6 +224,10 @@ public class StarlightProxy {
 
     public CommandManager getCommandManager() {
         return commandManager;
+    }
+
+    public void registerCommand(StarlightCommand command) {
+        commandManager.register(command);
     }
 
     public ProxyExecutors getExecutors() {

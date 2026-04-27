@@ -31,7 +31,7 @@ public class GlistCommand extends StarlightCommand {
     private final StarlightProxy proxy;
 
     public GlistCommand(StarlightProxy proxy) {
-        super(CommandMeta.builder("glist")
+        super(CommandMeta.builder("starlight", "glist")
                 .description("starlight.command.glist.desc", true)
                 .usage("starlight.command.glist.usage", true)
                 .build());

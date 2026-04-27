@@ -28,7 +28,7 @@ public class StarlightMainCommand extends StarlightCommand {
             MiniMessageUtils.MINI_MESSAGE.deserialize("<gradient:#FFE100:#C8A200>Starlight</gradient>");
 
     public StarlightMainCommand(StarlightProxy proxy) {
-        super(CommandMeta.builder("starlight")
+        super(CommandMeta.builder("starlight", "starlight")
                 .description("starlight.command.starlight.desc", true)
                 .usage("starlight.command.starlight.usage", true)
                 .build());
@@ -77,7 +77,10 @@ public class StarlightMainCommand extends StarlightCommand {
                         .then(RequiredArgumentBuilder.<IStarlightCommandSource, String>argument("name", StringArgumentType.word())
                                 .suggests((ctx, builder) -> {
                                     proxy.getCommandManager().getCommands()
-                                            .forEach(cmd -> builder.suggest(cmd.getName()));
+                                            .forEach(cmd -> {
+                                                builder.suggest(cmd.getName());
+                                                builder.suggest(cmd.getDisplayName());
+                                            });
                                     return builder.buildFuture();
                                 })
                                 .executes(ctx -> {
@@ -198,12 +201,16 @@ public class StarlightMainCommand extends StarlightCommand {
                     : "starlight.command.starlight.commands.entry";
             Component entry = MiniMessageUtils.MINI_MESSAGE.deserialize(
                     t(src, entryKey),
-                    Placeholder.parsed("name", cmd.getName()),
+                    Placeholder.parsed("name", cmd.getDisplayName()),
                     Placeholder.parsed("description", desc))
                     .hoverEvent(HoverEvent.showText(
                             MiniMessageUtils.MINI_MESSAGE.deserialize(
                                     t(src, "starlight.command.starlight.commands.hover_usage"),
-                                    Placeholder.parsed("usage", usage))));
+                                    Placeholder.parsed("usage", usage))
+                                    .append(Component.newline())
+                                    .append(MiniMessageUtils.MINI_MESSAGE.deserialize(
+                                            t(src, "starlight.command.starlight.commands.hover_fullname"),
+                                            Placeholder.parsed("name", "/" + cmd.getName())))));
             src.sendMessage(entry);
         }
     }

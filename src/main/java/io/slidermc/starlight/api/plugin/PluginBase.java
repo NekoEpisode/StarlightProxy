@@ -1,6 +1,7 @@
 package io.slidermc.starlight.api.plugin;
 
 import io.slidermc.starlight.StarlightProxy;
+import io.slidermc.starlight.api.command.StarlightCommand;
 import io.slidermc.starlight.api.event.EventListener;
 import io.slidermc.starlight.api.translate.TranslateManager;
 import org.slf4j.Logger;
@@ -104,6 +105,12 @@ public abstract class PluginBase implements IPlugin {
     public void unregisterListener(String listenerId) {
         if (proxy == null) throw new IllegalStateException("proxy field is null");
         proxy.getEventManager().unregister(this, listenerId);
+    }
+
+    @Override
+    public void registerCommand(StarlightCommand command) {
+        if (proxy == null) throw new IllegalStateException("proxy field is null");
+        proxy.getCommandManager().register(command);
     }
 }
 
