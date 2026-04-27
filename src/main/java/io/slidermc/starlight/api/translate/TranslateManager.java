@@ -278,7 +278,9 @@ public class TranslateManager {
             entry.setDisplayName(resolvedDisplayName);
             entry.merge(translations);
 
-            log.info("Loaded language {} ({}), total {} translations", locale, displayName, translations.size());
+            if (isNew) {
+                log.info("Loaded language {} ({}), total {} translations", locale, displayName, translations.size());
+            }
         } catch (Exception e) {
             log.error("Parse translation JSON failed (locale={})", locale, e);
         }
