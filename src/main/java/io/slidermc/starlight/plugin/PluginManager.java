@@ -133,13 +133,17 @@ public class PluginManager {
      * @param plugin      插件实例
      */
     public void registerPlugin(PluginDescription description, IPlugin plugin) {
-        if (orderedPlugins.stream().anyMatch(c -> c.description().name().equals(description.name()))
-                || pendingMemoryPlugins.stream().anyMatch(c -> c.description().name().equals(description.name()))) {
-            log.warn(t("starlight.logging.warn.plugin.duplicate"), description.name());
+        if (orderedPlugins.stream().anyMatch(c -> c.description().id().equals(description.id()))
+                || pendingMemoryPlugins.stream().anyMatch(c -> c.description().id().equals(description.id()))) {
+            log.warn(t("starlight.logging.warn.plugin.duplicate"), description.id());
             return;
         }
 
         PluginContainer container = new PluginContainer(description, plugin, null);
+
+        if (plugin instanceof io.slidermc.starlight.api.plugin.PluginBase pb) {
+            pb.setPluginManager(this);
+        }
 
         if (loadPhaseActive) {
             pendingMemoryPlugins.add(container);
@@ -185,7 +189,7 @@ public class PluginManager {
                 try {
                     container.classLoader().close();
                 } catch (IOException e) {
-                    log.warn(t("starlight.logging.warn.plugin.classloader_close_failed"), container.description().name(), e);
+                    log.warn(t("starlight.logging.warn.plugin.classloader_close_failed"), container.description().id(), e);
                 }
             }
         }
@@ -202,36 +206,36 @@ public class PluginManager {
             if (container.isEnabled()) {
                 try {
                     container.plugin().onReload(proxy);
-                    log.info(t("starlight.logging.info.plugin.reloaded"), container.description().name());
+                    log.info(t("starlight.logging.info.plugin.reloaded"), container.description().id());
                 } catch (Exception e) {
-                    log.error(t("starlight.logging.error.plugin.on_reload_failed"), container.description().name(), e);
+                    log.error(t("starlight.logging.error.plugin.on_reload_failed"), container.description().id(), e);
                 }
             }
         }
     }
 
     /**
-     * 按名称查找已加载的插件实例。
+     * 按 ID 查找已加载的插件实例。
      *
-     * @param name 插件名
+     * @param id 插件 ID（唯一标识符，非显示名称）
      * @return 插件实例，不存在时返回 {@link Optional#empty()}
      */
-    public Optional<IPlugin> getPlugin(String name) {
+    public Optional<IPlugin> getPlugin(String id) {
         return orderedPlugins.stream()
-                .filter(c -> c.description().name().equals(name))
+                .filter(c -> c.description().id().equals(id))
                 .map(PluginContainer::plugin)
                 .findFirst();
     }
 
     /**
-     * 查询指定名称的插件是否已启用。
+     * 查询指定 ID 的插件是否已启用。
      *
-     * @param name 插件名
+     * @param id 插件 ID（唯一标识符，非显示名称）
      * @return {@link Optional#empty()} 若插件不存在；否则返回启用状态
      */
-    public Optional<Boolean> isPluginEnabled(String name) {
+    public Optional<Boolean> isPluginEnabled(String id) {
         return orderedPlugins.stream()
-                .filter(c -> c.description().name().equals(name))
+                .filter(c -> c.description().id().equals(id))
                 .map(PluginContainer::isEnabled)
                 .findFirst();
     }
@@ -241,6 +245,83 @@ public class PluginManager {
      */
     public List<PluginDescription> getLoadedPlugins() {
         return orderedPlugins.stream().map(PluginContainer::description).toList();
+    }
+
+    /**
+     * 启用指定 ID 的插件（若已启用则无操作）。
+     *
+     * @param id 插件 ID（唯一标识符，非显示名称）
+     * @return 若插件存在且未被启用返回 true；否则 false
+     */
+    public boolean enablePlugin(String id) {
+        PluginContainer container = findContainer(id);
+        if (container == null) {
+            log.warn(t("starlight.logging.warn.plugin.not_found"), id);
+            return false;
+        }
+        if (container.isEnabled()) {
+            return false;
+        }
+        if (proxy == null) {
+            log.warn(t("starlight.logging.warn.plugin.enable_without_proxy"), id);
+            return false;
+        }
+        invokeOnEnable(container, proxy);
+        return true;
+    }
+
+    /**
+     * 禁用指定 ID 的插件（若未启用则无操作）。
+     * 会同时清理该插件的命令和事件监听器。
+     *
+     * @param id 插件 ID（唯一标识符，非显示名称）
+     * @return 若插件存在且处于启用状态返回 true；否则 false
+     */
+    public boolean disablePlugin(String id) {
+        PluginContainer container = findContainer(id);
+        if (container == null) {
+            log.warn(t("starlight.logging.warn.plugin.not_found"), id);
+            return false;
+        }
+        if (!container.isEnabled()) {
+            return false;
+        }
+        invokeOnDisable(container);
+        return true;
+    }
+
+    /**
+     * 注销指定 ID 的插件。若其已启用会先调用 {@link #disablePlugin(String)}，
+     * 随后移除所有内部状态（包括类加载器等资源）。
+     *
+     * @param id 插件 ID（唯一标识符，非显示名称）
+     * @return 若插件存在返回 true；否则 false
+     */
+    public boolean unregisterPlugin(String id) {
+        PluginContainer container = findContainer(id);
+        if (container == null) {
+            log.warn(t("starlight.logging.warn.plugin.not_found"), id);
+            return false;
+        }
+        if (container.isEnabled()) {
+            invokeOnDisable(container);
+        }
+        orderedPlugins.remove(container);
+        if (container.classLoader() != null) {
+            try {
+                container.classLoader().close();
+            } catch (IOException e) {
+                log.warn(t("starlight.logging.warn.plugin.classloader_close_failed"), id, e);
+            }
+        }
+        return true;
+    }
+
+    private PluginContainer findContainer(String id) {
+        return orderedPlugins.stream()
+                .filter(c -> c.description().id().equals(id))
+                .findFirst()
+                .orElse(null);
     }
 
     private List<Path> collectJars(Path directory) {
@@ -323,7 +404,7 @@ public class PluginManager {
             jp.init(description, this);
         }
 
-        log.info(t("starlight.logging.info.plugin.discovered"), description.name(), description.version());
+        log.info(t("starlight.logging.info.plugin.discovered"), description.id(), description.version());
 
         try {
             jarFile.close();
@@ -346,7 +427,7 @@ public class PluginManager {
     private List<PluginContainer> topologicalSort(List<PluginContainer> containers) {
         Map<String, PluginContainer> byName = new LinkedHashMap<>();
         for (PluginContainer c : containers) {
-            byName.put(c.description().name(), c);
+            byName.put(c.description().id(), c);
         }
 
         // 收集因硬依赖缺失而需要跳过的插件（传递性扩散，直到稳定）
@@ -355,12 +436,12 @@ public class PluginManager {
         while (changed) {
             changed = false;
             for (PluginContainer c : containers) {
-                String name = c.description().name();
+                String name = c.description().id();
                 if (excluded.contains(name)) continue;
                 for (String dep : c.description().depends()) {
                     if (!byName.containsKey(dep) || excluded.contains(dep)) {
                         log.error(t("starlight.logging.error.plugin.jar_load_failed"),
-                                name, "硬依赖 [" + dep + "] 不存在或已被跳过，跳过该插件");
+                                name, t("starlight.logging.error.plugin.hard_dep_missing").replace("{dep}", dep));
                         excluded.add(name);
                         changed = true;
                         break;
@@ -379,7 +460,7 @@ public class PluginManager {
         }
 
         for (PluginContainer c : containers) {
-            String name = c.description().name();
+            String name = c.description().id();
             if (excluded.contains(name)) continue;
             for (String dep : c.description().depends()) {
                 dependents.get(dep).add(name);
@@ -416,9 +497,9 @@ public class PluginManager {
         // 排序后仍有剩余 = 循环依赖，单独跳过
         if (sorted.size() != inDegree.size()) {
             Set<String> inCycle = new HashSet<>(inDegree.keySet());
-            sorted.forEach(c -> inCycle.remove(c.description().name()));
+            sorted.forEach(c -> inCycle.remove(c.description().id()));
             log.error(t("starlight.logging.error.plugin.dependency_resolve_failed"),
-                    "检测到循环依赖，涉及插件: " + inCycle + "，已跳过");
+                    t("starlight.logging.error.plugin.circular_dependency").replace("{plugins}", inCycle.toString()));
         }
 
         return sorted;
@@ -438,7 +519,14 @@ public class PluginManager {
         try {
             container.plugin().onLoad(translateManager);
         } catch (Exception e) {
-            log.error(t("starlight.logging.error.plugin.on_load_failed"), container.description().name(), e);
+            log.error(t("starlight.logging.error.plugin.on_load_failed"), container.description().id(), e);
+            invokeOnDisable(container);
+            orderedPlugins.remove(container);
+            if (container.classLoader() != null) {
+                try {
+                    container.classLoader().close();
+                } catch (IOException ignored) {}
+            }
         }
     }
 
@@ -446,23 +534,24 @@ public class PluginManager {
         try {
             container.plugin().onEnable(proxy);
             container.setEnabled(true);
-            log.info(t("starlight.logging.info.plugin.enabled"), container.description().name(), container.description().version());
+            log.info(t("starlight.logging.info.plugin.enabled"), container.description().id(), container.description().version());
         } catch (Exception e) {
-            log.error(t("starlight.logging.error.plugin.on_enable_failed"), container.description().name(), e);
+            log.error(t("starlight.logging.error.plugin.on_enable_failed"), container.description().id(), e);
+            invokeOnDisable(container);
         }
     }
 
     private void invokeOnDisable(PluginContainer container) {
         try {
             container.plugin().onDisable();
-            container.setEnabled(false);
-            log.info(t("starlight.logging.info.plugin.disabled"), container.description().name());
+            log.info(t("starlight.logging.info.plugin.disabled"), container.description().id());
         } catch (Exception e) {
-            log.error(t("starlight.logging.error.plugin.on_disable_failed"), container.description().name(), e);
+            log.error(t("starlight.logging.error.plugin.on_disable_failed"), container.description().id(), e);
         }
+        container.setEnabled(false);
         if (proxy != null) {
             proxy.getEventManager().unregisterAll(container.plugin());
-            proxy.getCommandManager().unregisterAll(container.description().name());
+            proxy.getCommandManager().unregisterAll(container.description().id());
         }
     }
 

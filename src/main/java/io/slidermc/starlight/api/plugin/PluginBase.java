@@ -5,6 +5,7 @@ import io.slidermc.starlight.api.command.CommandMeta;
 import io.slidermc.starlight.api.command.StarlightCommand;
 import io.slidermc.starlight.api.event.EventListener;
 import io.slidermc.starlight.api.translate.TranslateManager;
+import io.slidermc.starlight.plugin.PluginManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,6 +45,7 @@ public abstract class PluginBase implements IPlugin {
     private final PluginDescription description;
     private final Logger logger;
     protected StarlightProxy proxy;
+    protected PluginManager pluginManager;
 
     private final AtomicLong currentId = new AtomicLong(0);
 
@@ -54,7 +56,7 @@ public abstract class PluginBase implements IPlugin {
      */
     protected PluginBase(PluginDescription description) {
         this.description = description;
-        this.logger = LoggerFactory.getLogger("plugin." + description.name());
+        this.logger = LoggerFactory.getLogger("plugin." + description.id());
     }
 
     @Override
@@ -65,6 +67,26 @@ public abstract class PluginBase implements IPlugin {
     @Override
     public final Logger getLogger() {
         return logger;
+    }
+
+    /**
+     * 返回插件管理器实例，可在 {@link #onLoad(TranslateManager)} 中用于注册内存插件。
+     */
+    protected final PluginManager getPluginManager() {
+        return pluginManager;
+    }
+
+    /**
+     * 仅供框架内部使用，由 {@link PluginManager} 在注册时调用，注入管理器引用。
+     * 插件实现在任何生命周期阶段请勿调用或覆写该方法。
+     *
+     * @throws IllegalStateException 如果插件管理器已被设置为不同实例
+     */
+    public final void setPluginManager(PluginManager pluginManager) {
+        if (this.pluginManager != null && this.pluginManager != pluginManager) {
+            throw new IllegalStateException("PluginManager has already been set to a different instance");
+        }
+        this.pluginManager = pluginManager;
     }
 
     @Override
@@ -116,7 +138,7 @@ public abstract class PluginBase implements IPlugin {
 
     /** 创建预填本插件 namespace 的 CommandMeta.Builder。 */
     protected CommandMeta.Builder commandBuilder(String name) {
-        return CommandMeta.builder(getDescription().name(), name);
+        return CommandMeta.builder(getDescription().id(), name);
     }
 }
 
