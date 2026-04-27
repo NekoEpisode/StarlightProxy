@@ -35,6 +35,7 @@ public record CommandMeta(
         private final Set<String> aliases = new LinkedHashSet<>();
 
         private Builder(String namespace, String name) {
+            //noinspection PatternValidation
             this.key = Key.key(namespace.toLowerCase(), name.toLowerCase());
         }
 

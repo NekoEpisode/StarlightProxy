@@ -97,6 +97,7 @@ public class MinecraftCodecUtils {
         writeString(byteBuf, key.namespace() + ":" + key.value());
     }
 
+    @SuppressWarnings("PatternValidation")
     public static Key readKey(ByteBuf byteBuf) {
         String key = readString(byteBuf);
         return Key.key(key);
