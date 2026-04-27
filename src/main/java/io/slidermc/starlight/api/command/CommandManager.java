@@ -56,10 +56,13 @@ public class CommandManager {
             for (String alias : command.getAliases()) {
                 aliasToName.put(alias, command.getName());
                 var mainNode = dispatcher.getRoot().getChild(command.getName());
-                dispatcher.register(
-                        LiteralArgumentBuilder.<IStarlightCommandSource>literal(alias)
-                                .requires(mainNode.getRequirement())
-                                .redirect(mainNode));
+                var aliasBuilder = LiteralArgumentBuilder.<IStarlightCommandSource>literal(alias)
+                        .requires(mainNode.getRequirement())
+                        .redirect(mainNode);
+                if (mainNode.getCommand() != null) {
+                    aliasBuilder.executes(mainNode.getCommand());
+                }
+                dispatcher.register(aliasBuilder);
             }
         }
         log.debug("已注册命令: /{}", command.getName());

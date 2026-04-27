@@ -72,16 +72,13 @@ public class ClientboundCommandsPacket implements IMinecraftPacket {
             }
 
             CommandNodeData backendRoot = nodes.get(rootIndex);
+            Map<CommandNode<IStarlightCommandSource>, Integer> allNodeIndices = new LinkedHashMap<>();
 
+            // Pass 1: DFS collect all proxy nodes, append placeholder CommandNodeData
             for (CommandNode<IStarlightCommandSource> proxyChild : proxyRoot.getChildren()) {
+                if (!proxyChild.canUse(source)) continue;
                 String commandName = proxyChild.getName();
 
-                if (!proxyChild.canUse(source)) {
-                    log.debug("代理命令 '{}' 因权限不足，跳过合并", commandName);
-                    continue;
-                }
-
-                // 移除后端同名命令（代理优先）
                 backendRoot.getChildren().removeIf(childIndex -> {
                     if (childIndex < nodes.size()) {
                         CommandNodeData childNode = nodes.get(childIndex);
@@ -93,9 +90,30 @@ public class ClientboundCommandsPacket implements IMinecraftPacket {
                     return false;
                 });
 
-                int newIndex = addNodeRecursively(proxyChild, source);
-                backendRoot.getChildren().add(newIndex);
-                log.debug("已添加代理命令: {}", commandName);
+                collectProxyNodes(proxyChild, source, allNodeIndices);
+            }
+
+            // Pass 2: fill all collected proxy node data (redirects now resolvable)
+            for (Map.Entry<CommandNode<IStarlightCommandSource>, Integer> entry : allNodeIndices.entrySet()) {
+                CommandNode<IStarlightCommandSource> node = entry.getKey();
+                int index = entry.getValue();
+                CommandNodeData data = nodes.get(index);
+
+                Map<CommandNode<IStarlightCommandSource>, Integer> childIndices = new LinkedHashMap<>();
+                for (CommandNode<IStarlightCommandSource> child : node.getChildren()) {
+                    if (!child.canUse(source)) continue;
+                    Integer ci = allNodeIndices.get(child);
+                    if (ci != null) childIndices.put(child, ci);
+                }
+
+                fillNodeData(data, node, childIndices, allNodeIndices);
+            }
+
+            // Add root child references
+            for (CommandNode<IStarlightCommandSource> proxyChild : proxyRoot.getChildren()) {
+                if (!proxyChild.canUse(source)) continue;
+                Integer idx = allNodeIndices.get(proxyChild);
+                if (idx != null) backendRoot.getChildren().add(idx);
             }
         } finally {
             this.translateManager = null;
@@ -134,29 +152,20 @@ public class ClientboundCommandsPacket implements IMinecraftPacket {
     }
 
     /**
-     * 递归将代理命令节点追加到 nodes 列表，返回当前节点的索引。
+     * DFS 收集代理节点并分配索引，向 nodes 列表追加占位 CommandNodeData。
      */
-    private int addNodeRecursively(CommandNode<IStarlightCommandSource> node, IStarlightCommandSource source) {
-        Map<CommandNode<IStarlightCommandSource>, Integer> allNodeIndices = new LinkedHashMap<>();
-        return addNodeRecursively(node, source, allNodeIndices);
-    }
-
-    private int addNodeRecursively(CommandNode<IStarlightCommandSource> node, IStarlightCommandSource source,
+    private void collectProxyNodes(CommandNode<IStarlightCommandSource> node, IStarlightCommandSource source,
                                    Map<CommandNode<IStarlightCommandSource>, Integer> allNodeIndices) {
         int currentIndex = nodes.size();
         allNodeIndices.put(node, currentIndex);
-        CommandNodeData nodeData = new CommandNodeData();
-        nodes.add(nodeData); // 先占位，后填充
+        nodes.add(new CommandNodeData());
 
-        Map<CommandNode<IStarlightCommandSource>, Integer> childIndices = new LinkedHashMap<>();
         for (CommandNode<IStarlightCommandSource> child : node.getChildren()) {
             if (!child.canUse(source)) continue;
-            int childIndex = addNodeRecursively(child, source, allNodeIndices);
-            childIndices.put(child, childIndex);
+            if (!allNodeIndices.containsKey(child)) {
+                collectProxyNodes(child, source, allNodeIndices);
+            }
         }
-
-        fillNodeData(nodeData, node, childIndices, allNodeIndices);
-        return currentIndex;
     }
 
     private void fillNodeData(CommandNodeData data,
