@@ -1,6 +1,7 @@
 package io.slidermc.starlight.api.plugin;
 
 import io.slidermc.starlight.StarlightProxy;
+import io.slidermc.starlight.api.command.StarlightCommand;
 import io.slidermc.starlight.api.event.EventListener;
 import io.slidermc.starlight.api.translate.TranslateManager;
 import org.slf4j.Logger;
@@ -54,6 +55,11 @@ public interface IPlugin {
      * @param listenerId 监听器 ID
      */
     void unregisterListener(String listenerId);
+
+    /**
+     * 注册代理命令。需在 {@link #onEnable(StarlightProxy)} 或之后调用。
+     */
+    void registerCommand(StarlightCommand command);
 
     /**
      * 在代理优雅关闭时调用。应释放所有资源、取消订阅事件。

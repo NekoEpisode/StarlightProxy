@@ -122,8 +122,11 @@
     "starlight.command.only_player_can_use_command": "<red>Only players can use this command</red>",
     "starlight.command.usage": "<red>Usage: <usage></red>",
 
+    "starlight.command.server.desc": "Switch to the target server",
+    "starlight.command.server.usage": "/server <target_name>",
+
     "starlight.command.starlight.brief": " <gray>— <version></gray>",
-    "starlight.command.starlight.hint": "<dark_gray>Use /starlight help for a list of commands  ·  By SliderMC</dark_gray>",
+    "starlight.command.starlight.hint": "<dark_gray>Use '/starlight help' for help  ·  By SliderMC</dark_gray>",
 
     "starlight.command.starlight.version.header": "<gradient:#FFE100:#C8A200>— StarlightProxy —</gradient>",
     "starlight.command.starlight.version.version": " <gray>Version  </gray><white><version></white>",
@@ -138,9 +141,31 @@
     "starlight.command.starlight.plugins.hover.depends": "<gray>Depends: </gray><white><depends></white>",
     "starlight.command.starlight.plugins.hover.soft_depends": "<gray>Soft Depends: </gray><white><soft_depends></white>",
 
+    "starlight.command.starlight.desc": "StarlightProxy main command",
+    "starlight.command.starlight.usage": "/starlight help",
+
     "starlight.command.starlight.help.header": "<gradient:#FFE100:#C8A200>— Help —</gradient>",
     "starlight.command.starlight.help.entry": "<gray>  <usage></gray> <dark_gray>— <description></dark_gray>",
     "starlight.command.starlight.help.footer": "<dark_gray>By SliderMC</dark_gray>",
+    "starlight.command.starlight.help.desc.version": "Show Starlight version info",
+    "starlight.command.starlight.help.desc.plugins": "List loaded plugins",
+    "starlight.command.starlight.help.desc.commands": "List all available commands",
+    "starlight.command.starlight.help.desc.help": "Show this help",
+    "starlight.command.starlight.help.desc.shutdown": "Shut down the proxy",
+
+    "starlight.command.starlight.commands.header": "<gradient:#FFE100:#C8A200>— Commands —</gradient>",
+    "starlight.command.starlight.commands.entry": "<gray>  /<name></gray> <dark_gray>— <description></dark_gray>",
+    "starlight.command.starlight.commands.entry_no_desc": "<gray>  /<name></gray>",
+    "starlight.command.starlight.commands.not_found": "<red>Command not found: <name></red>",
+    "starlight.command.starlight.commands.page.prev": "<gray>[← Prev]</gray>",
+    "starlight.command.starlight.commands.page.next": "<gray>[Next →]</gray>",
+    "starlight.command.starlight.commands.page.info": "<dark_gray>Page <current>/<total></dark_gray>",
+    "starlight.command.starlight.commands.page.hover": "<gray>Page <page></gray>",
+    "starlight.command.starlight.commands.hover_usage": "<gray>Usage: <usage></gray>",
+    "starlight.command.starlight.commands.hover_fullname": "<dark_gray>Full name: <name></dark_gray>",
+    "starlight.command.starlight.commands.detail.header": "<gradient:#FFE100:#C8A200>— Command: <name> —</gradient>",
+    "starlight.command.starlight.commands.detail.desc": "<gray>  Description: </gray><white><description></white>",
+    "starlight.command.starlight.commands.detail.usage": "<gray>  Usage: </gray><white><usage></white>",
 
     "starlight.command.glist.summary": "<gradient:#FFE100:#C8A200>Online:</gradient> <white><players></white> <gray>player(s) across</gray> <white><servers></white> <gray>server(s)</gray>",
     "starlight.command.glist.all.header": "<gradient:#FFE100:#C8A200>— Server List (<servers> servers) —</gradient>",
@@ -155,10 +180,16 @@
     "starlight.command.glist.help.all_force": "<gray>  /glist all force</gray> <dark_gray>— List all servers including empty ones</dark_gray>",
     "starlight.command.glist.help.server": "<gray>  /glist <server></gray> <dark_gray>— List players on a specific server</dark_gray>",
 
+    "starlight.command.glist.desc": "Show online players across all servers",
+    "starlight.command.glist.usage": "/glist help",
+
     "starlight.logging.warn.console.init_failed": "Console initialization failed: {}, running without interactive console",
 
     "starlight.logging.warn.permission.load_failed": "Failed to load permissions file: {}",
     "starlight.logging.warn.permission.replaced": "PermissionService has been replaced: {} -> {}",
+    "starlight.logging.warn.command.overwrite": "Command /{} is being overwritten by a new registration",
+    "starlight.logging.warn.command.short_name_conflict": "Short name /{} is already used by /{}, skipping redirect for /{}",
+    "starlight.logging.warn.command.alias_conflict": "Alias /{} is already registered, skipping redirect for /{}",
     "starlight.logging.warn.client.complete_login_before_login": "completeLogin called before login() — loginFuture is null, ignoring. Caller: {}",
 
     "starlight.command.perm.added": "<green>Added permission <permission> to <player></green>",
@@ -172,6 +203,9 @@
     "starlight.command.perm.help.reload": "<gray>  /sperm reload</gray> <dark_gray>— Reload permissions from storage</dark_gray>",
     "starlight.command.perm.help.user_add": "<gray>  /sperm user <target> add <permission></gray> <dark_gray>— Add a permission for a player</dark_gray>",
     "starlight.command.perm.help.user_remove": "<gray>  /sperm user <target> remove <permission></gray> <dark_gray>— Remove a permission from a player</dark_gray>",
-    "starlight.command.perm.help.user_list": "<gray>  /sperm user <target> list</gray> <dark_gray>— List all permissions for a player</dark_gray>"
+    "starlight.command.perm.help.user_list": "<gray>  /sperm user <target> list</gray> <dark_gray>— List all permissions for a player</dark_gray>",
+
+    "starlight.command.perm.desc": "Manage player permissions",
+    "starlight.command.perm.usage": "/sperm help"
   }
 }

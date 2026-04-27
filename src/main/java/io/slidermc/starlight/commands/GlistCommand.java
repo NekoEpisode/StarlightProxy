@@ -4,6 +4,7 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import io.slidermc.starlight.StarlightProxy;
+import io.slidermc.starlight.api.command.CommandMeta;
 import io.slidermc.starlight.api.command.StarlightCommand;
 import io.slidermc.starlight.api.command.source.IStarlightCommandSource;
 import io.slidermc.starlight.api.player.PlayerManager;
@@ -30,7 +31,10 @@ public class GlistCommand extends StarlightCommand {
     private final StarlightProxy proxy;
 
     public GlistCommand(StarlightProxy proxy) {
-        super("glist", "Show online players across all servers", "/glist help");
+        super(CommandMeta.builder("starlight", "glist")
+                .description("starlight.command.glist.desc", true)
+                .usage("starlight.command.glist.usage", true)
+                .build());
         this.proxy = proxy;
     }
 
@@ -123,8 +127,8 @@ public class GlistCommand extends StarlightCommand {
         String names = players.isEmpty()
                 ? t(src, "starlight.command.glist.no_players")
                 : players.stream()
-                        .map(p -> p.getGameProfile().username())
-                        .collect(Collectors.joining("<dark_gray>, </dark_gray>"));
+                  .map(p -> p.getGameProfile().username())
+                  .collect(Collectors.joining("<dark_gray>, </dark_gray>"));
         src.sendMessage(MiniMessageUtils.MINI_MESSAGE.deserialize(
                 t(src, "starlight.command.glist.server_entry"),
                 Placeholder.parsed("server", server.getName()),

@@ -447,9 +447,9 @@ public class PluginManager {
         } catch (Exception e) {
             log.error(t("starlight.logging.error.plugin.on_disable_failed"), container.description().name(), e);
         }
-        // 插件禁用后自动注销其所有事件监听器，防止内存泄漏
         if (proxy != null) {
             proxy.getEventManager().unregisterAll(container.plugin());
+            proxy.getCommandManager().unregisterAll(container.description().name());
         }
     }
 

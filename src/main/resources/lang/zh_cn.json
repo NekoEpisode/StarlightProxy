@@ -122,8 +122,11 @@
     "starlight.command.only_player_can_use_command": "<red>只有玩家才能使用此命令</red>",
     "starlight.command.usage": "<red>用法: <usage></red>",
 
+    "starlight.command.server.desc": "切换到目标服务器",
+    "starlight.command.server.usage": "/server <target_name>",
+
     "starlight.command.starlight.brief": " <gray>— <version></gray>",
-    "starlight.command.starlight.hint": "<dark_gray>使用 /starlight help 查看命令列表  ·  By SliderMC</dark_gray>",
+    "starlight.command.starlight.hint": "<dark_gray>使用 /starlight help 查看帮助  ·  By SliderMC</dark_gray>",
 
     "starlight.command.starlight.version.header": "<gradient:#FFE100:#C8A200>— StarlightProxy —</gradient>",
     "starlight.command.starlight.version.version": " <gray>版本  </gray><white><version></white>",
@@ -138,9 +141,31 @@
     "starlight.command.starlight.plugins.hover.depends": "<gray>硬依赖: </gray><white><depends></white>",
     "starlight.command.starlight.plugins.hover.soft_depends": "<gray>软依赖: </gray><white><soft_depends></white>",
 
+    "starlight.command.starlight.desc": "StarlightProxy 主命令",
+    "starlight.command.starlight.usage": "/starlight help",
+
     "starlight.command.starlight.help.header": "<gradient:#FFE100:#C8A200>— 帮助 —</gradient>",
     "starlight.command.starlight.help.entry": "<gray>  <usage></gray> <dark_gray>— <description></dark_gray>",
     "starlight.command.starlight.help.footer": "<dark_gray>By SliderMC</dark_gray>",
+    "starlight.command.starlight.help.desc.version": "显示 Starlight 版本信息",
+    "starlight.command.starlight.help.desc.plugins": "列出已加载的插件",
+    "starlight.command.starlight.help.desc.commands": "列出所有可用命令",
+    "starlight.command.starlight.help.desc.help": "显示此帮助",
+    "starlight.command.starlight.help.desc.shutdown": "关闭代理服务器",
+
+    "starlight.command.starlight.commands.header": "<gradient:#FFE100:#C8A200>— 命令列表 —</gradient>",
+    "starlight.command.starlight.commands.entry": "<gray>  /<name></gray> <dark_gray>— <description></dark_gray>",
+    "starlight.command.starlight.commands.entry_no_desc": "<gray>  /<name></gray>",
+    "starlight.command.starlight.commands.not_found": "<red>未找到命令: <name></red>",
+    "starlight.command.starlight.commands.page.prev": "<gray>[← 上一页]</gray>",
+    "starlight.command.starlight.commands.page.next": "<gray>[下一页 →]</gray>",
+    "starlight.command.starlight.commands.page.info": "<dark_gray>第 <current>/<total> 页</dark_gray>",
+    "starlight.command.starlight.commands.page.hover": "<gray>转到第 <page> 页</gray>",
+    "starlight.command.starlight.commands.hover_usage": "<gray>用法: <usage></gray>",
+    "starlight.command.starlight.commands.hover_fullname": "<dark_gray>全名: <name></dark_gray>",
+    "starlight.command.starlight.commands.detail.header": "<gradient:#FFE100:#C8A200>— 命令: <name> —</gradient>",
+    "starlight.command.starlight.commands.detail.desc": "<gray>  描述: </gray><white><description></white>",
+    "starlight.command.starlight.commands.detail.usage": "<gray>  用法: </gray><white><usage></white>",
 
     "starlight.command.glist.summary": "<gradient:#FFE100:#C8A200>在线人数: </gradient><white><players></white> <gray>名玩家，共</gray> <white><servers></white> <gray>个服务器</gray>",
     "starlight.command.glist.all.header": "<gradient:#FFE100:#C8A200>— 服务器列表(共 <servers> 个)—</gradient>",
@@ -155,10 +180,16 @@
     "starlight.command.glist.help.all_force": "<gray>  /glist all force</gray> <dark_gray>— 列出所有服务器(包括空服务器)</dark_gray>",
     "starlight.command.glist.help.server": "<gray>  /glist <服务器名></gray> <dark_gray>— 查看指定服务器的玩家列表</dark_gray>",
 
+    "starlight.command.glist.desc": "查看所有服务器的在线玩家",
+    "starlight.command.glist.usage": "/glist help",
+
     "starlight.logging.warn.console.init_failed": "控制台初始化失败: {}，将在无交互控制台模式下运行",
 
     "starlight.logging.warn.permission.load_failed": "权限文件加载失败: {}",
     "starlight.logging.warn.permission.replaced": "权限服务已被替换: {} -> {}",
+    "starlight.logging.warn.command.overwrite": "命令 /{} 正被新注册覆盖",
+    "starlight.logging.warn.command.short_name_conflict": "短名 /{} 已被 /{} 占用，跳过为 /{} 注册 redirect",
+    "starlight.logging.warn.command.alias_conflict": "别名 /{} 已被注册，跳过为 /{} 注册 redirect",
     "starlight.logging.warn.client.complete_login_before_login": "completeLogin 在 login() 之前被调用 — loginFuture 为 null，已忽略。调用方: {}",
 
     "starlight.command.perm.added": "<green>已为 <player> 添加权限 <permission></green>",
@@ -172,6 +203,9 @@
     "starlight.command.perm.help.reload": "<gray>  /sperm reload</gray> <dark_gray>— 从存储重载权限</dark_gray>",
     "starlight.command.perm.help.user_add": "<gray>  /sperm user <target> add <permission></gray> <dark_gray>— 为玩家添加权限</dark_gray>",
     "starlight.command.perm.help.user_remove": "<gray>  /sperm user <target> remove <permission></gray> <dark_gray>— 移除玩家的权限</dark_gray>",
-    "starlight.command.perm.help.user_list": "<gray>  /sperm user <target> list</gray> <dark_gray>— 列出玩家的所有权限</dark_gray>"
+    "starlight.command.perm.help.user_list": "<gray>  /sperm user <target> list</gray> <dark_gray>— 列出玩家的所有权限</dark_gray>",
+
+    "starlight.command.perm.desc": "管理玩家权限",
+    "starlight.command.perm.usage": "/sperm help"
   }
 }

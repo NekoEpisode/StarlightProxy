@@ -3,6 +3,7 @@ package io.slidermc.starlight.commands;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import io.slidermc.starlight.StarlightProxy;
+import io.slidermc.starlight.api.command.CommandMeta;
 import io.slidermc.starlight.api.command.StarlightCommand;
 import io.slidermc.starlight.api.command.source.IStarlightCommandSource;
 import io.slidermc.starlight.api.player.ProxiedPlayer;
@@ -16,7 +17,10 @@ public class ServerCommand extends StarlightCommand {
     private final StarlightProxy proxy;
 
     public ServerCommand(StarlightProxy proxy) {
-        super("server", "Switch to the target server", "/server <target_name>");
+        super(CommandMeta.builder("starlight", "server")
+                .description("starlight.command.server.desc", true)
+                .usage("starlight.command.server.usage", true)
+                .build());
         this.proxy = proxy;
     }
 
@@ -31,10 +35,11 @@ public class ServerCommand extends StarlightCommand {
                         ConnectionContext context = optPlayer.get().getConnectionContext();
                         locale = context.getLocale();
                     }
+                    String usage = isUsageKey() ? proxy.getTranslateManager().translate(locale, getUsage()) : getUsage();
                     ctx.getSource().sendMessage(
                             MiniMessageUtils.MINI_MESSAGE.deserialize(
                                     proxy.getTranslateManager().translate(locale, "starlight.command.usage"),
-                                    Placeholder.parsed("usage", getUsage())
+                                    Placeholder.parsed("usage", usage)
                             )
                     );
                     return 0;

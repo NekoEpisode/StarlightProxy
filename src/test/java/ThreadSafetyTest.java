@@ -1,5 +1,6 @@
 import com.mojang.brigadier.CommandDispatcher;
 import io.slidermc.starlight.api.command.CommandManager;
+import io.slidermc.starlight.api.command.CommandMeta;
 import io.slidermc.starlight.api.command.StarlightCommand;
 import io.slidermc.starlight.api.command.source.IStarlightCommandSource;
 import io.slidermc.starlight.api.event.EventHandler;
@@ -444,6 +445,8 @@ public class ThreadSafetyTest {
         CommandDispatcher<IStarlightCommandSource> dispatcher = new CommandDispatcher<>();
         CommandManager commandManager = new CommandManager(dispatcher, null);
         String commandName = "concurrent-test";
+        String nsA = "test";
+        String nsB = "other";
 
         class TestSource implements IStarlightCommandSource {
             @Override public void sendMessage(net.kyori.adventure.text.Component message) {}
@@ -453,14 +456,6 @@ public class ThreadSafetyTest {
             @Override public Set<io.slidermc.starlight.api.command.source.ContextKey<?>> contextKeys() { return Set.of(); }
             @Override public boolean hasPermission(String permission) { return true; }
         }
-
-        commandManager.register(new StarlightCommand(commandName) {
-            @Override
-            public com.mojang.brigadier.builder.LiteralArgumentBuilder<IStarlightCommandSource> build() {
-                return com.mojang.brigadier.builder.LiteralArgumentBuilder.<IStarlightCommandSource>literal(commandName)
-                        .executes(ctx -> 1);
-            }
-        });
 
         int threadCount = 8;
         int iterations = 200;
@@ -477,25 +472,33 @@ public class ThreadSafetyTest {
                     TestSource source = new TestSource();
                     for (int j = 0; j < iterations; j++) {
                         try {
+                            String namespace = (threadIdx % 2 == 0) ? nsA : nsB;
                             String name = (threadIdx % 2 == 0) ? commandName : ("other-" + threadIdx);
-                            int op = j % 3;
+                            int op = j % 5;
                             if (op == 0) {
-                                commandManager.register(new StarlightCommand(name) {
+                                commandManager.register(new StarlightCommand(
+                                        CommandMeta.builder(namespace, name).aliases(name + "-alias").build()) {
                                     @Override
                                     public com.mojang.brigadier.builder.LiteralArgumentBuilder<IStarlightCommandSource> build() {
-                                        return com.mojang.brigadier.builder.LiteralArgumentBuilder.<IStarlightCommandSource>literal(name)
+                                        return com.mojang.brigadier.builder.LiteralArgumentBuilder.<IStarlightCommandSource>literal(namespace + ":" + name)
                                                 .executes(ctx -> 1);
                                     }
                                 });
                             } else if (op == 1) {
                                 commandManager.unregister(name);
+                            } else if (op == 2) {
+                                commandManager.unregister(namespace + ":" + name);
+                            } else if (op == 3) {
+                                commandManager.unregisterAll(namespace);
                             } else {
                                 commandManager.hasCommand(name);
+                                commandManager.hasCommand(namespace + ":" + name);
                                 try {
                                     commandManager.execute(name, source);
-                                } catch (Exception ignored) {
-                                    // 命令可能已被并发注销，执行失败是合法的
-                                }
+                                } catch (Exception ignored) {}
+                                try {
+                                    commandManager.execute(namespace + ":" + name, source);
+                                } catch (Exception ignored) {}
                             }
                         } catch (ConcurrentModificationException | IllegalStateException e) {
                             errors.add(e);
@@ -515,6 +518,118 @@ public class ThreadSafetyTest {
 
         assertTrue(errors.isEmpty(),
                 "并发访问 CommandManager 时不应出现并发相关异常: " + errors);
+    }
+
+    @Test
+    public void testCommandManagerNamespaceAndShortNameRedirect() throws Exception {
+        CommandDispatcher<IStarlightCommandSource> dispatcher = new CommandDispatcher<>();
+        CommandManager commandManager = new CommandManager(dispatcher, null);
+
+        class TestSource implements IStarlightCommandSource {
+            @Override public void sendMessage(net.kyori.adventure.text.Component message) {}
+            @Override public Optional<ProxiedPlayer> asProxiedPlayer() { return Optional.empty(); }
+            @Override public <T> void setContext(io.slidermc.starlight.api.command.source.ContextKey<T> key, T value) {}
+            @Override public <T> Optional<T> getContext(io.slidermc.starlight.api.command.source.ContextKey<T> key) { return Optional.empty(); }
+            @Override public Set<io.slidermc.starlight.api.command.source.ContextKey<?>> contextKeys() { return Set.of(); }
+            @Override public boolean hasPermission(String permission) { return true; }
+        }
+
+        TestSource source = new TestSource();
+
+        // Register plugin A and B with same short name
+        commandManager.register(new StarlightCommand(CommandMeta.builder("plugina", "cmd").build()) {
+            @Override
+            public com.mojang.brigadier.builder.LiteralArgumentBuilder<IStarlightCommandSource> build() {
+                return com.mojang.brigadier.builder.LiteralArgumentBuilder.<IStarlightCommandSource>literal("plugina:cmd")
+                        .executes(ctx -> 1);
+            }
+        });
+
+        commandManager.register(new StarlightCommand(CommandMeta.builder("pluginb", "cmd").build()) {
+            @Override
+            public com.mojang.brigadier.builder.LiteralArgumentBuilder<IStarlightCommandSource> build() {
+                return com.mojang.brigadier.builder.LiteralArgumentBuilder.<IStarlightCommandSource>literal("pluginb:cmd")
+                        .executes(ctx -> 2);
+            }
+        });
+
+        // Short name "cmd" → should redirect to plugina:cmd (first registered)
+        assertTrue(commandManager.hasCommand("cmd"));
+        assertTrue(commandManager.hasCommand("plugina:cmd"));
+        assertTrue(commandManager.hasCommand("pluginb:cmd"));
+
+        StarlightCommand byShort = commandManager.getCommand("cmd");
+        assertNotNull(byShort);
+        assertEquals("plugina", byShort.getNamespace());
+
+        StarlightCommand byFullA = commandManager.getCommand("plugina:cmd");
+        assertNotNull(byFullA);
+        assertEquals("plugina", byFullA.getNamespace());
+
+        StarlightCommand byFullB = commandManager.getCommand("pluginb:cmd");
+        assertNotNull(byFullB);
+        assertEquals("pluginb", byFullB.getNamespace());
+
+        // Verify short name redirect node exists in dispatcher
+        assertNotNull(dispatcher.getRoot().getChild("cmd"));
+        assertNotNull(dispatcher.getRoot().getChild("plugina:cmd"));
+        assertNotNull(dispatcher.getRoot().getChild("pluginb:cmd"));
+
+        // Verify execution through short name resolves to plugina:cmd
+        var parse = dispatcher.parse("cmd", source);
+        assertEquals(1, dispatcher.execute(parse));
+
+        // Verify namespaced execution
+        parse = dispatcher.parse("plugina:cmd", source);
+        assertEquals(1, dispatcher.execute(parse));
+
+        parse = dispatcher.parse("pluginb:cmd", source);
+        assertEquals(2, dispatcher.execute(parse));
+
+        // Verify unregisterAll cleans up all nodes for a namespace
+        commandManager.unregisterAll("plugina");
+        assertFalse(commandManager.hasCommand("plugina:cmd"));
+        assertNull(dispatcher.getRoot().getChild("plugina:cmd"));
+        // Short name redirect should also be gone
+        assertNull(dispatcher.getRoot().getChild("cmd"));
+        // pluginb should still be intact
+        assertTrue(commandManager.hasCommand("pluginb:cmd"));
+        assertNotNull(dispatcher.getRoot().getChild("pluginb:cmd"));
+
+        // Clean up pluginb
+        commandManager.unregisterAll("pluginb");
+        assertFalse(commandManager.hasCommand("pluginb:cmd"));
+        assertNull(dispatcher.getRoot().getChild("pluginb:cmd"));
+    }
+
+    @Test
+    public void testCommandManagerAliasRegistrationAndCleanup() throws Exception {
+        CommandDispatcher<IStarlightCommandSource> dispatcher = new CommandDispatcher<>();
+        CommandManager commandManager = new CommandManager(dispatcher, null);
+
+        commandManager.register(new StarlightCommand(
+                CommandMeta.builder("test", "main").aliases("alt", "alt2").build()) {
+            @Override
+            public com.mojang.brigadier.builder.LiteralArgumentBuilder<IStarlightCommandSource> build() {
+                return com.mojang.brigadier.builder.LiteralArgumentBuilder.<IStarlightCommandSource>literal("test:main")
+                        .executes(ctx -> 1);
+            }
+        });
+
+        // Aliases should be registered as redirect nodes
+        assertNotNull(dispatcher.getRoot().getChild("alt"));
+        assertNotNull(dispatcher.getRoot().getChild("alt2"));
+
+        // Lookup by alias
+        assertNotNull(commandManager.getCommand("alt"));
+        assertEquals("main", commandManager.getCommand("alt").getKey().value());
+
+        // Unregister cleans up aliases
+        commandManager.unregister("test:main");
+        assertFalse(commandManager.hasCommand("test:main"));
+        assertNull(dispatcher.getRoot().getChild("test:main"));
+        assertNull(dispatcher.getRoot().getChild("alt"));
+        assertNull(dispatcher.getRoot().getChild("alt2"));
     }
 
     @Test
