@@ -215,27 +215,27 @@ public class PluginManager {
     }
 
     /**
-     * 按名称查找已加载的插件实例。
+     * 按 ID 查找已加载的插件实例。
      *
-     * @param name 插件名
+     * @param id 插件 ID（唯一标识符，非显示名称）
      * @return 插件实例，不存在时返回 {@link Optional#empty()}
      */
-    public Optional<IPlugin> getPlugin(String name) {
+    public Optional<IPlugin> getPlugin(String id) {
         return orderedPlugins.stream()
-                .filter(c -> c.description().id().equals(name))
+                .filter(c -> c.description().id().equals(id))
                 .map(PluginContainer::plugin)
                 .findFirst();
     }
 
     /**
-     * 查询指定名称的插件是否已启用。
+     * 查询指定 ID 的插件是否已启用。
      *
-     * @param name 插件名
+     * @param id 插件 ID（唯一标识符，非显示名称）
      * @return {@link Optional#empty()} 若插件不存在；否则返回启用状态
      */
-    public Optional<Boolean> isPluginEnabled(String name) {
+    public Optional<Boolean> isPluginEnabled(String id) {
         return orderedPlugins.stream()
-                .filter(c -> c.description().id().equals(name))
+                .filter(c -> c.description().id().equals(id))
                 .map(PluginContainer::isEnabled)
                 .findFirst();
     }
@@ -248,22 +248,22 @@ public class PluginManager {
     }
 
     /**
-     * 启用指定名称的插件（若已启用则无操作）。
+     * 启用指定 ID 的插件（若已启用则无操作）。
      *
-     * @param name 插件名
+     * @param id 插件 ID（唯一标识符，非显示名称）
      * @return 若插件存在且未被启用返回 true；否则 false
      */
-    public boolean enablePlugin(String name) {
-        PluginContainer container = findContainer(name);
+    public boolean enablePlugin(String id) {
+        PluginContainer container = findContainer(id);
         if (container == null) {
-            log.warn(t("starlight.logging.warn.plugin.not_found"), name);
+            log.warn(t("starlight.logging.warn.plugin.not_found"), id);
             return false;
         }
         if (container.isEnabled()) {
             return false;
         }
         if (proxy == null) {
-            log.warn(t("starlight.logging.warn.plugin.enable_without_proxy"), name);
+            log.warn(t("starlight.logging.warn.plugin.enable_without_proxy"), id);
             return false;
         }
         invokeOnEnable(container, proxy);
@@ -271,16 +271,16 @@ public class PluginManager {
     }
 
     /**
-     * 禁用指定名称的插件（若未启用则无操作）。
+     * 禁用指定 ID 的插件（若未启用则无操作）。
      * 会同时清理该插件的命令和事件监听器。
      *
-     * @param name 插件名
+     * @param id 插件 ID（唯一标识符，非显示名称）
      * @return 若插件存在且处于启用状态返回 true；否则 false
      */
-    public boolean disablePlugin(String name) {
-        PluginContainer container = findContainer(name);
+    public boolean disablePlugin(String id) {
+        PluginContainer container = findContainer(id);
         if (container == null) {
-            log.warn(t("starlight.logging.warn.plugin.not_found"), name);
+            log.warn(t("starlight.logging.warn.plugin.not_found"), id);
             return false;
         }
         if (!container.isEnabled()) {
@@ -291,16 +291,16 @@ public class PluginManager {
     }
 
     /**
-     * 注销指定名称的插件。若其已启用会先调用 {@link #disablePlugin(String)}，
+     * 注销指定 ID 的插件。若其已启用会先调用 {@link #disablePlugin(String)}，
      * 随后移除所有内部状态（包括类加载器等资源）。
      *
-     * @param name 插件名
+     * @param id 插件 ID（唯一标识符，非显示名称）
      * @return 若插件存在返回 true；否则 false
      */
-    public boolean unregisterPlugin(String name) {
-        PluginContainer container = findContainer(name);
+    public boolean unregisterPlugin(String id) {
+        PluginContainer container = findContainer(id);
         if (container == null) {
-            log.warn(t("starlight.logging.warn.plugin.not_found"), name);
+            log.warn(t("starlight.logging.warn.plugin.not_found"), id);
             return false;
         }
         if (container.isEnabled()) {
@@ -311,15 +311,15 @@ public class PluginManager {
             try {
                 container.classLoader().close();
             } catch (IOException e) {
-                log.warn(t("starlight.logging.warn.plugin.classloader_close_failed"), name, e);
+                log.warn(t("starlight.logging.warn.plugin.classloader_close_failed"), id, e);
             }
         }
         return true;
     }
 
-    private PluginContainer findContainer(String name) {
+    private PluginContainer findContainer(String id) {
         return orderedPlugins.stream()
-                .filter(c -> c.description().id().equals(name))
+                .filter(c -> c.description().id().equals(id))
                 .findFirst()
                 .orElse(null);
     }
@@ -441,7 +441,7 @@ public class PluginManager {
                 for (String dep : c.description().depends()) {
                     if (!byName.containsKey(dep) || excluded.contains(dep)) {
                         log.error(t("starlight.logging.error.plugin.jar_load_failed"),
-                                name, "硬依赖 [" + dep + "] 不存在或已被跳过，跳过该插件");
+                                name, t("starlight.logging.error.plugin.hard_dep_missing").replace("{dep}", dep));
                         excluded.add(name);
                         changed = true;
                         break;
@@ -499,7 +499,7 @@ public class PluginManager {
             Set<String> inCycle = new HashSet<>(inDegree.keySet());
             sorted.forEach(c -> inCycle.remove(c.description().id()));
             log.error(t("starlight.logging.error.plugin.dependency_resolve_failed"),
-                    "检测到循环依赖，涉及插件: " + inCycle + "，已跳过");
+                    t("starlight.logging.error.plugin.circular_dependency").replace("{plugins}", inCycle.toString()));
         }
 
         return sorted;

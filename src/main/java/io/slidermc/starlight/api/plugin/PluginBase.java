@@ -77,9 +77,15 @@ public abstract class PluginBase implements IPlugin {
     }
 
     /**
-     * @hidden 由 {@link PluginManager} 在注册时调用，注入管理器引用。
+     * 仅供框架内部使用，由 {@link PluginManager} 在注册时调用，注入管理器引用。
+     * 插件实现在任何生命周期阶段请勿调用或覆写该方法。
+     *
+     * @throws IllegalStateException 如果插件管理器已被设置为不同实例
      */
     public final void setPluginManager(PluginManager pluginManager) {
+        if (this.pluginManager != null && this.pluginManager != pluginManager) {
+            throw new IllegalStateException("PluginManager has already been set to a different instance");
+        }
         this.pluginManager = pluginManager;
     }
 

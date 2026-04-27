@@ -3,6 +3,7 @@ package io.slidermc.starlight.api.plugin;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 /**
  * 描述插件的元数据，对应 {@code plugin.yml} 中的字段。
@@ -82,9 +83,9 @@ public record PluginDescription(
         private PluginType type = PluginType.MEMORY;
 
         private Builder(String id, String version) {
-            this.id = id;
-            this.name = id;
-            this.main = id;
+            this.id = id.toLowerCase();
+            this.name = this.id;
+            this.main = this.id;
             this.version = version;
         }
 
@@ -104,6 +105,7 @@ public record PluginDescription(
         public Builder softDepends(List<String> softDepends) { this.softDepends = List.copyOf(softDepends); return this; }
 
         public PluginDescription build() {
+            validateId(id);
             return new PluginDescription(id, name, version, main, apiVersion, description, authors, depends, softDepends, type);
         }
     }
@@ -117,6 +119,11 @@ public record PluginDescription(
      */
     public static PluginDescription fromMap(Map<String, Object> map) throws PluginLoadException {
         String id = requireString(map, "id").toLowerCase();
+        try {
+            validateId(id);
+        } catch (IllegalArgumentException e) {
+            throw new PluginLoadException(e.getMessage());
+        }
         String name = getOptionalString(map, "name");
         if (name == null) name = id;
         String version = requireString(map, "version");
@@ -132,11 +139,11 @@ public record PluginDescription(
     private static String requireString(Map<String, Object> map, String key) throws PluginLoadException {
         Object value = map.get(key);
         if (value == null) {
-            throw new PluginLoadException("plugin.yml 缺少必填字段: " + key);
+            throw new PluginLoadException("plugin.yml missing required field: " + key);
         }
         String s = value.toString().strip();
         if (s.isBlank()) {
-            throw new PluginLoadException("plugin.yml 字段为空: " + key);
+            throw new PluginLoadException("plugin.yml field is blank: " + key);
         }
         return s;
     }
@@ -156,5 +163,13 @@ public record PluginDescription(
                     .toList();
         }
         return Collections.emptyList();
+    }
+
+    private static final Pattern ID_PATTERN = Pattern.compile("[a-z0-9_-]+");
+
+    private static void validateId(String id) {
+        if (!ID_PATTERN.matcher(id).matches()) {
+            throw new IllegalArgumentException("Invalid plugin id: '" + id + "' — only lowercase letters, digits, hyphens, and underscores allowed");
+        }
     }
 }
