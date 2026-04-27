@@ -39,7 +39,7 @@ public class StarlightMainCommand extends StarlightCommand {
 
     private static final String[][] HELP_ENTRIES = {
             {"version", "starlight.command.starlight.help.desc.version"},
-            {"plugins", "starlight.command.starlight.help.desc.plugins"},
+            {"plugins [page <n>|show <name>|search <keyword>]", "starlight.command.starlight.help.desc.plugins"},
             {"commands [page <n>|show <name>]", "starlight.command.starlight.help.desc.commands"},
             {"help", "starlight.command.starlight.help.desc.help"},
             {"shutdown", "starlight.command.starlight.help.desc.shutdown"},
@@ -61,9 +61,35 @@ public class StarlightMainCommand extends StarlightCommand {
                 .then(literal("plugins")
                         .requires(src -> src.hasPermission("starlight.plugins"))
                         .executes(ctx -> {
-                            sendPlugins(ctx.getSource());
+                            sendPluginsPage(ctx.getSource(), 1);
                             return 1;
-                        }))
+                        })
+                        .then(literal("page")
+                                .then(RequiredArgumentBuilder.<IStarlightCommandSource, Integer>argument("page", IntegerArgumentType.integer(1))
+                                        .executes(ctx -> {
+                                            int page = IntegerArgumentType.getInteger(ctx, "page");
+                                            sendPluginsPage(ctx.getSource(), page);
+                                            return 1;
+                                        })))
+                        .then(literal("show")
+                                .then(RequiredArgumentBuilder.<IStarlightCommandSource, String>argument("name", StringArgumentType.greedyString())
+                                        .suggests((ctx, builder) -> {
+                                            proxy.getPluginManager().getLoadedPlugins()
+                                                    .forEach(desc -> builder.suggest(desc.name()));
+                                            return builder.buildFuture();
+                                        })
+                                        .executes(ctx -> {
+                                            String name = StringArgumentType.getString(ctx, "name");
+                                            sendPluginDetail(ctx.getSource(), name.trim());
+                                            return 1;
+                                        })))
+                        .then(literal("search")
+                                .then(RequiredArgumentBuilder.<IStarlightCommandSource, String>argument("keyword", StringArgumentType.greedyString())
+                                        .executes(ctx -> {
+                                            String keyword = StringArgumentType.getString(ctx, "keyword");
+                                            sendPluginSearch(ctx.getSource(), keyword.trim());
+                                            return 1;
+                                        }))))
                 .then(literal("help")
                         .requires(src -> src.hasPermission("starlight.help"))
                         .executes(ctx -> {
@@ -132,30 +158,137 @@ public class StarlightMainCommand extends StarlightCommand {
                 Placeholder.parsed("count", String.valueOf(proxy.getPlayerManager().getPlayers().size()))));
     }
 
-    private void sendPlugins(IStarlightCommandSource src) {
+    private void sendPluginsPage(IStarlightCommandSource src, int page) {
         List<PluginDescription> plugins = proxy.getPluginManager().getLoadedPlugins();
+        int total = Math.max(1, (plugins.size() + PAGE_SIZE - 1) / PAGE_SIZE);
+        if (page < 1) page = 1;
+        if (page > total) page = total;
+
+        int start = (page - 1) * PAGE_SIZE;
+        int end = Math.min(start + PAGE_SIZE, plugins.size());
+
         src.sendMessage(MiniMessageUtils.MINI_MESSAGE.deserialize(
                 t(src, "starlight.command.starlight.plugins.header"),
                 Placeholder.parsed("count", String.valueOf(plugins.size()))));
+
         if (plugins.isEmpty()) {
             src.sendMessage(MiniMessageUtils.MINI_MESSAGE.deserialize(
                     t(src, "starlight.command.starlight.plugins.empty")));
         } else {
-            for (PluginDescription desc : plugins) {
-                Component hover = buildPluginHover(desc, src);
-                Component entry = MiniMessageUtils.MINI_MESSAGE.deserialize(
-                        t(src, "starlight.command.starlight.plugins.entry"),
-                        Placeholder.parsed("name", desc.name()),
-                        Placeholder.parsed("version", desc.version()))
-                        .hoverEvent(HoverEvent.showText(hover));
-                src.sendMessage(entry);
+            for (int i = start; i < end; i++) {
+                src.sendMessage(buildPluginEntry(plugins.get(i), src));
+            }
+        }
+
+        if (total > 1) {
+            sendPageNav(src, page, total, "starlight plugins page");
+        }
+    }
+
+    private void sendPluginDetail(IStarlightCommandSource src, String name) {
+        PluginDescription desc = proxy.getPluginManager().getLoadedPlugins().stream()
+                .filter(d -> d.name().equalsIgnoreCase(name))
+                .findFirst()
+                .orElse(null);
+
+        if (desc == null) {
+            src.sendMessage(MiniMessageUtils.MINI_MESSAGE.deserialize(
+                    t(src, "starlight.command.starlight.plugins.not_found"),
+                    Placeholder.parsed("name", name)));
+            return;
+        }
+
+        src.sendMessage(MiniMessageUtils.MINI_MESSAGE.deserialize(
+                t(src, "starlight.command.starlight.plugins.detail.header"),
+                Placeholder.parsed("name", desc.name())));
+
+        src.sendMessage(MiniMessageUtils.MINI_MESSAGE.deserialize(
+                t(src, "starlight.command.starlight.plugins.detail.version"),
+                Placeholder.parsed("version", desc.version())));
+
+        src.sendMessage(MiniMessageUtils.MINI_MESSAGE.deserialize(
+                t(src, "starlight.command.starlight.plugins.detail.main"),
+                Placeholder.parsed("main", desc.main())));
+
+        if (desc.description() != null && !desc.description().isBlank()) {
+            src.sendMessage(MiniMessageUtils.MINI_MESSAGE.deserialize(
+                    t(src, "starlight.command.starlight.plugins.detail.description"),
+                    Placeholder.parsed("description", desc.description())));
+        }
+
+        if (!desc.authors().isEmpty()) {
+            src.sendMessage(MiniMessageUtils.MINI_MESSAGE.deserialize(
+                    t(src, "starlight.command.starlight.plugins.detail.authors"),
+                    Placeholder.parsed("authors", String.join(", ", desc.authors()))));
+        }
+
+        if (!desc.depends().isEmpty()) {
+            src.sendMessage(MiniMessageUtils.MINI_MESSAGE.deserialize(
+                    t(src, "starlight.command.starlight.plugins.detail.depends"),
+                    Placeholder.parsed("depends", String.join(", ", desc.depends()))));
+        }
+
+        if (!desc.softDepends().isEmpty()) {
+            src.sendMessage(MiniMessageUtils.MINI_MESSAGE.deserialize(
+                    t(src, "starlight.command.starlight.plugins.detail.soft_depends"),
+                    Placeholder.parsed("soft_depends", String.join(", ", desc.softDepends()))));
+        }
+
+        boolean enabled = proxy.getPluginManager().isPluginEnabled(name).orElse(false);
+        src.sendMessage(MiniMessageUtils.MINI_MESSAGE.deserialize(
+                t(src, enabled
+                        ? "starlight.command.starlight.plugins.detail.status_enabled"
+                        : "starlight.command.starlight.plugins.detail.status_disabled")));
+    }
+
+    private void sendPluginSearch(IStarlightCommandSource src, String keyword) {
+        List<PluginDescription> plugins = proxy.getPluginManager().getLoadedPlugins();
+        String lower = keyword.toLowerCase();
+        List<PluginDescription> matches = plugins.stream()
+                .filter(d -> d.name().toLowerCase().contains(lower))
+                .toList();
+
+        src.sendMessage(MiniMessageUtils.MINI_MESSAGE.deserialize(
+                t(src, "starlight.command.starlight.plugins.search.header"),
+                Placeholder.parsed("keyword", keyword),
+                Placeholder.parsed("count", String.valueOf(matches.size()))));
+
+        if (matches.isEmpty()) {
+            src.sendMessage(MiniMessageUtils.MINI_MESSAGE.deserialize(
+                    t(src, "starlight.command.starlight.plugins.search.no_results"),
+                    Placeholder.parsed("keyword", keyword)));
+        } else {
+            for (PluginDescription desc : matches) {
+                src.sendMessage(buildPluginEntry(desc, src));
             }
         }
     }
 
+    private Component buildPluginEntry(PluginDescription desc, IStarlightCommandSource src) {
+        boolean enabled = proxy.getPluginManager().isPluginEnabled(desc.name()).orElse(false);
+        String entryKey = enabled
+                ? "starlight.command.starlight.plugins.entry"
+                : "starlight.command.starlight.plugins.entry_disabled";
+        Component hover = buildPluginHover(desc, src);
+        return MiniMessageUtils.MINI_MESSAGE.deserialize(
+                        t(src, entryKey),
+                        Placeholder.parsed("name", desc.name()),
+                        Placeholder.parsed("version", desc.version()))
+                .clickEvent(ClickEvent.runCommand("/starlight plugins show " + desc.name()))
+                .hoverEvent(HoverEvent.showText(hover));
+    }
+
     private Component buildPluginHover(PluginDescription desc, IStarlightCommandSource src) {
+        boolean enabled = proxy.getPluginManager().isPluginEnabled(desc.name()).orElse(false);
+
         Component result = MiniMessageUtils.MINI_MESSAGE.deserialize(
-                "<white><bold>" + desc.name() + "</bold></white> <dark_gray>v" + desc.version() + "</dark_gray>");
+                enabled
+                        ? t(src, "starlight.command.starlight.plugins.hover.status_enabled")
+                        : t(src, "starlight.command.starlight.plugins.hover.status_disabled"));
+
+        result = result.append(Component.newline())
+                .append(MiniMessageUtils.MINI_MESSAGE.deserialize(
+                        "<white><bold>" + desc.name() + "</bold></white> <dark_gray>v" + desc.version() + "</dark_gray>"));
 
         if (desc.description() != null && !desc.description().isBlank()) {
             result = result.append(Component.newline())
@@ -198,6 +331,56 @@ public class StarlightMainCommand extends StarlightCommand {
         }
     }
 
+    private void sendPageNav(IStarlightCommandSource src, int page, int total, String commandBase) {
+        int prevPage = page > 1 ? page - 1 : page;
+        int nextPage = page < total ? page + 1 : page;
+
+        Component spacer = Component.text("   ");
+        Component nav = Component.empty();
+
+        String prevKey = commandBase.startsWith("starlight plugins")
+                ? "starlight.command.starlight.plugins.page.prev"
+                : "starlight.command.starlight.commands.page.prev";
+        String nextKey = commandBase.startsWith("starlight plugins")
+                ? "starlight.command.starlight.plugins.page.next"
+                : "starlight.command.starlight.commands.page.next";
+        String infoKey = commandBase.startsWith("starlight plugins")
+                ? "starlight.command.starlight.plugins.page.info"
+                : "starlight.command.starlight.commands.page.info";
+        String hoverKey = commandBase.startsWith("starlight plugins")
+                ? "starlight.command.starlight.plugins.page.hover"
+                : "starlight.command.starlight.commands.page.hover";
+
+        if (page > 1) {
+            nav = nav.append(MiniMessageUtils.MINI_MESSAGE.deserialize(
+                            t(src, prevKey))
+                    .hoverEvent(HoverEvent.showText(MiniMessageUtils.MINI_MESSAGE.deserialize(
+                            t(src, hoverKey),
+                            Placeholder.parsed("page", String.valueOf(prevPage)))))
+                    .clickEvent(ClickEvent.runCommand("/" + commandBase + " " + prevPage)));
+        }
+
+        nav = nav.append(spacer);
+
+        nav = nav.append(MiniMessageUtils.MINI_MESSAGE.deserialize(
+                t(src, infoKey),
+                Placeholder.parsed("current", String.valueOf(page)),
+                Placeholder.parsed("total", String.valueOf(total))));
+
+        nav = nav.append(spacer);
+
+        if (page < total) {
+            nav = nav.append(MiniMessageUtils.MINI_MESSAGE.deserialize(
+                            t(src, nextKey))
+                    .hoverEvent(HoverEvent.showText(MiniMessageUtils.MINI_MESSAGE.deserialize(
+                            t(src, hoverKey),
+                            Placeholder.parsed("page", String.valueOf(nextPage)))))
+                    .clickEvent(ClickEvent.runCommand("/" + commandBase + " " + nextPage)));
+        }
+
+        src.sendMessage(nav);
+    }
+
     private List<StarlightCommand> getSortedCommands() {
         List<StarlightCommand> sorted = new ArrayList<>(proxy.getCommandManager().getCommands());
         sorted.sort(Comparator
@@ -223,40 +406,7 @@ public class StarlightMainCommand extends StarlightCommand {
         }
 
         if (total > 1) {
-            int prevPage = page > 1 ? page - 1 : page;
-            int nextPage = page < total ? page + 1 : page;
-
-            Component spacer = Component.text("   ");
-            Component nav = Component.empty();
-
-            if (page > 1) {
-                nav = nav.append(MiniMessageUtils.MINI_MESSAGE.deserialize(
-                        t(src, "starlight.command.starlight.commands.page.prev"))
-                        .hoverEvent(HoverEvent.showText(MiniMessageUtils.MINI_MESSAGE.deserialize(
-                                t(src, "starlight.command.starlight.commands.page.hover"),
-                                Placeholder.parsed("page", String.valueOf(prevPage)))))
-                        .clickEvent(ClickEvent.runCommand("/starlight commands page " + prevPage)));
-            }
-
-            nav = nav.append(spacer);
-
-            nav = nav.append(MiniMessageUtils.MINI_MESSAGE.deserialize(
-                    t(src, "starlight.command.starlight.commands.page.info"),
-                    Placeholder.parsed("current", String.valueOf(page)),
-                    Placeholder.parsed("total", String.valueOf(total))));
-
-            nav = nav.append(spacer);
-
-            if (page < total) {
-                nav = nav.append(MiniMessageUtils.MINI_MESSAGE.deserialize(
-                        t(src, "starlight.command.starlight.commands.page.next"))
-                        .hoverEvent(HoverEvent.showText(MiniMessageUtils.MINI_MESSAGE.deserialize(
-                                t(src, "starlight.command.starlight.commands.page.hover"),
-                                Placeholder.parsed("page", String.valueOf(nextPage)))))
-                        .clickEvent(ClickEvent.runCommand("/starlight commands page " + nextPage)));
-            }
-
-            src.sendMessage(nav);
+            sendPageNav(src, page, total, "starlight commands page");
         }
     }
 

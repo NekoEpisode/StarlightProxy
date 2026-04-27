@@ -224,6 +224,19 @@ public class PluginManager {
     }
 
     /**
+     * 查询指定名称的插件是否已启用。
+     *
+     * @param name 插件名
+     * @return {@link Optional#empty()} 若插件不存在；否则返回启用状态
+     */
+    public Optional<Boolean> isPluginEnabled(String name) {
+        return orderedPlugins.stream()
+                .filter(c -> c.description().name().equals(name))
+                .map(PluginContainer::isEnabled)
+                .findFirst();
+    }
+
+    /**
      * 返回所有已加载插件描述的不可修改视图。
      */
     public List<PluginDescription> getLoadedPlugins() {
