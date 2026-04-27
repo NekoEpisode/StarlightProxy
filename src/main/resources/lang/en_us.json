@@ -187,6 +187,9 @@
 
     "starlight.logging.warn.permission.load_failed": "Failed to load permissions file: {}",
     "starlight.logging.warn.permission.replaced": "PermissionService has been replaced: {} -> {}",
+    "starlight.logging.warn.command.overwrite": "Command /{} is being overwritten by a new registration",
+    "starlight.logging.warn.command.short_name_conflict": "Short name /{} is already used by /{}, skipping redirect for /{}",
+    "starlight.logging.warn.command.alias_conflict": "Alias /{} is already registered, skipping redirect for /{}",
     "starlight.logging.warn.client.complete_login_before_login": "completeLogin called before login() — loginFuture is null, ignoring. Caller: {}",
 
     "starlight.command.perm.added": "<green>Added permission <permission> to <player></green>",

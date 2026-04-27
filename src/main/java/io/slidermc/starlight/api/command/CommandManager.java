@@ -61,6 +61,10 @@ public class CommandManager {
         String namespace = command.getNamespace();
 
         synchronized (lock) {
+            if (commands.containsKey(fullName)) {
+                log.warn(t("starlight.logging.warn.command.overwrite"), fullName);
+            }
+
             dispatcher.register(command.build());
             commands.put(fullName, command);
             namespaceIndex.computeIfAbsent(namespace, k -> Collections.newSetFromMap(new ConcurrentHashMap<>())).add(fullName);
@@ -70,10 +74,17 @@ public class CommandManager {
             if (dispatcher.getRoot().getChild(shortName) == null) {
                 shortNames.put(shortName, fullName);
                 registerRedirect(shortName, mainNode);
+            } else {
+                String existing = shortNames.getOrDefault(shortName, "<unknown>");
+                log.warn(t("starlight.logging.warn.command.short_name_conflict"), shortName, existing, fullName);
             }
 
             for (String alias : command.getAliases()) {
-                registerRedirect(alias, mainNode);
+                if (dispatcher.getRoot().getChild(alias) != null) {
+                    log.warn(t("starlight.logging.warn.command.alias_conflict"), alias, fullName);
+                } else {
+                    registerRedirect(alias, mainNode);
+                }
             }
         }
         log.debug("已注册命令: /{}", fullName);
@@ -197,5 +208,9 @@ public class CommandManager {
             builder.executes(target.getCommand());
         }
         dispatcher.register(builder);
+    }
+
+    private String t(String key) {
+        return proxy != null ? proxy.getTranslateManager().translate(key) : key;
     }
 }

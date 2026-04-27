@@ -1,6 +1,7 @@
 package io.slidermc.starlight.plugin;
 
 import io.slidermc.starlight.StarlightProxy;
+import io.slidermc.starlight.api.command.CommandMeta;
 import io.slidermc.starlight.api.command.StarlightCommand;
 import io.slidermc.starlight.api.event.EventListener;
 import io.slidermc.starlight.api.plugin.IPlugin;
@@ -100,5 +101,10 @@ public abstract class JavaPlugin implements IPlugin {
     public void registerCommand(StarlightCommand command) {
         if (proxy == null) throw new IllegalStateException("proxy field is null");
         proxy.getCommandManager().register(command);
+    }
+
+    /** 创建预填本插件 namespace 的 CommandMeta.Builder。 */
+    protected CommandMeta.Builder commandBuilder(String name) {
+        return CommandMeta.builder(getDescription().name(), name);
     }
 }

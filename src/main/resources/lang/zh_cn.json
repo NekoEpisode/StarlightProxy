@@ -187,6 +187,9 @@
 
     "starlight.logging.warn.permission.load_failed": "权限文件加载失败: {}",
     "starlight.logging.warn.permission.replaced": "权限服务已被替换: {} -> {}",
+    "starlight.logging.warn.command.overwrite": "命令 /{} 正被新注册覆盖",
+    "starlight.logging.warn.command.short_name_conflict": "短名 /{} 已被 /{} 占用，跳过为 /{} 注册 redirect",
+    "starlight.logging.warn.command.alias_conflict": "别名 /{} 已被注册，跳过为 /{} 注册 redirect",
     "starlight.logging.warn.client.complete_login_before_login": "completeLogin 在 login() 之前被调用 — loginFuture 为 null，已忽略。调用方: {}",
 
     "starlight.command.perm.added": "<green>已为 <player> 添加权限 <permission></green>",
