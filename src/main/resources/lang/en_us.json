@@ -122,6 +122,9 @@
     "starlight.command.only_player_can_use_command": "<red>Only players can use this command</red>",
     "starlight.command.usage": "<red>Usage: <usage></red>",
 
+    "starlight.command.server.desc": "Switch to the target server",
+    "starlight.command.server.usage": "/server <target_name>",
+
     "starlight.command.starlight.brief": " <gray>— <version></gray>",
     "starlight.command.starlight.hint": "<dark_gray>Use /starlight help for a list of commands  ·  By SliderMC</dark_gray>",
 
@@ -137,6 +140,9 @@
     "starlight.command.starlight.plugins.hover.authors": "<gray>Authors: </gray><white><authors></white>",
     "starlight.command.starlight.plugins.hover.depends": "<gray>Depends: </gray><white><depends></white>",
     "starlight.command.starlight.plugins.hover.soft_depends": "<gray>Soft Depends: </gray><white><soft_depends></white>",
+
+    "starlight.command.starlight.desc": "StarlightProxy main command",
+    "starlight.command.starlight.usage": "/starlight <version|plugins|help|shutdown>",
 
     "starlight.command.starlight.help.header": "<gradient:#FFE100:#C8A200>— Help —</gradient>",
     "starlight.command.starlight.help.entry": "<gray>  <usage></gray> <dark_gray>— <description></dark_gray>",
@@ -155,6 +161,9 @@
     "starlight.command.glist.help.all_force": "<gray>  /glist all force</gray> <dark_gray>— List all servers including empty ones</dark_gray>",
     "starlight.command.glist.help.server": "<gray>  /glist <server></gray> <dark_gray>— List players on a specific server</dark_gray>",
 
+    "starlight.command.glist.desc": "Show online players across all servers",
+    "starlight.command.glist.usage": "/glist help",
+
     "starlight.logging.warn.console.init_failed": "Console initialization failed: {}, running without interactive console",
 
     "starlight.logging.warn.permission.load_failed": "Failed to load permissions file: {}",
@@ -172,6 +181,9 @@
     "starlight.command.perm.help.reload": "<gray>  /sperm reload</gray> <dark_gray>— Reload permissions from storage</dark_gray>",
     "starlight.command.perm.help.user_add": "<gray>  /sperm user <target> add <permission></gray> <dark_gray>— Add a permission for a player</dark_gray>",
     "starlight.command.perm.help.user_remove": "<gray>  /sperm user <target> remove <permission></gray> <dark_gray>— Remove a permission from a player</dark_gray>",
-    "starlight.command.perm.help.user_list": "<gray>  /sperm user <target> list</gray> <dark_gray>— List all permissions for a player</dark_gray>"
+    "starlight.command.perm.help.user_list": "<gray>  /sperm user <target> list</gray> <dark_gray>— List all permissions for a player</dark_gray>",
+
+    "starlight.command.perm.desc": "Manage player permissions",
+    "starlight.command.perm.usage": "/sperm help"
   }
 }

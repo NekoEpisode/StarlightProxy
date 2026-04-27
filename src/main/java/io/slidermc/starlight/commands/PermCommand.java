@@ -29,7 +29,7 @@ public class PermCommand extends StarlightCommand {
     private final StarlightProxy proxy;
 
     public PermCommand(StarlightProxy proxy) {
-        super("sperm", "Manage player permissions", "/sperm help");
+        super("sperm", "starlight.command.perm.desc", "starlight.command.perm.usage", true, true);
         this.proxy = proxy;
     }
 

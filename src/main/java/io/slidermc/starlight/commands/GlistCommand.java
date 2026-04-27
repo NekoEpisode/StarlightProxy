@@ -30,7 +30,7 @@ public class GlistCommand extends StarlightCommand {
     private final StarlightProxy proxy;
 
     public GlistCommand(StarlightProxy proxy) {
-        super("glist", "Show online players across all servers", "/glist help");
+        super("glist", "starlight.command.glist.desc", "starlight.command.glist.usage", true, true);
         this.proxy = proxy;
     }
 

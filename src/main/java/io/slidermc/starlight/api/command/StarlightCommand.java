@@ -31,6 +31,8 @@ public abstract class StarlightCommand {
     private final String name;
     private String description = "";
     private String usage = "";
+    private boolean descriptionAsKey;
+    private boolean usageAsKey;
 
     protected StarlightCommand(String name) {
         if (name == null || name.isBlank()) throw new IllegalArgumentException("Command name must not be blank");
@@ -47,6 +49,13 @@ public abstract class StarlightCommand {
         this.usage = usage;
     }
 
+    protected StarlightCommand(String name, String description, String usage,
+                               boolean descriptionAsKey, boolean usageAsKey) {
+        this(name, description, usage);
+        this.descriptionAsKey = descriptionAsKey;
+        this.usageAsKey = usageAsKey;
+    }
+
     /**
      * 构建并返回命令节点。根节点的 literal 名称应与 {@link #getName()} 一致。
      */
@@ -54,11 +63,17 @@ public abstract class StarlightCommand {
 
     public String getName() { return name; }
 
-    /** 命令简介，显示在 /help 列表中。 */
+    /** 命令简介，显示在 /help 列表中。若 {@link #isDescriptionKey()} 为 {@code true}，则该值是一个翻译键。 */
     public String getDescription() { return description; }
 
-    /** 用法说明，如 {@code "/hub"} 或 {@code "/server <name>"}。 */
+    /** 用法说明，如 {@code "/hub"} 或 {@code "/server <name>"}。若 {@link #isUsageKey()} 为 {@code true}，则该值是一个翻译键。 */
     public String getUsage() { return usage.isEmpty() ? "/" + name : usage; }
+
+    /** 若为 {@code true}，{@link #getDescription()} 返回的是翻译键而非原文。 */
+    public boolean isDescriptionKey() { return descriptionAsKey; }
+
+    /** 若为 {@code true}，{@link #getUsage()} 返回的是翻译键而非原文。 */
+    public boolean isUsageKey() { return usageAsKey; }
 
     /** 便捷方法，减少 import 负担。 */
     protected static LiteralArgumentBuilder<IStarlightCommandSource> literal(String name) {

@@ -16,7 +16,7 @@ public class ServerCommand extends StarlightCommand {
     private final StarlightProxy proxy;
 
     public ServerCommand(StarlightProxy proxy) {
-        super("server", "Switch to the target server", "/server <target_name>");
+        super("server", "starlight.command.server.desc", "starlight.command.server.usage", true, true);
         this.proxy = proxy;
     }
 
@@ -31,10 +31,11 @@ public class ServerCommand extends StarlightCommand {
                         ConnectionContext context = optPlayer.get().getConnectionContext();
                         locale = context.getLocale();
                     }
+                    String usage = isUsageKey() ? proxy.getTranslateManager().translate(locale, getUsage()) : getUsage();
                     ctx.getSource().sendMessage(
                             MiniMessageUtils.MINI_MESSAGE.deserialize(
                                     proxy.getTranslateManager().translate(locale, "starlight.command.usage"),
-                                    Placeholder.parsed("usage", getUsage())
+                                    Placeholder.parsed("usage", usage)
                             )
                     );
                     return 0;

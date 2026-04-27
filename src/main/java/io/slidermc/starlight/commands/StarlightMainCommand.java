@@ -25,7 +25,7 @@ public class StarlightMainCommand extends StarlightCommand {
             MiniMessageUtils.MINI_MESSAGE.deserialize("<gradient:#FFE100:#C8A200>Starlight</gradient>");
 
     public StarlightMainCommand(StarlightProxy proxy) {
-        super("starlight", "StarlightProxy main command", "/starlight <version|plugins|help|shutdown>");
+        super("starlight", "starlight.command.starlight.desc", "starlight.command.starlight.usage", true, true);
         this.proxy = proxy;
     }
 
@@ -149,10 +149,12 @@ public class StarlightMainCommand extends StarlightCommand {
         src.sendMessage(MiniMessageUtils.MINI_MESSAGE.deserialize(
                 t(src, "starlight.command.starlight.help.header")));
         for (StarlightCommand cmd : commands) {
+            String usage = cmd.isUsageKey() ? t(src, cmd.getUsage()) : cmd.getUsage();
+            String desc = cmd.isDescriptionKey() ? t(src, cmd.getDescription()) : cmd.getDescription();
             src.sendMessage(MiniMessageUtils.MINI_MESSAGE.deserialize(
                     t(src, "starlight.command.starlight.help.entry"),
-                    Placeholder.parsed("usage", cmd.getUsage()),
-                    Placeholder.parsed("description", cmd.getDescription())));
+                    Placeholder.parsed("usage", usage),
+                    Placeholder.parsed("description", desc)));
         }
     }
 

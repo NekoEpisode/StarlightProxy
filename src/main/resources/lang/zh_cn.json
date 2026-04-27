@@ -122,6 +122,9 @@
     "starlight.command.only_player_can_use_command": "<red>只有玩家才能使用此命令</red>",
     "starlight.command.usage": "<red>用法: <usage></red>",
 
+    "starlight.command.server.desc": "切换到目标服务器",
+    "starlight.command.server.usage": "/server <target_name>",
+
     "starlight.command.starlight.brief": " <gray>— <version></gray>",
     "starlight.command.starlight.hint": "<dark_gray>使用 /starlight help 查看命令列表  ·  By SliderMC</dark_gray>",
 
@@ -137,6 +140,9 @@
     "starlight.command.starlight.plugins.hover.authors": "<gray>作者: </gray><white><authors></white>",
     "starlight.command.starlight.plugins.hover.depends": "<gray>硬依赖: </gray><white><depends></white>",
     "starlight.command.starlight.plugins.hover.soft_depends": "<gray>软依赖: </gray><white><soft_depends></white>",
+
+    "starlight.command.starlight.desc": "StarlightProxy 主命令",
+    "starlight.command.starlight.usage": "/starlight <version|plugins|help|shutdown>",
 
     "starlight.command.starlight.help.header": "<gradient:#FFE100:#C8A200>— 帮助 —</gradient>",
     "starlight.command.starlight.help.entry": "<gray>  <usage></gray> <dark_gray>— <description></dark_gray>",
@@ -155,6 +161,9 @@
     "starlight.command.glist.help.all_force": "<gray>  /glist all force</gray> <dark_gray>— 列出所有服务器(包括空服务器)</dark_gray>",
     "starlight.command.glist.help.server": "<gray>  /glist <服务器名></gray> <dark_gray>— 查看指定服务器的玩家列表</dark_gray>",
 
+    "starlight.command.glist.desc": "查看所有服务器的在线玩家",
+    "starlight.command.glist.usage": "/glist help",
+
     "starlight.logging.warn.console.init_failed": "控制台初始化失败: {}，将在无交互控制台模式下运行",
 
     "starlight.logging.warn.permission.load_failed": "权限文件加载失败: {}",
@@ -172,6 +181,9 @@
     "starlight.command.perm.help.reload": "<gray>  /sperm reload</gray> <dark_gray>— 从存储重载权限</dark_gray>",
     "starlight.command.perm.help.user_add": "<gray>  /sperm user <target> add <permission></gray> <dark_gray>— 为玩家添加权限</dark_gray>",
     "starlight.command.perm.help.user_remove": "<gray>  /sperm user <target> remove <permission></gray> <dark_gray>— 移除玩家的权限</dark_gray>",
-    "starlight.command.perm.help.user_list": "<gray>  /sperm user <target> list</gray> <dark_gray>— 列出玩家的所有权限</dark_gray>"
+    "starlight.command.perm.help.user_list": "<gray>  /sperm user <target> list</gray> <dark_gray>— 列出玩家的所有权限</dark_gray>",
+
+    "starlight.command.perm.desc": "管理玩家权限",
+    "starlight.command.perm.usage": "/sperm help"
   }
 }
