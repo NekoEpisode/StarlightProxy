@@ -54,7 +54,7 @@ public class ServerboundStatusRequestPacket implements IMinecraftPacket {
                     samplePlayers.size(),
                     samplePlayers,
                     MiniMessageUtils.MINI_MESSAGE.deserialize(proxy.getConfig().getMotd()),
-                    null,
+                    proxy.getFaviconBase64(),
                     false
             ));
         }

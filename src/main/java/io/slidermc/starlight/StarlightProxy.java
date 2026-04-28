@@ -63,6 +63,7 @@ public class StarlightProxy {
     private Channel serverChannel;
     private volatile ConsoleManager consoleManager;
     private final AtomicBoolean shutdownInitiated = new AtomicBoolean(false);
+    private volatile String faviconBase64;
 
     public StarlightProxy(InetSocketAddress address, TranslateManager translateManager,
                           RegistryPacketUtils registryPacketUtils, StarlightConfig config,
@@ -265,5 +266,20 @@ public class StarlightProxy {
                     permissionService.getClass().getName());
         }
         this.permissionService = permissionService;
+    }
+
+    /**
+     * 获取缓存的 Base64 编码 favicon 数据（包含 data URI 前缀），启动时从配置文件指定的图标文件编码而来。
+     * 若文件不存在或未配置，返回 {@code null}。
+     */
+    public String getFaviconBase64() {
+        return faviconBase64;
+    }
+
+    /**
+     * 设置缓存的 favicon Base64 数据。
+     */
+    public void setFaviconBase64(String faviconBase64) {
+        this.faviconBase64 = faviconBase64;
     }
 }

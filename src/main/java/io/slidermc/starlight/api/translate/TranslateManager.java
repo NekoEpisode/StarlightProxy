@@ -253,14 +253,6 @@ public class TranslateManager {
         try {
             JsonObject root = JsonParser.parseString(json).getAsJsonObject();
 
-            String displayName = locale;
-            if (root.has("metadata")) {
-                JsonObject meta = root.getAsJsonObject("metadata");
-                if (meta.has("name")) {
-                    displayName = meta.get("name").getAsString();
-                }
-            }
-
             Map<String, String> translations = new LinkedHashMap<>();
             if (root.has("translations")) {
                 JsonObject trans = root.getAsJsonObject("translations");
@@ -269,18 +261,26 @@ public class TranslateManager {
                 }
             }
 
-            final String resolvedDisplayName = displayName;
             boolean isNew = !languages.containsKey(locale);
-            LanguageEntry entry = languages.computeIfAbsent(locale, _ -> new LanguageEntry(resolvedDisplayName));
-            if (isNew && !localeOrder.contains(locale)) {
-                localeOrder.add(locale);
-            }
-            entry.setDisplayName(resolvedDisplayName);
-            entry.merge(translations);
-
+            LanguageEntry entry;
             if (isNew) {
+                String displayName = locale;
+                if (root.has("metadata")) {
+                    JsonObject meta = root.getAsJsonObject("metadata");
+                    if (meta.has("name")) {
+                        displayName = meta.get("name").getAsString();
+                    }
+                }
+                entry = new LanguageEntry(displayName);
+                languages.put(locale, entry);
+                if (!localeOrder.contains(locale)) {
+                    localeOrder.add(locale);
+                }
                 log.info("Loaded language {} ({}), total {} translations", locale, displayName, translations.size());
+            } else {
+                entry = languages.get(locale);
             }
+            entry.merge(translations);
         } catch (Exception e) {
             log.error("Parse translation JSON failed (locale={})", locale, e);
         }

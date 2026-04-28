@@ -30,6 +30,7 @@ public class StarlightConfig {
     private final String language;
     private final boolean loggingCommand;
     private final int compressThreshold;
+    private final String iconFilePath;
 
     // servers 节
     private final Map<String, ServerEntry> servers;
@@ -40,7 +41,8 @@ public class StarlightConfig {
                            boolean encryption, String ipForwardType, String forwardSecret, String motd,
                            boolean forceDefaultServer, String defaultServer,
                            boolean bungeecordPluginMessage, String language, boolean loggingCommand,
-                           int compressThreshold, Map<String, ServerEntry> servers) {
+                           int compressThreshold, String iconFilePath,
+                           Map<String, ServerEntry> servers) {
         this.host = host;
         this.port = port;
         this.maxPlayers = maxPlayers;
@@ -55,6 +57,7 @@ public class StarlightConfig {
         this.language = language;
         this.loggingCommand = loggingCommand;
         this.compressThreshold = compressThreshold;
+        this.iconFilePath = iconFilePath;
         this.servers = Collections.unmodifiableMap(servers);
     }
 
@@ -105,6 +108,7 @@ public class StarlightConfig {
         String language              = (String)   proxy.get("language");
         boolean loggingCommand       = (boolean)  proxy.get("logging-command");
         int compressThreshold        = (int)      proxy.get("compress-threshold");
+        String iconFilePath          = (String)   proxy.get("icon-file-path");
 
         Map<String, ServerEntry> servers = new LinkedHashMap<>();
         Object serversRaw = root.get("servers");
@@ -118,7 +122,7 @@ public class StarlightConfig {
 
         return new StarlightConfig(host, port, maxPlayers, onlineMode, encryption, ipForwardType, forwardSecret,
                 motd, forceDefaultServer, defaultServer, bungeecordPluginMsg,
-                language, loggingCommand, compressThreshold, servers);
+                language, loggingCommand, compressThreshold, iconFilePath, servers);
     }
 
     // -------------------------------------------------------------------------
@@ -139,5 +143,6 @@ public class StarlightConfig {
     public String getLanguage()           { return language; }
     public boolean isLoggingCommand()     { return loggingCommand; }
     public int getCompressThreshold()     { return compressThreshold; }
+    public String getIconFilePath()        { return iconFilePath; }
     public Map<String, ServerEntry> getServers() { return servers; }
 }
