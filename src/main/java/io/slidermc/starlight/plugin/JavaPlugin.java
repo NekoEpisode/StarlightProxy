@@ -42,21 +42,21 @@ public abstract class JavaPlugin implements IPlugin {
     }
 
     /**
-     * 由 {@link PluginManager} 在加载时调用，设置并自动创建数据文件夹。
+     * 由 {@link PluginManager} 在加载时调用，记录数据文件夹路径但不立即创建。
      */
     final void initDataFolder(File dataFolder) {
         this.dataFolder = dataFolder;
-        if (!dataFolder.exists()) {
-            dataFolder.mkdirs();
-        }
     }
 
     /**
-     * 获取此插件的数据文件夹（{@code plugins/<plugin-id>/}），由框架在加载时自动创建。
+     * 获取此插件的数据文件夹（{@code plugins/<plugin-id>/}），首次调用时自动创建目录。
      *
      * @return 插件专属的数据文件夹，仅 JAR 插件有效
      */
     public final File getDataFolder() {
+        if (!dataFolder.exists()) {
+            dataFolder.mkdirs();
+        }
         return dataFolder;
     }
 
