@@ -19,7 +19,7 @@ public class ProxyPingEvent implements ICancellableEvent {
     private volatile int versionProtocol;
     private volatile int maxPlayers;
     private volatile int onlinePlayers;
-    private volatile List<ClientboundStatusResponsePacket.SamplePlayer> samplePlayers;
+    private List<ClientboundStatusResponsePacket.SamplePlayer> samplePlayers;
     private volatile Component description;
     private volatile String favicon;
     private volatile boolean enforcesSecureChat;
