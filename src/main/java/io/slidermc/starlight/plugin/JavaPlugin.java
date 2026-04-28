@@ -11,6 +11,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -55,7 +57,11 @@ public abstract class JavaPlugin implements IPlugin {
      */
     public final File getDataFolder() {
         if (!dataFolder.exists()) {
-            dataFolder.mkdirs();
+            try {
+                Files.createDirectories(dataFolder.toPath());
+            } catch (IOException e) {
+                logger.error("Failed to create data folder: {}", dataFolder, e);
+            }
         }
         return dataFolder;
     }
