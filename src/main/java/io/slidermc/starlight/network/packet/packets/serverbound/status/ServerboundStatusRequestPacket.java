@@ -3,6 +3,7 @@ package io.slidermc.starlight.network.packet.packets.serverbound.status;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.slidermc.starlight.StarlightProxy;
+import io.slidermc.starlight.api.event.events.internal.ProxyPingEvent;
 import io.slidermc.starlight.api.player.ProxiedPlayer;
 import io.slidermc.starlight.config.InternalConfig;
 import io.slidermc.starlight.network.context.AttributeKeys;
@@ -12,6 +13,7 @@ import io.slidermc.starlight.network.packet.listener.IPacketListener;
 import io.slidermc.starlight.network.packet.packets.clientbound.status.ClientboundStatusResponsePacket;
 import io.slidermc.starlight.network.protocolenum.ProtocolVersion;
 import io.slidermc.starlight.utils.MiniMessageUtils;
+import net.kyori.adventure.text.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,16 +49,41 @@ public class ServerboundStatusRequestPacket implements IMinecraftPacket {
                         )
                 );
             }
-            ctx.channel().writeAndFlush(new ClientboundStatusResponsePacket(
-                    InternalConfig.VERSION_STRING,
-                    versionProtocol,
-                    proxy.getConfig().getMaxPlayers(),
-                    samplePlayers.size(),
-                    samplePlayers,
-                    MiniMessageUtils.MINI_MESSAGE.deserialize(proxy.getConfig().getMotd()),
-                    proxy.getFaviconBase64(),
-                    false
-            ));
+
+            int origMaxPlayers = proxy.getConfig().getMaxPlayers();
+            int origOnlinePlayers = samplePlayers.size();
+            Component origDescription = MiniMessageUtils.MINI_MESSAGE.deserialize(proxy.getConfig().getMotd());
+            String origFavicon = proxy.getFaviconBase64();
+
+            ClientboundStatusResponsePacket originalResponse = new ClientboundStatusResponsePacket(
+                    InternalConfig.VERSION_STRING, versionProtocol,
+                    origMaxPlayers, origOnlinePlayers,
+                    new ArrayList<>(samplePlayers), origDescription, origFavicon, false
+            );
+
+            ProxyPingEvent event = new ProxyPingEvent(
+                    InternalConfig.VERSION_STRING, versionProtocol,
+                    origMaxPlayers, origOnlinePlayers,
+                    samplePlayers, origDescription, origFavicon, false
+            );
+
+            proxy.getEventManager().fireAsync(event, proxy.getExecutors().getEventExecutor())
+                    .whenComplete((e, throwable) -> {
+                        if (throwable != null) {
+                            log.warn("ProxyPingEvent failed, using original response", throwable);
+                            ctx.channel().writeAndFlush(originalResponse);
+                            return;
+                        }
+                        if (e.isCancelled()) {
+                            return;
+                        }
+                        ctx.channel().writeAndFlush(new ClientboundStatusResponsePacket(
+                                e.getVersionName(), e.getVersionProtocol(),
+                                e.getMaxPlayers(), e.getOnlinePlayers(),
+                                e.getSamplePlayers(), e.getDescription(),
+                                e.getFavicon(), e.isEnforcesSecureChat()
+                        ));
+                    });
         }
     }
 }
