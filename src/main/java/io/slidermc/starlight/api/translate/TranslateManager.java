@@ -261,9 +261,9 @@ public class TranslateManager {
                 }
             }
 
-            boolean isNew = !languages.containsKey(locale);
-            LanguageEntry entry;
-            if (isNew) {
+            LanguageEntry entry = languages.get(locale);
+            boolean isNew = false;
+            if (entry == null) {
                 String displayName = locale;
                 if (root.has("metadata")) {
                     JsonObject meta = root.getAsJsonObject("metadata");
@@ -271,14 +271,18 @@ public class TranslateManager {
                         displayName = meta.get("name").getAsString();
                     }
                 }
-                entry = new LanguageEntry(displayName);
-                languages.put(locale, entry);
-                if (!localeOrder.contains(locale)) {
-                    localeOrder.add(locale);
+                LanguageEntry newEntry = new LanguageEntry(displayName);
+                LanguageEntry existing = languages.putIfAbsent(locale, newEntry);
+                if (existing == null) {
+                    entry = newEntry;
+                    isNew = true;
+                    if (!localeOrder.contains(locale)) {
+                        localeOrder.add(locale);
+                    }
+                    log.info("Loaded language {} ({}), total {} translations", locale, displayName, translations.size());
+                } else {
+                    entry = existing;
                 }
-                log.info("Loaded language {} ({}), total {} translations", locale, displayName, translations.size());
-            } else {
-                entry = languages.get(locale);
             }
             entry.merge(translations);
         } catch (Exception e) {
