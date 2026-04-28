@@ -68,14 +68,14 @@ public class ServerboundStatusRequestPacket implements IMinecraftPacket {
             );
 
             proxy.getEventManager().fireAsync(event, proxy.getExecutors().getEventExecutor())
-                    .handle((e, throwable) -> {
+                    .whenComplete((e, throwable) -> {
                         if (throwable != null) {
                             log.warn("ProxyPingEvent failed, using original response", throwable);
                             ctx.channel().writeAndFlush(originalResponse);
-                            return null;
+                            return;
                         }
                         if (e.isCancelled()) {
-                            return null;
+                            return;
                         }
                         ctx.channel().writeAndFlush(new ClientboundStatusResponsePacket(
                                 e.getVersionName(), e.getVersionProtocol(),
@@ -83,7 +83,6 @@ public class ServerboundStatusRequestPacket implements IMinecraftPacket {
                                 e.getSamplePlayers(), e.getDescription(),
                                 e.getFavicon(), e.isEnforcesSecureChat()
                         ));
-                        return null;
                     });
         }
     }
