@@ -10,6 +10,9 @@ import io.slidermc.starlight.api.translate.TranslateManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -25,6 +28,7 @@ public abstract class JavaPlugin implements IPlugin {
     private PluginDescription description;
     private Logger logger;
     private PluginManager pluginManager;
+    private File dataFolder;
     protected StarlightProxy proxy;
 
     private final AtomicLong currentId = new AtomicLong(0);
@@ -37,6 +41,29 @@ public abstract class JavaPlugin implements IPlugin {
         this.description = description;
         this.logger = LoggerFactory.getLogger("plugin." + description.id());
         this.pluginManager = pluginManager;
+    }
+
+    /**
+     * 由 {@link PluginManager} 在加载时调用，记录数据文件夹路径但不立即创建。
+     */
+    final void initDataFolder(File dataFolder) {
+        this.dataFolder = dataFolder;
+    }
+
+    /**
+     * 获取此插件的数据文件夹（{@code plugins/<plugin-id>/}），首次调用时自动创建目录。
+     *
+     * @return 插件专属的数据文件夹，仅 JAR 插件有效
+     */
+    public final File getDataFolder() {
+        if (!dataFolder.exists()) {
+            try {
+                Files.createDirectories(dataFolder.toPath());
+            } catch (IOException e) {
+                logger.error("Failed to create data folder: {}", dataFolder, e);
+            }
+        }
+        return dataFolder;
     }
 
     @Override

@@ -46,6 +46,9 @@ public class PluginManager {
     /** 是否处于加载阶段（即正在执行 onLoad 回调期间）。 */
     private volatile boolean loadPhaseActive = false;
 
+    /** 插件目录，在 loadPlugins 时设置。 */
+    private volatile Path pluginsDir;
+
     /** 已启动的代理实例，enableAll 后设置。 */
     private volatile StarlightProxy proxy = null;
 
@@ -72,6 +75,7 @@ public class PluginManager {
      * @param directory 插件目录
      */
     public void loadPlugins(Path directory) {
+        this.pluginsDir = directory;
         if (!Files.exists(directory)) {
             try {
                 Files.createDirectories(directory);
@@ -402,6 +406,7 @@ public class PluginManager {
 
         if (instance instanceof JavaPlugin jp) {
             jp.init(description, this);
+            jp.initDataFolder(pluginsDir.resolve(description.id()).toFile());
         }
 
         log.info(t("starlight.logging.info.plugin.discovered"), description.id(), description.version());
