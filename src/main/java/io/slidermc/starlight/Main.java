@@ -43,7 +43,9 @@ import io.slidermc.starlight.command.console.ConsoleManager;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Base64;
 import java.util.Map;
 
 public class Main {
@@ -127,6 +129,9 @@ public class Main {
                 serverManager,
                 pluginManager
         );
+
+        // 启动时编码图标文件为Base64并缓存
+        proxy.setFaviconBase64(loadFavicon(config.getIconFilePath()));
 
         // onEnable 在代理完全创建后调用
         pluginManager.enableAll(proxy);
@@ -293,5 +298,25 @@ public class Main {
 
         registryPacketUtils.registerByAutoMapping(Key.key("minecraft:chat"), ProtocolState.PLAY, ProtocolDirection.SERVERBOUND, ServerboundChatPacket::new);
         r.registerListener(ServerboundChatPacket.class, "default", new ServerboundChatPacket.Listener());
+    }
+
+    /**
+     * 读取指定路径的 PNG 图标文件，编码为 Minecraft 服务器列表 favicon 格式的 Base64 data URI。
+     * 若文件不存在或路径为 {@code null}/空白，则静默跳过并返回 {@code null}。
+     *
+     * @param iconPath 图标文件路径
+     * @return "data:image/png;base64,…" 格式的字符串，或 {@code null}
+     */
+    private static String loadFavicon(String iconPath) {
+        if (iconPath == null || iconPath.isBlank()) {
+            return null;
+        }
+        try {
+            byte[] bytes = Files.readAllBytes(Path.of(iconPath));
+            return "data:image/png;base64," + Base64.getEncoder().encodeToString(bytes);
+        } catch (IOException e) {
+            log.debug("Favicon file not found or unreadable: {}", iconPath);
+            return null;
+        }
     }
 }
