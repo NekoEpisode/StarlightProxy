@@ -55,7 +55,7 @@ public class ProxyPingEvent implements ICancellableEvent {
     public int getOnlinePlayers() { return onlinePlayers; }
     public void setOnlinePlayers(int onlinePlayers) { this.onlinePlayers = onlinePlayers; }
 
-    /** 返回在线玩家样本列表，可直接修改（add/remove/clear）。元素为不可变 record，线程安全。 */
+    /** 返回在线玩家样本列表，可直接修改（add/remove/clear）。元素为不可变 record，注意，只有元素是线程安全的，List本身不保证 */
     public List<ClientboundStatusResponsePacket.SamplePlayer> getSamplePlayers() { return samplePlayers; }
     public void setSamplePlayers(List<ClientboundStatusResponsePacket.SamplePlayer> samplePlayers) {
         this.samplePlayers = samplePlayers != null ? samplePlayers : new ArrayList<>();
