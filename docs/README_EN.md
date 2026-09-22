@@ -15,7 +15,7 @@ This project is currently alpha. Features implemented so far include:
 1. Allow players to connect to downstream servers
 2. Allow players to switch servers
 3. Command system
-4. Support for protocols 1.21.11-26.1
+4. Support for protocols 1.21.11-26.2
 5. Event system
 6. Plugin system
 7. I18N support
