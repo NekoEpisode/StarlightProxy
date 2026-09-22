@@ -136,6 +136,7 @@
     "starlight.command.starlight.version.version": " <gray>Version  </gray><white><version></white>",
     "starlight.command.starlight.version.address": " <gray>Address  </gray><white><host>:<port></white>",
     "starlight.command.starlight.version.players": " <gray>Players  </gray><white><count> online</white>",
+    "starlight.command.starlight.version.commithash": " <gray>Commit  </gray><white><commithash></white>",
     "starlight.command.starlight.version.footer": "<dark_gray>By SliderMC</dark_gray>",
 
     "starlight.command.starlight.plugins.header": "<gradient:#FFE100:#C8A200>— Plugins (<count>) —</gradient>",

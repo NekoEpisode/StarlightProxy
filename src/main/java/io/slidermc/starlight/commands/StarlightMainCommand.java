@@ -4,6 +4,7 @@ import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
+import io.slidermc.starlight.SharedData;
 import io.slidermc.starlight.StarlightProxy;
 import io.slidermc.starlight.api.command.CommandMeta;
 import io.slidermc.starlight.api.command.StarlightCommand;
@@ -156,6 +157,14 @@ public class StarlightMainCommand extends StarlightCommand {
         src.sendMessage(MiniMessageUtils.MINI_MESSAGE.deserialize(
                 t(src, "starlight.command.starlight.version.players"),
                 Placeholder.parsed("count", String.valueOf(proxy.getPlayerManager().getPlayers().size()))));
+
+        Component commit = MiniMessageUtils.MINI_MESSAGE.deserialize(
+                t(src, "starlight.command.starlight.version.commithash"),
+                Placeholder.parsed("commithash", (SharedData.commitHash != null ? SharedData.commitHash : "(None)")));
+        if (SharedData.commitHash != null) {
+            commit = commit.clickEvent(ClickEvent.openUrl(SharedData.GITHUB_REPO_URL + "/commit/" + SharedData.commitHash));
+        }
+        src.sendMessage(commit);
     }
 
     private void sendPluginsPage(IStarlightCommandSource src, int page) {
@@ -434,14 +443,14 @@ public class StarlightMainCommand extends StarlightCommand {
                 ? "starlight.command.starlight.commands.entry_no_desc"
                 : "starlight.command.starlight.commands.entry";
         return MiniMessageUtils.MINI_MESSAGE.deserialize(
-                t(src, entryKey),
-                Placeholder.parsed("name", cmd.getDisplayName()),
-                Placeholder.parsed("description", desc))
+                        t(src, entryKey),
+                        Placeholder.parsed("name", cmd.getDisplayName()),
+                        Placeholder.parsed("description", desc))
                 .clickEvent(ClickEvent.runCommand("/starlight commands show " + cmd.getName()))
                 .hoverEvent(HoverEvent.showText(
                         MiniMessageUtils.MINI_MESSAGE.deserialize(
-                                t(src, "starlight.command.starlight.commands.hover_usage"),
-                                Placeholder.parsed("usage", usage))
+                                        t(src, "starlight.command.starlight.commands.hover_usage"),
+                                        Placeholder.parsed("usage", usage))
                                 .append(Component.newline())
                                 .append(MiniMessageUtils.MINI_MESSAGE.deserialize(
                                         t(src, "starlight.command.starlight.commands.hover_fullname"),

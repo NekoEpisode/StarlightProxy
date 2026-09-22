@@ -136,6 +136,7 @@
     "starlight.command.starlight.version.version": " <gray>版本  </gray><white><version></white>",
     "starlight.command.starlight.version.address": " <gray>地址  </gray><white><host>:<port></white>",
     "starlight.command.starlight.version.players": " <gray>在线  </gray><white><count> 名玩家</white>",
+    "starlight.command.starlight.version.commithash": " <gray>提交  </gray><white><commithash></white>",
     "starlight.command.starlight.version.footer": "<dark_gray>By SliderMC</dark_gray>",
 
     "starlight.command.starlight.plugins.header": "<gradient:#FFE100:#C8A200>— 插件列表 (<count>) —</gradient>",

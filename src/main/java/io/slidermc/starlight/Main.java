@@ -42,17 +42,27 @@ import org.slf4j.LoggerFactory;
 import io.slidermc.starlight.command.console.ConsoleManager;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Base64;
 import java.util.Map;
+import java.util.Properties;
 
 public class Main {
     private static final Logger log = LoggerFactory.getLogger(Main.class);
 
     static void main() {
         long start = System.currentTimeMillis();
+
+        Properties properties = new Properties();
+        try (InputStream is = Main.class.getClassLoader().getResourceAsStream("git.properties")) {
+            if (is != null) {
+                properties.load(is);
+                SharedData.commitHash = properties.getProperty("git.commit.id.abbrev");
+            }
+        } catch (IOException ignore) {}
 
         log.info("Loading I18N...");
         TranslateManager translateManager = new TranslateManager();
