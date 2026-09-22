@@ -6,6 +6,7 @@ package io.slidermc.starlight.network.protocolenum;
  * This enum allows for easy comparison between different protocol versions.
  */
 public enum ProtocolVersion {
+    MINECRAFT_26_2(776),
     MINECRAFT_26_1(775),
     MINECRAFT_1_21_11(774),
 

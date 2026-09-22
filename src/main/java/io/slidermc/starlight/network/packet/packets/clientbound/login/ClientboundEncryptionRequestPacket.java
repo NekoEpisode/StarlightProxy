@@ -154,7 +154,7 @@ public class ClientboundEncryptionRequestPacket implements IMinecraftPacket {
                             }
                             try {
                                 ctx.pipeline().addBefore(
-                                        InternalConfig.HANDLER_DECODER,
+                                        InternalConfig.HANDLER_FRAME,
                                         InternalConfig.HANDLER_DECRYPT,
                                         new EncryptionDecoder(em.createDecryptCipher(sharedSecret)));
                                 ctx.pipeline().addBefore(

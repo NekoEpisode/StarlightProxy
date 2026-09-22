@@ -24,6 +24,7 @@ import io.slidermc.starlight.executor.ProxyExecutors;
 import io.slidermc.starlight.manager.EncryptionManager;
 import io.slidermc.starlight.utils.MiniMessageUtils;
 import io.slidermc.starlight.manager.ServerManager;
+import io.slidermc.starlight.network.codec.FrameDecoder;
 import io.slidermc.starlight.network.codec.ServerPacketDecoder;
 import io.slidermc.starlight.network.codec.ServerPacketEncoder;
 import io.slidermc.starlight.network.context.ConnectionContext;
@@ -107,6 +108,7 @@ public class StarlightProxy {
                 .childHandler(new ChannelInitializer<SocketChannel>() {
                     @Override
                     protected void initChannel(SocketChannel socketChannel) throws Exception {
+                        socketChannel.pipeline().addLast(InternalConfig.HANDLER_FRAME, new FrameDecoder());
                         socketChannel.pipeline().addLast(InternalConfig.HANDLER_DECODER, new ServerPacketDecoder(
                                 registryPacketUtils.getPacketRegistry(),
                                 proxy
