@@ -54,7 +54,7 @@ public class CompressionDecoder extends ByteToMessageDecoder {
         byte[] decompressed = new byte[dataLength];
         try {
             int actual = inflater.inflate(decompressed);
-            if (actual != dataLength) {
+            if (actual != dataLength || !inflater.finished() || inflater.getRemaining() != 0) {
                 throw new DecoderException("Decompressed size mismatch: expected "
                         + dataLength + ", got " + actual);
             }
