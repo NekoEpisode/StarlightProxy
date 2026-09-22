@@ -43,6 +43,8 @@ public class ConnectionContext {
     private volatile byte[] verifyToken;
     /** 正版验证流程中暂存的用户名，EncryptionResponse.Listener 使用后可清除 */
     private volatile String pendingUsername;
+    /** 当 PreLoginEvent 强制此连接走正版验证时设为 true，覆盖全局 offline-mode 配置 */
+    private volatile boolean perConnectionOnlineMode;
 
     /** 后端命令树的深拷贝缓存，用于权限更新后重建命令树 */
     private volatile List<CommandNodeData> cachedCommandNodes;
@@ -138,6 +140,14 @@ public class ConnectionContext {
 
     public void setPendingUsername(String pendingUsername) {
         this.pendingUsername = pendingUsername;
+    }
+
+    public boolean isPerConnectionOnlineMode() {
+        return perConnectionOnlineMode;
+    }
+
+    public void setPerConnectionOnlineMode(boolean perConnectionOnlineMode) {
+        this.perConnectionOnlineMode = perConnectionOnlineMode;
     }
 
     public void cacheCommandTree(List<CommandNodeData> nodes, int rootIndex) {
