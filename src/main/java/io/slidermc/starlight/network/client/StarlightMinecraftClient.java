@@ -13,6 +13,7 @@ import io.slidermc.starlight.config.InternalConfig;
 import io.slidermc.starlight.network.client.handler.StarlightClientHandler;
 import io.slidermc.starlight.network.codec.ClientPacketDecoder;
 import io.slidermc.starlight.network.codec.ClientPacketEncoder;
+import io.slidermc.starlight.network.codec.FrameDecoder;
 import io.slidermc.starlight.network.context.AttributeKeys;
 import io.slidermc.starlight.network.context.DownstreamConnectionContext;
 import io.slidermc.starlight.network.packet.PacketRegistry;
@@ -67,6 +68,7 @@ public class StarlightMinecraftClient {
                         .handler(new ChannelInitializer<SocketChannel>() {
                             @Override
                             protected void initChannel(SocketChannel socketChannel) throws Exception {
+                                socketChannel.pipeline().addLast(InternalConfig.HANDLER_FRAME, new FrameDecoder());
                                 socketChannel.pipeline().addLast(InternalConfig.HANDLER_DECODER, new ClientPacketDecoder(packetRegistry, client));
                                 socketChannel.pipeline().addLast(InternalConfig.HANDLER_ENCODER, new ClientPacketEncoder(packetRegistry, client));
                                 socketChannel.pipeline().addLast(InternalConfig.HANDLER_MAIN, new StarlightClientHandler(packetRegistry, proxy, client));

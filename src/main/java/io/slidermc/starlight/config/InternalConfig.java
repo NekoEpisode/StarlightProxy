@@ -1,8 +1,9 @@
 package io.slidermc.starlight.config;
 
 public class InternalConfig {
-    public static final String VERSION_STRING = "Starlight 1.21.11-26.1";
+    public static final String VERSION_STRING = "Starlight 1.21.11-26.2";
 
+    public static final String HANDLER_FRAME = "frame";
     public static final String HANDLER_DECODER = "decoder";
     public static final String HANDLER_ENCODER = "encoder";
     public static final String HANDLER_COMPRESS = "compress";

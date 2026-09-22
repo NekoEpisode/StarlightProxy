@@ -14,6 +14,8 @@ import io.slidermc.starlight.network.protocolenum.ProtocolState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.UUID;
+
 /**
  * 登录流程公共逻辑：
  * 创建 ProxiedPlayer → (可选) SetCompression → LoginSuccess
@@ -72,7 +74,7 @@ public final class LoginHelper {
     }
 
     private static void sendLoginSuccess(ChannelHandlerContext ctx, ProxiedPlayer player) {
-        ctx.channel().writeAndFlush(new ClientboundLoginSuccessPacket(player.getGameProfile())).addListener(_ -> {
+        ctx.channel().writeAndFlush(new ClientboundLoginSuccessPacket(player.getGameProfile(), UUID.randomUUID())).addListener(_ -> {
             player.getConnectionContext().setOutboundState(ProtocolState.CONFIGURATION);
             log.debug("上游Outbound切换到CONFIGURATION");
         });

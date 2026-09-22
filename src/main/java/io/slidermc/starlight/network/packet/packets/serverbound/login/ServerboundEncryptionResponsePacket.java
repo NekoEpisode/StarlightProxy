@@ -105,7 +105,7 @@ public class ServerboundEncryptionResponsePacket implements IMinecraftPacket {
             // 3. 安装 AES 加密 pipeline（必须在发任何后续包之前完成）
             try {
                 ctx.pipeline().addBefore(
-                        InternalConfig.HANDLER_DECODER,
+                        InternalConfig.HANDLER_FRAME,
                         InternalConfig.HANDLER_DECRYPT,
                         new EncryptionDecoder(encryption.createDecryptCipher(sharedSecret))
                 );

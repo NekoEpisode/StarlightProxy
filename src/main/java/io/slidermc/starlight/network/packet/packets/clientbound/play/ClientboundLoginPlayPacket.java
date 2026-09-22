@@ -36,6 +36,7 @@ public class ClientboundLoginPlayPacket implements IMinecraftPacket {
     public int[] deathLocation;       // optional, [x, y, z]
     public int portalCooldown; // VarInt
     public int seaLevel;       // VarInt
+    public boolean onlineMode;
     public boolean enforcesSecureChat;
 
     public ClientboundLoginPlayPacket() {}
@@ -75,6 +76,11 @@ public class ClientboundLoginPlayPacket implements IMinecraftPacket {
 
         MinecraftCodecUtils.writeVarInt(byteBuf, portalCooldown);
         MinecraftCodecUtils.writeVarInt(byteBuf, seaLevel);
+
+        if (protocolVersion.isGreaterThanOrEqual(ProtocolVersion.MINECRAFT_26_2)) {
+            byteBuf.writeBoolean(onlineMode);
+        }
+
         byteBuf.writeBoolean(enforcesSecureChat);
     }
 
@@ -114,6 +120,10 @@ public class ClientboundLoginPlayPacket implements IMinecraftPacket {
 
         portalCooldown = MinecraftCodecUtils.readVarInt(byteBuf);
         seaLevel = MinecraftCodecUtils.readVarInt(byteBuf);
+
+        if (protocolVersion.isGreaterThanOrEqual(ProtocolVersion.MINECRAFT_26_2)) {
+            this.onlineMode = byteBuf.readBoolean();
+        }
         enforcesSecureChat = byteBuf.readBoolean();
     }
 
@@ -283,6 +293,14 @@ public class ClientboundLoginPlayPacket implements IMinecraftPacket {
 
     public void setSeaLevel(int seaLevel) {
         this.seaLevel = seaLevel;
+    }
+
+    public void setOnlineMode(boolean onlineMode) {
+        this.onlineMode = onlineMode;
+    }
+
+    public boolean isOnlineMode() {
+        return onlineMode;
     }
 
     public boolean isEnforcesSecureChat() {

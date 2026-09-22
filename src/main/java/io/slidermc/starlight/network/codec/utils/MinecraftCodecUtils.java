@@ -165,4 +165,19 @@ public class MinecraftCodecUtils {
         long val = (((long)x & 0x3FFFFFF) << 38) | (((long)z & 0x3FFFFFF) << 12) | ((long)y & 0xFFF);
         buf.writeLong(val);
     }
+
+    /** 把当前可读字节转成十六进制串，供 debug 抓包使用（不移动 readerIndex）。 */
+    public static String toHex(ByteBuf buf) {
+        int start = buf.readerIndex();
+        return toHex(buf, start, buf.readableBytes());
+    }
+
+    /** 把指定区间转成十六进制串（不移动 readerIndex）。 */
+    public static String toHex(ByteBuf buf, int index, int length) {
+        StringBuilder sb = new StringBuilder(length * 3);
+        for (int i = 0; i < length; i++) {
+            sb.append(String.format("%02x ", buf.getByte(index + i)));
+        }
+        return sb.toString().trim();
+    }
 }

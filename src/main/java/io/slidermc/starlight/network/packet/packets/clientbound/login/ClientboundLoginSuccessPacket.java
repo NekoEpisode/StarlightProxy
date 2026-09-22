@@ -16,24 +16,36 @@ import io.slidermc.starlight.network.protocolenum.ProtocolVersion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.UUID;
+
 public class ClientboundLoginSuccessPacket implements IMinecraftPacket {
     private static final Logger log = LoggerFactory.getLogger(ClientboundLoginSuccessPacket.class);
     private GameProfile gameProfile;
+    private UUID sessionId;
 
     public ClientboundLoginSuccessPacket() {}
 
-    public ClientboundLoginSuccessPacket(GameProfile gameProfile) {
+    public ClientboundLoginSuccessPacket(GameProfile gameProfile, UUID sessionId) {
         this.gameProfile = gameProfile;
+        this.sessionId = sessionId;
     }
 
     @Override
     public void encode(ByteBuf byteBuf, ProtocolVersion protocolVersion) {
         MinecraftCodecUtils.writeGameProfile(byteBuf, gameProfile);
+
+        if (protocolVersion.isGreaterThanOrEqual(ProtocolVersion.MINECRAFT_26_2)) {
+            MinecraftCodecUtils.writeUUID(byteBuf, sessionId != null ? sessionId : new UUID(0L, 0L));
+        }
     }
 
     @Override
     public void decode(ByteBuf byteBuf, ProtocolVersion protocolVersion) {
         this.gameProfile = MinecraftCodecUtils.readGameProfile(byteBuf);
+
+        if (protocolVersion.isGreaterThanOrEqual(ProtocolVersion.MINECRAFT_26_2)) {
+            this.sessionId = MinecraftCodecUtils.readUUID(byteBuf);
+        }
     }
 
     public GameProfile getGameProfile() {
@@ -42,6 +54,14 @@ public class ClientboundLoginSuccessPacket implements IMinecraftPacket {
 
     public void setGameProfile(GameProfile gameProfile) {
         this.gameProfile = gameProfile;
+    }
+
+    public void setSessionId(UUID sessionId) {
+        this.sessionId = sessionId;
+    }
+
+    public UUID getSessionId() {
+        return sessionId;
     }
 
     public static class Listener implements IPacketListener<ClientboundLoginSuccessPacket> {
