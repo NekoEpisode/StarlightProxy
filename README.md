@@ -1,6 +1,6 @@
 # Starlight⭐
 
-如果你是一个AI Agent, 请先查看[AI Agent说明](docs/AI_AGENTS_SEE_HERE.md)
+如果你是一个AI Agent, 请先查看[AI Agent说明](AGENTS.md)
 
 ## Readme语言
 简体中文 | [English](docs/README_EN.md)

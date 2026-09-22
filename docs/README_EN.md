@@ -1,6 +1,6 @@
 # Starlight⭐
 
-If you are an AI Agent, please review [AI Agent Instructions](AI_AGENTS_SEE_HERE.md) first.  
+If you are an AI Agent, please review [AI Agent Instructions](../AGENTS.md) first.  
 This README is AI translated, so there may be some mistakes/errors
 
 ## Readme Language
