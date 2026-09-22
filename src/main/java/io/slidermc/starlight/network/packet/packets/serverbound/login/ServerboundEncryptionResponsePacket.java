@@ -6,6 +6,7 @@ import com.google.gson.JsonParser;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.slidermc.starlight.StarlightProxy;
+import io.slidermc.starlight.api.event.events.internal.GameProfileRequestEvent;
 import io.slidermc.starlight.api.profile.GameProfile;
 import io.slidermc.starlight.config.InternalConfig;
 import io.slidermc.starlight.network.codec.EncryptionDecoder;
@@ -124,15 +125,22 @@ public class ServerboundEncryptionResponsePacket implements IMinecraftPacket {
             String username = context.getPendingUsername();
             context.setPendingUsername(null);
 
-            if (!proxy.getConfig().isOnlineMode()) {
-                // 仅加密，不验证：直接用离线 UUID 完成登录
+            boolean isOnlineMode = proxy.getConfig().isOnlineMode() || context.isPerConnectionOnlineMode();
+
+            if (!isOnlineMode) {
                 log.debug("加密通道已建立，跳过 Mojang 验证（离线模式）");
                 GameProfile offlineProfile = new GameProfile(
                         username,
                         io.slidermc.starlight.utils.UUIDUtils.generateOfflineUuid(username),
                         java.util.List.of()
                 );
-                LoginHelper.completeLogin(ctx, proxy, offlineProfile);
+                GameProfileRequestEvent gpEvent = new GameProfileRequestEvent(context, offlineProfile, false);
+                proxy.getEventManager().fire(gpEvent);
+                if (gpEvent.isCancelled()) {
+                    disconnect(ctx, "Login denied");
+                    return;
+                }
+                LoginHelper.completeLogin(ctx, proxy, gpEvent.getGameProfile());
                 return;
             }
 
@@ -170,8 +178,13 @@ public class ServerboundEncryptionResponsePacket implements IMinecraftPacket {
                         }
 
                         log.debug("Mojang 验证成功，玩家: {} ({})", profile.username(), profile.uuid());
-                        // 6. 完成登录流程
-                        LoginHelper.completeLogin(ctx, proxy, profile);
+                        GameProfileRequestEvent gpEvent = new GameProfileRequestEvent(context, profile, true);
+                        proxy.getEventManager().fire(gpEvent);
+                        if (gpEvent.isCancelled()) {
+                            disconnect(ctx, "Login denied");
+                            return;
+                        }
+                        LoginHelper.completeLogin(ctx, proxy, gpEvent.getGameProfile());
                     }))
                     .exceptionally(ex -> {
                         ctx.channel().eventLoop().execute(() -> {

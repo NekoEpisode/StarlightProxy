@@ -3,6 +3,8 @@ package io.slidermc.starlight.network.packet.packets.serverbound.login;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.slidermc.starlight.StarlightProxy;
+import io.slidermc.starlight.api.event.events.internal.GameProfileRequestEvent;
+import io.slidermc.starlight.api.event.events.internal.PreLoginEvent;
 import io.slidermc.starlight.api.profile.GameProfile;
 import io.slidermc.starlight.network.codec.utils.MinecraftCodecUtils;
 import io.slidermc.starlight.network.context.AttributeKeys;
@@ -64,6 +66,8 @@ public class ServerboundLoginStartPacket implements IMinecraftPacket {
     }
 
     public static class Listener implements IPacketListener<ServerboundLoginStartPacket> {
+        private static final Component LOGIN_DENIED_COMPONENT = Component.text("Login denied").color(NamedTextColor.RED);
+
         @Override
         public void handle(ServerboundLoginStartPacket packet, ChannelHandlerContext ctx, StarlightProxy proxy) {
             ConnectionContext context = ctx.channel().attr(AttributeKeys.CONNECTION_CONTEXT).get();
@@ -76,12 +80,43 @@ public class ServerboundLoginStartPacket implements IMinecraftPacket {
                 return;
             }
 
-            if (proxy.getConfig().isEncryption()) {
+            PreLoginEvent preLoginEvent = new PreLoginEvent(context, packet.getUsername());
+            proxy.getEventManager().fire(preLoginEvent);
+
+            if (preLoginEvent.isDenied()) {
+                Component reason = preLoginEvent.getDenyReason();
+                if (reason == null) {
+                    reason = LOGIN_DENIED_COMPONENT;
+                }
+                ctx.channel().writeAndFlush(new ClientboundDisconnectLoginPacket(reason))
+                        .addListener(_ -> ctx.channel().close());
+                return;
+            }
+
+            Runnable loginAction = () -> {
+                if (!ctx.channel().isActive()) return;
+                doLogin(ctx, proxy, packet, context, preLoginEvent.isForceOnlineMode());
+            };
+
+            if (!preLoginEvent.hasIntents()) {
+                loginAction.run();
+            } else {
+                preLoginEvent.tryComplete();
+                preLoginEvent.getCompletionFuture().thenRun(() ->
+                        ctx.channel().eventLoop().execute(loginAction));
+            }
+        }
+
+        private static void doLogin(ChannelHandlerContext ctx, StarlightProxy proxy,
+                                     ServerboundLoginStartPacket packet, ConnectionContext context,
+                                     boolean forceOnline) {
+            if (forceOnline || proxy.getConfig().isEncryption()) {
+                if (forceOnline) {
+                    context.setPerConnectionOnlineMode(true);
+                }
                 log.debug("玩家 {} 进入{}流程", packet.getUsername(),
-                        proxy.getConfig().isOnlineMode() ? "正版验证" : "加密登录");
-                // 暂存用户名供 EncryptionResponse.Listener 使用
+                        (forceOnline || proxy.getConfig().isOnlineMode()) ? "正版验证" : "加密登录");
                 context.setPendingUsername(packet.getUsername());
-                // 生成 verifyToken 并存入 context 待验证
                 byte[] verifyToken = proxy.getEncryptionManager().generateVerifyToken();
                 context.setVerifyToken(verifyToken);
                 ctx.channel().writeAndFlush(new ClientboundEncryptionRequestPacket(
@@ -97,8 +132,20 @@ public class ServerboundLoginStartPacket implements IMinecraftPacket {
                         UUIDUtils.generateOfflineUuid(packet.username),
                         List.of()
                 );
-                LoginHelper.completeLogin(ctx, proxy, profile);
+                GameProfileRequestEvent gpEvent = new GameProfileRequestEvent(context, profile, false);
+                proxy.getEventManager().fire(gpEvent);
+                if (gpEvent.isCancelled()) {
+                    disconnect(ctx);
+                    return;
+                }
+                LoginHelper.completeLogin(ctx, proxy, gpEvent.getGameProfile());
             }
+        }
+
+        private static void disconnect(ChannelHandlerContext ctx) {
+            ctx.channel().writeAndFlush(
+                    new ClientboundDisconnectLoginPacket(LOGIN_DENIED_COMPONENT)
+            ).addListener(_ -> ctx.channel().close());
         }
     }
 }
