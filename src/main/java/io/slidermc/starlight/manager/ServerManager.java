@@ -10,7 +10,6 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ServerManager {
     private final Map<String, ProxiedServer> serverMap = new ConcurrentHashMap<>();
     private final Map<String, String> forceHostMap = new ConcurrentHashMap<>();
-    private final Map<String, String> forceHostReverse = new ConcurrentHashMap<>();
 
     public ServerManager(ProxiedServer defaultServer) {
         serverMap.put(defaultServer.getName(), defaultServer);
@@ -25,16 +24,15 @@ public class ServerManager {
             throw new IllegalArgumentException("Forced host server '" + serverName + "' not exists!");
         }
         forceHostMap.put(addr, serverName);
-        forceHostReverse.put(serverName, addr);
     }
 
     public ProxiedServer removeServer(ProxiedServer server) {
-        forceHostMap.remove(forceHostReverse.remove(server.getName()));
+        forceHostMap.entrySet().removeIf(e -> e.getValue().equals(server.getName()));
         return serverMap.remove(server.getName());
     }
 
     public ProxiedServer removeServer(String name) {
-        forceHostMap.remove(forceHostReverse.remove(name));
+        forceHostMap.entrySet().removeIf(e -> e.getValue().equals(name));
         return serverMap.remove(name);
     }
 
@@ -50,10 +48,6 @@ public class ServerManager {
         String serverName = forceHostMap.get(addr);
         if (serverName == null) return null;
         return serverMap.get(serverName);
-    }
-
-    public String getServerForceHostAddr(ProxiedServer server) {
-        return forceHostReverse.get(server.getName());
     }
 
     public List<ProxiedServer> getServers() {
