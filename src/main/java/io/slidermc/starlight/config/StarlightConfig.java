@@ -15,7 +15,6 @@ import java.util.Map;
 public class StarlightConfig {
     private static final Logger log = LoggerFactory.getLogger(StarlightConfig.class);
 
-    // proxy 节
     private final String host;
     private final int port;
     private final int maxPlayers;
@@ -24,25 +23,23 @@ public class StarlightConfig {
     private final String ipForwardType;
     private final String forwardSecret;
     private final String motd;
-    private final boolean forceDefaultServer;
-    private final String defaultServer;
     private final boolean bungeecordPluginMessage;
     private final String language;
     private final boolean loggingCommand;
     private final int compressThreshold;
     private final String iconFilePath;
 
-    // servers 节
     private final Map<String, ServerEntry> servers;
+
+    private final Map<String, String> forcedHost;
 
     public record ServerEntry(String address) {}
 
     public StarlightConfig(String host, int port, int maxPlayers, boolean onlineMode,
                            boolean encryption, String ipForwardType, String forwardSecret, String motd,
-                           boolean forceDefaultServer, String defaultServer,
-                           boolean bungeecordPluginMessage, String language, boolean loggingCommand,
-                           int compressThreshold, String iconFilePath,
-                           Map<String, ServerEntry> servers) {
+                           boolean bungeecordPluginMessage, String language,
+                           boolean loggingCommand, int compressThreshold, String iconFilePath,
+                           Map<String, ServerEntry> servers, Map<String, String> forcedHost) {
         this.host = host;
         this.port = port;
         this.maxPlayers = maxPlayers;
@@ -51,14 +48,13 @@ public class StarlightConfig {
         this.ipForwardType = ipForwardType;
         this.forwardSecret = forwardSecret;
         this.motd = motd;
-        this.forceDefaultServer = forceDefaultServer;
-        this.defaultServer = defaultServer;
         this.bungeecordPluginMessage = bungeecordPluginMessage;
         this.language = language;
         this.loggingCommand = loggingCommand;
         this.compressThreshold = compressThreshold;
         this.iconFilePath = iconFilePath;
         this.servers = Collections.unmodifiableMap(servers);
+        this.forcedHost = Collections.unmodifiableMap(forcedHost);
     }
 
     // -------------------------------------------------------------------------
@@ -102,8 +98,6 @@ public class StarlightConfig {
         String ipForwardType         = (String)   proxy.get("forward-type");
         String forwardSecret         = (String)   proxy.get("forward-secret");
         String motd                  = (String)   proxy.get("motd");
-        boolean forceDefaultServer   = (boolean)  proxy.get("force-default-server");
-        String defaultServer         =            proxy.get("default-server").toString();
         boolean bungeecordPluginMsg  = (boolean)  proxy.get("bungeecord-plugin-message");
         String language              = (String)   proxy.get("language");
         boolean loggingCommand       = (boolean)  proxy.get("logging-command");
@@ -120,9 +114,20 @@ public class StarlightConfig {
             }
         }
 
+        Map<String, String> forcedHost = new LinkedHashMap<>();
+        Object forcedHostsRaw = root.get("forced-host");
+        if (forcedHostsRaw instanceof Map<?, ?> forcedHostsMap) {
+            for (Map.Entry<?, ?> e : forcedHostsMap.entrySet()) {
+                String address = e.getKey().toString();
+                String serverName = e.getValue().toString();
+                forcedHost.put(address, serverName);
+            }
+        }
+        log.debug("Force Hosts: {}", forcedHost);
+
         return new StarlightConfig(host, port, maxPlayers, onlineMode, encryption, ipForwardType, forwardSecret,
-                motd, forceDefaultServer, defaultServer, bungeecordPluginMsg,
-                language, loggingCommand, compressThreshold, iconFilePath, servers);
+                motd, bungeecordPluginMsg, language, loggingCommand, compressThreshold, iconFilePath, servers,
+                forcedHost);
     }
 
     // -------------------------------------------------------------------------
@@ -137,12 +142,11 @@ public class StarlightConfig {
     public String getForwardType()        { return ipForwardType; }
     public String getForwardSecret()      { return forwardSecret; }
     public String getMotd()               { return motd; }
-    public boolean isForceDefaultServer() { return forceDefaultServer; }
-    public String getDefaultServer()      { return defaultServer; }
     public boolean isBungeecordPluginMessage() { return bungeecordPluginMessage; }
     public String getLanguage()           { return language; }
     public boolean isLoggingCommand()     { return loggingCommand; }
     public int getCompressThreshold()     { return compressThreshold; }
     public String getIconFilePath()        { return iconFilePath; }
     public Map<String, ServerEntry> getServers() { return servers; }
+    public Map<String, String> getForcedHost() { return forcedHost; }
 }

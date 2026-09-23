@@ -4,6 +4,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.slidermc.starlight.StarlightProxy;
+import io.slidermc.starlight.api.server.ProxiedServer;
 import io.slidermc.starlight.network.client.LoginResult;
 import io.slidermc.starlight.network.client.StarlightMinecraftClient;
 import io.slidermc.starlight.network.context.AttributeKeys;
@@ -40,17 +41,30 @@ public class ServerboundLoginAckPacket implements IMinecraftPacket {
             // Netty 会把这期间到达的数据留在 TCP buffer 里，恢复后自动重新处理。
             ctx.channel().config().setAutoRead(false);
 
+            ProxiedServer server = proxy.getServerManager().getForceHostDefaultServer();
+
+            String handshakeServerAddr = context.getHandshakeInformation().getServerAddress().trim();
+            log.debug("握手时虚拟主机地址: {}", handshakeServerAddr);
+            ProxiedServer server1 = proxy.getServerManager().getForceHostServer(handshakeServerAddr);
+            if (server1 != null) {
+                server = server1;
+                log.debug("修改为Force host后端: {}", server1);
+            } else {
+                log.debug("服务器是null, 回退到default");
+            }
+
             StarlightMinecraftClient client = new StarlightMinecraftClient(
-                    proxy.getServerManager().getDefaultServer().getAddress(),
+                    server.getAddress(),
                     proxy.getRegistryPacketUtils().getPacketRegistry(),
                     proxy
             );
             try {
+                ProxiedServer finalServer = server;
                 client.connectAsync().whenComplete((_, connectThrowable) -> {
                     if (connectThrowable != null) {
                         log.error(proxy.getTranslateManager().translate("starlight.logging.error.connect_default_server_failed"), connectThrowable);
                         ctx.channel().config().setAutoRead(true);
-                        kickWithConfigDisconnect(ctx, buildConnectFailedMessage(proxy, context.getLocale()));
+                        kickWithConfigDisconnect(ctx, buildConnectFailedMessage(proxy, context.getLocale(), finalServer));
                         return;
                     }
                     // 必须在 login() 之前设置 playerChannel，否则 login 阶段
@@ -77,7 +91,7 @@ public class ServerboundLoginAckPacket implements IMinecraftPacket {
                             case LoginResult.Success() -> {
                                 log.debug("设置上游和下游的连接");
                                 context.setDownstreamChannel(client.getChannel());
-                                context.getPlayer().setCurrentServer(proxy.getServerManager().getDefaultServer());
+                                context.getPlayer().setCurrentServer(finalServer);
                                 context.getPlayer().setPreviousServer(null);
                                 // 下游登录完成，恢复读取，之前 buffer 的 CONFIGURATION 包现在开始转发
                                 ctx.channel().config().setAutoRead(true);
@@ -106,14 +120,14 @@ public class ServerboundLoginAckPacket implements IMinecraftPacket {
             } catch (Exception e) {
                 log.error(proxy.getTranslateManager().translate("starlight.logging.error.connect_default_server_failed"), e);
                 ctx.channel().config().setAutoRead(true);
-                kickWithConfigDisconnect(ctx, buildConnectFailedMessage(proxy, context.getLocale()));
+                kickWithConfigDisconnect(ctx, buildConnectFailedMessage(proxy, context.getLocale(), server));
             }
         }
 
-        private static Component buildConnectFailedMessage(StarlightProxy proxy, String locale) {
-            String serverName = proxy.getServerManager().getDefaultServer().getName();
+        private static Component buildConnectFailedMessage(StarlightProxy proxy, String locale, ProxiedServer server) {
+            String serverName = server.getName();
 
-            String template = proxy.getTranslateManager().translate(locale, "starlight.disconnect.failed_connect_default_server");
+            String template = proxy.getTranslateManager().translate(locale, "starlight.disconnect.failed_connect_server");
 
             return MiniMessageUtils.MINI_MESSAGE.deserialize(
                     template,
