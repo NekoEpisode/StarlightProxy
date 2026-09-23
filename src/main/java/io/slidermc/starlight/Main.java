@@ -88,7 +88,7 @@ public class Main {
 
         printASCIIArt();
 
-        String defaultServer = config.getDefaultServer();
+        String defaultServer = config.getForcedHost().get("default");
         if (defaultServer == null) {
             log.error(translateManager.translate("starlight.logging.error.config_dont_have_default_server"));
             System.exit(1);
@@ -121,6 +121,16 @@ public class Main {
                 serverManager.addServer(new ProxiedServer(addr, entry.getKey()));
             } catch (IllegalArgumentException e) {
                 log.warn(translateManager.translate("starlight.logging.warn.server_address_resolve_failed"), entry.getKey(), e.getMessage());
+            }
+        }
+
+        // 加载Force host
+        for (Map.Entry<String, String> entry : config.getForcedHost().entrySet()) {
+            log.debug("加载ForceHost: {} -> {}", entry.getKey(), entry.getValue());
+            try {
+                serverManager.addForceHost(entry.getKey(), entry.getValue());
+            } catch (Exception e) {
+                log.error(translateManager.translate("starlight.logging.error.forcehost_server_load_error"), entry.getKey(), e);
             }
         }
 

@@ -60,6 +60,7 @@
     "starlight.logging.warn.forwarding.downstream_requires_modern_switch": "下游服务器要求Modern Forwarding，但代理未启用，正在中止切换服务器",
     "starlight.logging.warn.forwarding.non_inet_address": "玩家远程地址不是InetSocketAddress，无法构建转发数据，正在关闭下游连接",
     "starlight.logging.warn.forwarding.player_not_found": "处理velocity:player_info时未找到ProxiedPlayer，正在关闭下游连接",
+    "starlight.logging.error.forcehost_server_load_error": "加载Force Host '{}' 时出现错误: {}",
 
     "starlight.logging.info.shutdown.stopping": "正在关闭Starlight代理服务器...",
     "starlight.logging.info.shutdown.complete": "Starlight代理服务器已关闭",
@@ -104,7 +105,7 @@
 
     "starlight.unknown_error": "未知错误",
 
-    "starlight.disconnect.failed_connect_default_server": "<red>无法连接到默认服务器 <server_name></red>\n<gray>请稍后再试</gray>",
+    "starlight.disconnect.failed_connect_server": "<red>无法连接到服务器 <server_name></red>\n<gray>请稍后再试</gray>",
     "starlight.disconnect.login_failed": "<red>登录失败: <error_msg></red>",
     "starlight.disconnect.backend_requires_online_mode": "<red>后端服务器需要正版模式(online-mode)</red>",
     "starlight.disconnect.downstream_requires_modern_forwarding": "<red>服务器要求Velocity Modern Forwarding，但代理未启用此功能</red>",
