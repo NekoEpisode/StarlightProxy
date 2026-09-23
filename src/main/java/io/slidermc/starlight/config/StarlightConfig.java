@@ -23,7 +23,6 @@ public class StarlightConfig {
     private final String ipForwardType;
     private final String forwardSecret;
     private final String motd;
-    private final boolean bungeecordPluginMessage;
     private final String language;
     private final boolean loggingCommand;
     private final int compressThreshold;
@@ -37,8 +36,7 @@ public class StarlightConfig {
 
     public StarlightConfig(String host, int port, int maxPlayers, boolean onlineMode,
                            boolean encryption, String ipForwardType, String forwardSecret, String motd,
-                           boolean bungeecordPluginMessage, String language,
-                           boolean loggingCommand, int compressThreshold, String iconFilePath,
+                           String language, boolean loggingCommand, int compressThreshold, String iconFilePath,
                            Map<String, ServerEntry> servers, Map<String, String> forcedHost) {
         this.host = host;
         this.port = port;
@@ -48,7 +46,6 @@ public class StarlightConfig {
         this.ipForwardType = ipForwardType;
         this.forwardSecret = forwardSecret;
         this.motd = motd;
-        this.bungeecordPluginMessage = bungeecordPluginMessage;
         this.language = language;
         this.loggingCommand = loggingCommand;
         this.compressThreshold = compressThreshold;
@@ -98,7 +95,6 @@ public class StarlightConfig {
         String ipForwardType         = (String)   proxy.get("forward-type");
         String forwardSecret         = (String)   proxy.get("forward-secret");
         String motd                  = (String)   proxy.get("motd");
-        boolean bungeecordPluginMsg  = (boolean)  proxy.get("bungeecord-plugin-message");
         String language              = (String)   proxy.get("language");
         boolean loggingCommand       = (boolean)  proxy.get("logging-command");
         int compressThreshold        = (int)      proxy.get("compress-threshold");
@@ -126,7 +122,7 @@ public class StarlightConfig {
         log.debug("Force Hosts: {}", forcedHost);
 
         return new StarlightConfig(host, port, maxPlayers, onlineMode, encryption, ipForwardType, forwardSecret,
-                motd, bungeecordPluginMsg, language, loggingCommand, compressThreshold, iconFilePath, servers,
+                motd, language, loggingCommand, compressThreshold, iconFilePath, servers,
                 forcedHost);
     }
 
@@ -142,7 +138,6 @@ public class StarlightConfig {
     public String getForwardType()        { return ipForwardType; }
     public String getForwardSecret()      { return forwardSecret; }
     public String getMotd()               { return motd; }
-    public boolean isBungeecordPluginMessage() { return bungeecordPluginMessage; }
     public String getLanguage()           { return language; }
     public boolean isLoggingCommand()     { return loggingCommand; }
     public int getCompressThreshold()     { return compressThreshold; }
