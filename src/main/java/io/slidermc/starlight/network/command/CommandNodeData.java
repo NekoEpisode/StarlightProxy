@@ -7,6 +7,7 @@ import com.mojang.brigadier.tree.RootCommandNode;
 import io.netty.buffer.ByteBuf;
 import io.slidermc.starlight.api.command.source.IStarlightCommandSource;
 import io.slidermc.starlight.network.codec.utils.MinecraftCodecUtils;
+import io.slidermc.starlight.network.protocolenum.ProtocolVersion;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -50,10 +51,16 @@ public class CommandNodeData {
     
     /**
      * 从Brigadier命令节点创建CommandNodeData
+     *
+     * @param node          Brigadier 命令节点
+     * @param nodeIndices   节点到索引的映射
+     * @param registry      命令参数类型注册表，用于换算参数类型
+     * @return 命令节点数据
      */
     public static CommandNodeData fromBrigadierNode(
             CommandNode<IStarlightCommandSource> node,
-            Map<CommandNode<IStarlightCommandSource>, Integer> nodeIndices) {
+            Map<CommandNode<IStarlightCommandSource>, Integer> nodeIndices,
+            CommandArgumentTypeRegistry registry) {
         
         CommandNodeData data = new CommandNodeData();
         
@@ -103,7 +110,7 @@ public class CommandNodeData {
             data.name = argNode.getName();
             
             // 设置参数类型
-            data.argumentType = ArgumentTypeData.fromBrigadierType(argNode.getType());
+            data.argumentType = ArgumentTypeData.fromBrigadierType(registry, argNode.getType());
             
             // 设置建议类型
             if (argNode.getCustomSuggestions() != null) {
@@ -116,7 +123,14 @@ public class CommandNodeData {
         return data;
     }
     
-    public void read(ByteBuf buf) {
+    /**
+     * 按协议版本从缓冲区读取节点。
+     *
+     * @param buf             数据缓冲区
+     * @param protocolVersion 当前协议版本，用于换算参数类型 ID
+     * @param registry        命令参数类型注册表
+     */
+    public void read(ByteBuf buf, ProtocolVersion protocolVersion, CommandArgumentTypeRegistry registry) {
         flags = buf.readByte();
         
         // 读取子节点
@@ -142,8 +156,8 @@ public class CommandNodeData {
         
         // 读取参数类型
         if (nodeType == NODE_TYPE_ARGUMENT) {
-            argumentType = new ArgumentTypeData();
-            argumentType.read(buf);
+            argumentType = new ArgumentTypeData(registry);
+            argumentType.read(buf, protocolVersion);
         }
         
         // 读取建议类型
@@ -152,7 +166,13 @@ public class CommandNodeData {
         }
     }
     
-    public void write(ByteBuf buf) {
+    /**
+     * 按协议版本将节点写入缓冲区。
+     *
+     * @param buf             数据缓冲区
+     * @param protocolVersion 目标协议版本，用于换算参数类型 ID
+     */
+    public void write(ByteBuf buf, ProtocolVersion protocolVersion) {
         buf.writeByte(flags);
         
         // 写入子节点
@@ -174,7 +194,7 @@ public class CommandNodeData {
         
         // 写入参数类型
         if (nodeType == NODE_TYPE_ARGUMENT && argumentType != null) {
-            argumentType.write(buf);
+            argumentType.write(buf, protocolVersion);
         }
         
         // 写入建议类型

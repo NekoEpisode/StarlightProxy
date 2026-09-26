@@ -170,7 +170,7 @@ public class ConnectionContext {
         ProxiedPlayer p = this.player;
         if (p == null) return;
 
-        ClientboundCommandsPacket packet = new ClientboundCommandsPacket();
+        ClientboundCommandsPacket packet = new ClientboundCommandsPacket(proxy.getCommandArgumentTypeRegistry());
         packet.loadFromCache(cached, this.cachedCommandRootIndex);
         packet.mergeProxyCommands(
                 proxy.getCommandDispatcher().getRoot(),

@@ -1,0 +1,252 @@
+{
+  "types": [
+    {
+      "name": "brigadier:bool",
+      "protocol_id": 0
+    },
+    {
+      "name": "brigadier:float",
+      "protocol_id": 1
+    },
+    {
+      "name": "brigadier:double",
+      "protocol_id": 2
+    },
+    {
+      "name": "brigadier:integer",
+      "protocol_id": 3
+    },
+    {
+      "name": "brigadier:long",
+      "protocol_id": 4
+    },
+    {
+      "name": "brigadier:string",
+      "protocol_id": 5
+    },
+    {
+      "name": "entity",
+      "protocol_id": 6
+    },
+    {
+      "name": "game_profile",
+      "protocol_id": 7
+    },
+    {
+      "name": "block_pos",
+      "protocol_id": 8
+    },
+    {
+      "name": "column_pos",
+      "protocol_id": 9
+    },
+    {
+      "name": "vec3",
+      "protocol_id": 10
+    },
+    {
+      "name": "vec2",
+      "protocol_id": 11
+    },
+    {
+      "name": "block_state",
+      "protocol_id": 12
+    },
+    {
+      "name": "block_predicate",
+      "protocol_id": 13
+    },
+    {
+      "name": "item_stack",
+      "protocol_id": 14
+    },
+    {
+      "name": "item_predicate",
+      "protocol_id": 15
+    },
+    {
+      "name": "team_color",
+      "protocol_id": 16
+    },
+    {
+      "name": "hex_color",
+      "protocol_id": 17
+    },
+    {
+      "name": "component",
+      "protocol_id": 18
+    },
+    {
+      "name": "style",
+      "protocol_id": 19
+    },
+    {
+      "name": "message",
+      "protocol_id": 20
+    },
+    {
+      "name": "nbt_compound_tag",
+      "protocol_id": 21
+    },
+    {
+      "name": "nbt_tag",
+      "protocol_id": 22
+    },
+    {
+      "name": "nbt_path",
+      "protocol_id": 23
+    },
+    {
+      "name": "objective",
+      "protocol_id": 24
+    },
+    {
+      "name": "objective_criteria",
+      "protocol_id": 25
+    },
+    {
+      "name": "operation",
+      "protocol_id": 26
+    },
+    {
+      "name": "particle",
+      "protocol_id": 27
+    },
+    {
+      "name": "angle",
+      "protocol_id": 28
+    },
+    {
+      "name": "rotation",
+      "protocol_id": 29
+    },
+    {
+      "name": "scoreboard_slot",
+      "protocol_id": 30
+    },
+    {
+      "name": "score_holder",
+      "protocol_id": 31
+    },
+    {
+      "name": "swizzle",
+      "protocol_id": 32
+    },
+    {
+      "name": "team",
+      "protocol_id": 33
+    },
+    {
+      "name": "item_slot",
+      "protocol_id": 34
+    },
+    {
+      "name": "item_slots",
+      "protocol_id": 35
+    },
+    {
+      "name": "resource_location",
+      "protocol_id": 36
+    },
+    {
+      "name": "function",
+      "protocol_id": 37
+    },
+    {
+      "name": "entity_anchor",
+      "protocol_id": 38
+    },
+    {
+      "name": "int_range",
+      "protocol_id": 39
+    },
+    {
+      "name": "float_range",
+      "protocol_id": 40
+    },
+    {
+      "name": "dimension",
+      "protocol_id": 41
+    },
+    {
+      "name": "gamemode",
+      "protocol_id": 42
+    },
+    {
+      "name": "time",
+      "protocol_id": 43
+    },
+    {
+      "name": "resource_or_tag",
+      "protocol_id": 44
+    },
+    {
+      "name": "resource_or_tag_key",
+      "protocol_id": 45
+    },
+    {
+      "name": "resource",
+      "protocol_id": 46
+    },
+    {
+      "name": "resource_key",
+      "protocol_id": 47
+    },
+    {
+      "name": "resource_selector",
+      "protocol_id": 48
+    },
+    {
+      "name": "template_mirror",
+      "protocol_id": 49
+    },
+    {
+      "name": "template_rotation",
+      "protocol_id": 50
+    },
+    {
+      "name": "heightmap",
+      "protocol_id": 51
+    },
+    {
+      "name": "loot_table",
+      "protocol_id": 52
+    },
+    {
+      "name": "loot_predicate",
+      "protocol_id": 53
+    },
+    {
+      "name": "loot_modifier",
+      "protocol_id": 54
+    },
+    {
+      "name": "context_float_provider",
+      "protocol_id": 55
+    },
+    {
+      "name": "context_int_provider",
+      "protocol_id": 56
+    },
+    {
+      "name": "slot_source",
+      "protocol_id": 57
+    },
+    {
+      "name": "dialog",
+      "protocol_id": 58
+    },
+    {
+      "name": "feature",
+      "protocol_id": 59
+    },
+    {
+      "name": "swing_animation",
+      "protocol_id": 60
+    },
+    {
+      "name": "uuid",
+      "protocol_id": 61
+    }
+  ]
+}
