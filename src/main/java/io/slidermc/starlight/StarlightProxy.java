@@ -28,6 +28,7 @@ import io.slidermc.starlight.network.codec.FrameDecoder;
 import io.slidermc.starlight.network.codec.ServerPacketDecoder;
 import io.slidermc.starlight.network.codec.ServerPacketEncoder;
 import io.slidermc.starlight.network.context.ConnectionContext;
+import io.slidermc.starlight.network.command.CommandArgumentTypeRegistry;
 import io.slidermc.starlight.network.packet.RegistryPacketUtils;
 import io.slidermc.starlight.network.server.handler.StarlightServerHandler;
 import io.slidermc.starlight.permission.SimplePermissionManager;
@@ -50,6 +51,7 @@ public class StarlightProxy {
     private final PlayerManager playerManager;
     private final ServerManager serverManager;
     private final RegistryPacketUtils registryPacketUtils;
+    private final CommandArgumentTypeRegistry commandArgumentTypeRegistry;
     private final StarlightConfig config;
     private final EncryptionManager encryptionManager;
     private final CommandDispatcher<IStarlightCommandSource> commandDispatcher = new CommandDispatcher<>();
@@ -67,11 +69,13 @@ public class StarlightProxy {
     private volatile String faviconBase64;
 
     public StarlightProxy(InetSocketAddress address, TranslateManager translateManager,
-                          RegistryPacketUtils registryPacketUtils, StarlightConfig config,
+                          RegistryPacketUtils registryPacketUtils, CommandArgumentTypeRegistry commandArgumentTypeRegistry,
+                          StarlightConfig config,
                           ServerManager serverManager, PluginManager pluginManager) {
         this.address = address;
         this.translateManager = translateManager;
         this.registryPacketUtils = registryPacketUtils;
+        this.commandArgumentTypeRegistry = commandArgumentTypeRegistry;
         this.config = config;
         this.playerManager = new PlayerManager();
         this.serverManager = serverManager;
@@ -203,6 +207,13 @@ public class StarlightProxy {
 
     public RegistryPacketUtils getRegistryPacketUtils() {
         return registryPacketUtils;
+    }
+
+    /**
+     * @return 命令参数类型注册表，用于按协议版本换算参数类型 ID
+     */
+    public CommandArgumentTypeRegistry getCommandArgumentTypeRegistry() {
+        return commandArgumentTypeRegistry;
     }
 
     public TranslateManager getTranslateManager() {

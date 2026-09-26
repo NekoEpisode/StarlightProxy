@@ -1,78 +1,33 @@
 package io.slidermc.starlight.network.command;
 
-import com.mojang.brigadier.arguments.*;
+import com.mojang.brigadier.arguments.BoolArgumentType;
+import com.mojang.brigadier.arguments.DoubleArgumentType;
+import com.mojang.brigadier.arguments.FloatArgumentType;
+import com.mojang.brigadier.arguments.IntegerArgumentType;
+import com.mojang.brigadier.arguments.LongArgumentType;
+import com.mojang.brigadier.arguments.StringArgumentType;
 import io.netty.buffer.ByteBuf;
 import io.slidermc.starlight.network.codec.utils.MinecraftCodecUtils;
+import io.slidermc.starlight.network.protocolenum.ProtocolVersion;
 
 /**
- * 参数类型数据
- * 表示命令参数的类型和属性
+ * 命令参数类型数据
+ *
+ * <p>表示命令树中一个参数节点的类型及其属性。类型本身以语义 {@link ArgumentType} 保存，
+ * 读写时通过 {@link CommandArgumentTypeRegistry} 按协议版本换算线上参数类型 ID，
+ * 因此同一份命令树数据可以在 1.21.11 到 26.3 之间正确编解码。
+ *
+ * <p>注意：{@link ArgumentType} 的语义 ID 与线上 ID 并不相同。例如 {@code dialog} 在协议 775/776
+ * 中的线上 ID 是 55，在 26.3（协议 777）中是 58，但语义 ID 始终是同一个。
  */
 public class ArgumentTypeData {
-    // Brigadier 基础类型
-    public static final int BRIGADIER_BOOL = 0;
-    public static final int BRIGADIER_FLOAT = 1;
-    public static final int BRIGADIER_DOUBLE = 2;
-    public static final int BRIGADIER_INTEGER = 3;
-    public static final int BRIGADIER_LONG = 4;
-    public static final int BRIGADIER_STRING = 5;
-    
-    // Minecraft 特定类型
-    public static final int MINECRAFT_ENTITY = 6;
-    public static final int MINECRAFT_GAME_PROFILE = 7;
-    public static final int MINECRAFT_BLOCK_POS = 8;
-    public static final int MINECRAFT_COLUMN_POS = 9;
-    public static final int MINECRAFT_VEC3 = 10;
-    public static final int MINECRAFT_VEC2 = 11;
-    public static final int MINECRAFT_BLOCK_STATE = 12;
-    public static final int MINECRAFT_BLOCK_PREDICATE = 13;
-    public static final int MINECRAFT_ITEM_STACK = 14;
-    public static final int MINECRAFT_ITEM_PREDICATE = 15;
-    public static final int MINECRAFT_COLOR = 16;
-    public static final int MINECRAFT_HEX_COLOR = 17;
-    public static final int MINECRAFT_COMPONENT = 18;
-    public static final int MINECRAFT_STYLE = 19;
-    public static final int MINECRAFT_MESSAGE = 20;
-    public static final int MINECRAFT_NBT_COMPOUND_TAG = 21;
-    public static final int MINECRAFT_NBT_TAG = 22;
-    public static final int MINECRAFT_NBT_PATH = 23;
-    public static final int MINECRAFT_OBJECTIVE = 24;
-    public static final int MINECRAFT_OBJECTIVE_CRITERIA = 25;
-    public static final int MINECRAFT_OPERATION = 26;
-    public static final int MINECRAFT_PARTICLE = 27;
-    public static final int MINECRAFT_ANGLE = 28;
-    public static final int MINECRAFT_ROTATION = 29;
-    public static final int MINECRAFT_SCOREBOARD_SLOT = 30;
-    public static final int MINECRAFT_SCORE_HOLDER = 31;
-    public static final int MINECRAFT_SWIZZLE = 32;
-    public static final int MINECRAFT_TEAM = 33;
-    public static final int MINECRAFT_ITEM_SLOT = 34;
-    public static final int MINECRAFT_ITEM_SLOTS = 35;
-    public static final int MINECRAFT_RESOURCE_LOCATION = 36;
-    public static final int MINECRAFT_FUNCTION = 37;
-    public static final int MINECRAFT_ENTITY_ANCHOR = 38;
-    public static final int MINECRAFT_INT_RANGE = 39;
-    public static final int MINECRAFT_FLOAT_RANGE = 40;
-    public static final int MINECRAFT_DIMENSION = 41;
-    public static final int MINECRAFT_GAMEMODE = 42;
-    public static final int MINECRAFT_TIME = 43;
-    public static final int MINECRAFT_RESOURCE_OR_TAG = 44;
-    public static final int MINECRAFT_RESOURCE_OR_TAG_KEY = 45;
-    public static final int MINECRAFT_RESOURCE = 46;
-    public static final int MINECRAFT_RESOURCE_KEY = 47;
-    public static final int MINECRAFT_RESOURCE_SELECTOR = 48;
-    public static final int MINECRAFT_TEMPLATE_MIRROR = 49;
-    public static final int MINECRAFT_TEMPLATE_ROTATION = 50;
-    public static final int MINECRAFT_HEIGHTMAP = 51;
-    public static final int MINECRAFT_LOOT_TABLE = 52;
-    public static final int MINECRAFT_LOOT_PREDICATE = 53;
-    public static final int MINECRAFT_LOOT_MODIFIER = 54;
-    public static final int MINECRAFT_DIALOG = 55;
-    public static final int MINECRAFT_UUID = 56;
-    
-    private int parserId;
-    
-    // 存储原始属性数据用于写回
+
+    private final CommandArgumentTypeRegistry registry;
+
+    /** 参数类型，语义类型而非线上 ID */
+    private ArgumentType type;
+
+    // 属性字段，仅在 type.bracketed() 为 true 时有效
     private byte numberFlags;
     private float minFloat, maxFloat;
     private double minDouble, maxDouble;
@@ -82,17 +37,23 @@ public class ArgumentTypeData {
     private byte entityFlags;
     private byte scoreHolderFlags;
     private int minTime;
-    private String registry;
-    
-    public ArgumentTypeData() {
-    }
-    
-    public ArgumentTypeData(int parserId) {
-        this.parserId = parserId;
+    private String registryKey;
+
+    /**
+     * @param registry 命令参数类型注册表，用于按协议版本换算线上 ID
+     */
+    public ArgumentTypeData(CommandArgumentTypeRegistry registry) {
+        this.registry = registry;
     }
 
+    /**
+     * 拷贝构造。
+     *
+     * @param other 被拷贝的数据
+     */
     public ArgumentTypeData(ArgumentTypeData other) {
-        this.parserId = other.parserId;
+        this.registry = other.registry;
+        this.type = other.type;
         this.numberFlags = other.numberFlags;
         this.minFloat = other.minFloat;
         this.maxFloat = other.maxFloat;
@@ -106,19 +67,27 @@ public class ArgumentTypeData {
         this.entityFlags = other.entityFlags;
         this.scoreHolderFlags = other.scoreHolderFlags;
         this.minTime = other.minTime;
-        this.registry = other.registry;
+        this.registryKey = other.registryKey;
     }
-    
+
     /**
-     * 从Brigadier参数类型创建ArgumentTypeData
+     * 从 Brigadier 参数类型创建参数类型数据。
+     *
+     * <p>用于编码代理自身注册的命令树。这些命令只使用 Brigadier 基础类型，
+     * 因此不会产生带注册表名的参数类型。
+     *
+     * @param registry 命令参数类型注册表
+     * @param type     Brigadier 参数类型
+     * @return 对应的参数类型数据
      */
-    public static ArgumentTypeData fromBrigadierType(ArgumentType<?> type) {
-        ArgumentTypeData data = new ArgumentTypeData();
+    public static ArgumentTypeData fromBrigadierType(CommandArgumentTypeRegistry registry,
+                                                     com.mojang.brigadier.arguments.ArgumentType<?> type) {
+        ArgumentTypeData data = new ArgumentTypeData(registry);
 
         switch (type) {
-            case BoolArgumentType _ -> data.parserId = BRIGADIER_BOOL;
+            case BoolArgumentType _ -> data.type = ArgumentType.BRIGADIER_BOOL;
             case FloatArgumentType floatType -> {
-                data.parserId = BRIGADIER_FLOAT;
+                data.type = ArgumentType.BRIGADIER_FLOAT;
                 data.minFloat = floatType.getMinimum();
                 data.maxFloat = floatType.getMaximum();
                 data.numberFlags = 0;
@@ -126,7 +95,7 @@ public class ArgumentTypeData {
                 if (data.maxFloat != Float.MAX_VALUE) data.numberFlags |= 0x02;
             }
             case DoubleArgumentType doubleType -> {
-                data.parserId = BRIGADIER_DOUBLE;
+                data.type = ArgumentType.BRIGADIER_DOUBLE;
                 data.minDouble = doubleType.getMinimum();
                 data.maxDouble = doubleType.getMaximum();
                 data.numberFlags = 0;
@@ -134,7 +103,7 @@ public class ArgumentTypeData {
                 if (data.maxDouble != Double.MAX_VALUE) data.numberFlags |= 0x02;
             }
             case IntegerArgumentType intType -> {
-                data.parserId = BRIGADIER_INTEGER;
+                data.type = ArgumentType.BRIGADIER_INTEGER;
                 data.minInt = intType.getMinimum();
                 data.maxInt = intType.getMaximum();
                 data.numberFlags = 0;
@@ -142,7 +111,7 @@ public class ArgumentTypeData {
                 if (data.maxInt != Integer.MAX_VALUE) data.numberFlags |= 0x02;
             }
             case LongArgumentType longType -> {
-                data.parserId = BRIGADIER_LONG;
+                data.type = ArgumentType.BRIGADIER_LONG;
                 data.minLong = longType.getMinimum();
                 data.maxLong = longType.getMaximum();
                 data.numberFlags = 0;
@@ -150,204 +119,126 @@ public class ArgumentTypeData {
                 if (data.maxLong != Long.MAX_VALUE) data.numberFlags |= 0x02;
             }
             case StringArgumentType stringType -> {
-                data.parserId = BRIGADIER_STRING;
-                switch (stringType.getType()) {
-                    case SINGLE_WORD:
-                        data.stringBehavior = 0;
-                        break;
-                    case QUOTABLE_PHRASE:
-                        data.stringBehavior = 1;
-                        break;
-                    case GREEDY_PHRASE:
-                        data.stringBehavior = 2;
-                        break;
-                }
+                data.type = ArgumentType.BRIGADIER_STRING;
+                data.stringBehavior = switch (stringType.getType()) {
+                    case SINGLE_WORD -> 0;
+                    case QUOTABLE_PHRASE -> 1;
+                    case GREEDY_PHRASE -> 2;
+                };
             }
             case null, default -> {
-                // 默认字符串类型
-                data.parserId = BRIGADIER_STRING;
+                // 未知的 Brigadier 类型按可引用短语字符串处理，与 Minecraft 客户端的行为一致
+                data.type = ArgumentType.BRIGADIER_STRING;
                 data.stringBehavior = 1;
             }
         }
-        
+
         return data;
     }
-    
-    public void read(ByteBuf buf) {
-        parserId = MinecraftCodecUtils.readVarInt(buf);
-        
-        switch (parserId) {
-            case BRIGADIER_BOOL:
-                // 无属性
-                break;
-                
-            case BRIGADIER_FLOAT:
+
+    /**
+     * 按协议版本从缓冲区读取参数类型及其属性。
+     *
+     * @param buf             数据缓冲区
+     * @param protocolVersion 当前协议版本，用于换算线上参数类型 ID
+     * @throws IllegalArgumentException 参数类型 ID 在该协议版本中不存在时
+     */
+    public void read(ByteBuf buf, ProtocolVersion protocolVersion) {
+        int protocolId = MinecraftCodecUtils.readVarInt(buf);
+        type = registry.read(protocolVersion.getProtocolVersionCode(), protocolId);
+
+        switch (type) {
+            // BRIGADIER_BOOL 与其余无属性类型一样，网络上只有一个参数类型 ID
+            case BRIGADIER_FLOAT -> {
                 numberFlags = buf.readByte();
                 if ((numberFlags & 0x01) != 0) minFloat = buf.readFloat();
                 if ((numberFlags & 0x02) != 0) maxFloat = buf.readFloat();
-                break;
-                
-            case BRIGADIER_DOUBLE:
+            }
+            case BRIGADIER_DOUBLE -> {
                 numberFlags = buf.readByte();
                 if ((numberFlags & 0x01) != 0) minDouble = buf.readDouble();
                 if ((numberFlags & 0x02) != 0) maxDouble = buf.readDouble();
-                break;
-                
-            case BRIGADIER_INTEGER:
+            }
+            case BRIGADIER_INTEGER -> {
                 numberFlags = buf.readByte();
                 if ((numberFlags & 0x01) != 0) minInt = buf.readInt();
                 if ((numberFlags & 0x02) != 0) maxInt = buf.readInt();
-                break;
-                
-            case BRIGADIER_LONG:
+            }
+            case BRIGADIER_LONG -> {
                 numberFlags = buf.readByte();
                 if ((numberFlags & 0x01) != 0) minLong = buf.readLong();
                 if ((numberFlags & 0x02) != 0) maxLong = buf.readLong();
-                break;
-                
-            case BRIGADIER_STRING:
-                stringBehavior = MinecraftCodecUtils.readVarInt(buf);
-                break;
-                
-            case MINECRAFT_ENTITY:
-                entityFlags = buf.readByte();
-                break;
-                
-            case MINECRAFT_SCORE_HOLDER:
-                scoreHolderFlags = buf.readByte();
-                break;
-                
-            case MINECRAFT_TIME:
-                minTime = buf.readInt();
-                break;
-                
-            case MINECRAFT_RESOURCE_OR_TAG:
-            case MINECRAFT_RESOURCE_OR_TAG_KEY:
-            case MINECRAFT_RESOURCE:
-            case MINECRAFT_RESOURCE_KEY:
-            case MINECRAFT_RESOURCE_SELECTOR:
-                registry = MinecraftCodecUtils.readString(buf);
-                break;
-                
-            // 以下类型无属性
-            case MINECRAFT_GAME_PROFILE:
-            case MINECRAFT_BLOCK_POS:
-            case MINECRAFT_COLUMN_POS:
-            case MINECRAFT_VEC3:
-            case MINECRAFT_VEC2:
-            case MINECRAFT_BLOCK_STATE:
-            case MINECRAFT_BLOCK_PREDICATE:
-            case MINECRAFT_ITEM_STACK:
-            case MINECRAFT_ITEM_PREDICATE:
-            case MINECRAFT_COLOR:
-            case MINECRAFT_HEX_COLOR:
-            case MINECRAFT_COMPONENT:
-            case MINECRAFT_STYLE:
-            case MINECRAFT_MESSAGE:
-            case MINECRAFT_NBT_COMPOUND_TAG:
-            case MINECRAFT_NBT_TAG:
-            case MINECRAFT_NBT_PATH:
-            case MINECRAFT_OBJECTIVE:
-            case MINECRAFT_OBJECTIVE_CRITERIA:
-            case MINECRAFT_OPERATION:
-            case MINECRAFT_PARTICLE:
-            case MINECRAFT_ANGLE:
-            case MINECRAFT_ROTATION:
-            case MINECRAFT_SCOREBOARD_SLOT:
-            case MINECRAFT_SWIZZLE:
-            case MINECRAFT_TEAM:
-            case MINECRAFT_ITEM_SLOT:
-            case MINECRAFT_ITEM_SLOTS:
-            case MINECRAFT_RESOURCE_LOCATION:
-            case MINECRAFT_FUNCTION:
-            case MINECRAFT_ENTITY_ANCHOR:
-            case MINECRAFT_INT_RANGE:
-            case MINECRAFT_FLOAT_RANGE:
-            case MINECRAFT_DIMENSION:
-            case MINECRAFT_GAMEMODE:
-            case MINECRAFT_TEMPLATE_MIRROR:
-            case MINECRAFT_TEMPLATE_ROTATION:
-            case MINECRAFT_HEIGHTMAP:
-            case MINECRAFT_LOOT_TABLE:
-            case MINECRAFT_LOOT_PREDICATE:
-            case MINECRAFT_LOOT_MODIFIER:
-            case MINECRAFT_DIALOG:
-            case MINECRAFT_UUID:
-                // 无属性
-                break;
-                
-            default:
-                throw new IllegalArgumentException("Unknown parser ID: " + parserId);
+            }
+            case BRIGADIER_STRING -> stringBehavior = MinecraftCodecUtils.readVarInt(buf);
+            case ENTITY -> entityFlags = buf.readByte();
+            case SCORE_HOLDER -> scoreHolderFlags = buf.readByte();
+            case TIME -> minTime = buf.readInt();
+            case RESOURCE_OR_TAG, RESOURCE_OR_TAG_KEY, RESOURCE, RESOURCE_KEY, RESOURCE_SELECTOR ->
+                    registryKey = MinecraftCodecUtils.readString(buf);
+            default -> {
+                // 其余类型在网络上只有一个参数类型 ID，没有附加属性
+            }
         }
     }
-    
-    public void write(ByteBuf buf) {
-        MinecraftCodecUtils.writeVarInt(buf, parserId);
-        
-        switch (parserId) {
-            case BRIGADIER_BOOL:
-                break;
-                
-            case BRIGADIER_FLOAT:
+
+    /**
+     * 按协议版本将参数类型及其属性写入缓冲区。
+     *
+     * @param buf             数据缓冲区
+     * @param protocolVersion 目标协议版本，用于换算线上参数类型 ID
+     * @throws IllegalArgumentException 参数类型在该协议版本中不存在时
+     */
+    public void write(ByteBuf buf, ProtocolVersion protocolVersion) {
+        if (type == null) {
+            throw new IllegalStateException("Cannot write an argument type before it has been set");
+        }
+        MinecraftCodecUtils.writeVarInt(buf, registry.write(protocolVersion.getProtocolVersionCode(), type));
+
+        switch (type) {
+            case BRIGADIER_FLOAT -> {
                 buf.writeByte(numberFlags);
                 if ((numberFlags & 0x01) != 0) buf.writeFloat(minFloat);
                 if ((numberFlags & 0x02) != 0) buf.writeFloat(maxFloat);
-                break;
-                
-            case BRIGADIER_DOUBLE:
+            }
+            case BRIGADIER_DOUBLE -> {
                 buf.writeByte(numberFlags);
                 if ((numberFlags & 0x01) != 0) buf.writeDouble(minDouble);
                 if ((numberFlags & 0x02) != 0) buf.writeDouble(maxDouble);
-                break;
-                
-            case BRIGADIER_INTEGER:
+            }
+            case BRIGADIER_INTEGER -> {
                 buf.writeByte(numberFlags);
                 if ((numberFlags & 0x01) != 0) buf.writeInt(minInt);
                 if ((numberFlags & 0x02) != 0) buf.writeInt(maxInt);
-                break;
-                
-            case BRIGADIER_LONG:
+            }
+            case BRIGADIER_LONG -> {
                 buf.writeByte(numberFlags);
                 if ((numberFlags & 0x01) != 0) buf.writeLong(minLong);
                 if ((numberFlags & 0x02) != 0) buf.writeLong(maxLong);
-                break;
-                
-            case BRIGADIER_STRING:
-                MinecraftCodecUtils.writeVarInt(buf, stringBehavior);
-                break;
-                
-            case MINECRAFT_ENTITY:
-                buf.writeByte(entityFlags);
-                break;
-                
-            case MINECRAFT_SCORE_HOLDER:
-                buf.writeByte(scoreHolderFlags);
-                break;
-                
-            case MINECRAFT_TIME:
-                buf.writeInt(minTime);
-                break;
-                
-            case MINECRAFT_RESOURCE_OR_TAG:
-            case MINECRAFT_RESOURCE_OR_TAG_KEY:
-            case MINECRAFT_RESOURCE:
-            case MINECRAFT_RESOURCE_KEY:
-            case MINECRAFT_RESOURCE_SELECTOR:
-                MinecraftCodecUtils.writeString(buf, registry != null ? registry : "");
-                break;
-                
-            default:
-                // 无属性
-                break;
+            }
+            case BRIGADIER_STRING -> MinecraftCodecUtils.writeVarInt(buf, stringBehavior);
+            case ENTITY -> buf.writeByte(entityFlags);
+            case SCORE_HOLDER -> buf.writeByte(scoreHolderFlags);
+            case TIME -> buf.writeInt(minTime);
+            case RESOURCE_OR_TAG, RESOURCE_OR_TAG_KEY, RESOURCE, RESOURCE_KEY, RESOURCE_SELECTOR ->
+                    MinecraftCodecUtils.writeString(buf, registryKey != null ? registryKey : "");
+            default -> {
+                // 其余类型在网络上只有一个参数类型 ID，没有附加属性
+            }
         }
     }
 
-    public int getParserId() {
-        return parserId;
+    /**
+     * @return 参数类型，未设置时为 {@code null}
+     */
+    public ArgumentType getType() {
+        return type;
     }
 
-    public void setParserId(int parserId) {
-        this.parserId = parserId;
+    /**
+     * @param type 参数类型
+     */
+    public void setType(ArgumentType type) {
+        this.type = type;
     }
 
     public byte getNumberFlags() {
@@ -366,20 +257,20 @@ public class ArgumentTypeData {
         this.minFloat = minFloat;
     }
 
-    public double getMinDouble() {
-        return minDouble;
-    }
-
-    public void setMinDouble(double minDouble) {
-        this.minDouble = minDouble;
-    }
-
     public float getMaxFloat() {
         return maxFloat;
     }
 
     public void setMaxFloat(float maxFloat) {
         this.maxFloat = maxFloat;
+    }
+
+    public double getMinDouble() {
+        return minDouble;
+    }
+
+    public void setMinDouble(double minDouble) {
+        this.minDouble = minDouble;
     }
 
     public double getMaxDouble() {
@@ -422,20 +313,20 @@ public class ArgumentTypeData {
         this.maxLong = maxLong;
     }
 
-    public byte getEntityFlags() {
-        return entityFlags;
-    }
-
-    public void setEntityFlags(byte entityFlags) {
-        this.entityFlags = entityFlags;
-    }
-
     public int getStringBehavior() {
         return stringBehavior;
     }
 
     public void setStringBehavior(int stringBehavior) {
         this.stringBehavior = stringBehavior;
+    }
+
+    public byte getEntityFlags() {
+        return entityFlags;
+    }
+
+    public void setEntityFlags(byte entityFlags) {
+        this.entityFlags = entityFlags;
     }
 
     public byte getScoreHolderFlags() {
@@ -454,11 +345,11 @@ public class ArgumentTypeData {
         this.minTime = minTime;
     }
 
-    public String getRegistry() {
-        return registry;
+    public String getRegistryKey() {
+        return registryKey;
     }
 
-    public void setRegistry(String registry) {
-        this.registry = registry;
+    public void setRegistryKey(String registryKey) {
+        this.registryKey = registryKey;
     }
 }

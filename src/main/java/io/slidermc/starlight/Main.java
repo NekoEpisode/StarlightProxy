@@ -10,6 +10,7 @@ import io.slidermc.starlight.config.StarlightConfig;
 import io.slidermc.starlight.eventlisteners.PluginMessageEventListener;
 import io.slidermc.starlight.manager.ServerManager;
 import io.slidermc.starlight.permission.SimplePermissionManager;
+import io.slidermc.starlight.network.command.CommandArgumentTypeRegistry;
 import io.slidermc.starlight.network.packet.PacketRegistry;
 import io.slidermc.starlight.network.packet.RegistryPacketUtils;
 import io.slidermc.starlight.network.packet.packets.clientbound.configuration.ClientboundDisconnectConfigurationPacket;
@@ -137,14 +138,18 @@ public class Main {
         RegistryPacketUtils registryPacketUtils = new RegistryPacketUtils(new PacketRegistry(), translateManager);
         registryPacketUtils.loadMappings();
 
+        CommandArgumentTypeRegistry commandArgumentTypeRegistry = new CommandArgumentTypeRegistry(translateManager);
+        commandArgumentTypeRegistry.loadMappings();
+
         log.info(translateManager.translate("starlight.logging.info.packet.registering"));
 
-        registerPackets(registryPacketUtils);
+        registerPackets(registryPacketUtils, commandArgumentTypeRegistry);
 
         StarlightProxy proxy = new StarlightProxy(
                 new InetSocketAddress(config.getHost(), config.getPort()),
                 translateManager,
                 registryPacketUtils,
+                commandArgumentTypeRegistry,
                 config,
                 serverManager,
                 pluginManager
@@ -206,12 +211,12 @@ public class Main {
                 """);
     }
 
-    private static void registerPackets(RegistryPacketUtils registryPacketUtils) {
-        registerClientboundPackets(registryPacketUtils);
+    private static void registerPackets(RegistryPacketUtils registryPacketUtils, CommandArgumentTypeRegistry commandArgumentTypeRegistry) {
+        registerClientboundPackets(registryPacketUtils, commandArgumentTypeRegistry);
         registerServerboundPackets(registryPacketUtils);
     }
 
-    private static void registerClientboundPackets(RegistryPacketUtils registryPacketUtils) {
+    private static void registerClientboundPackets(RegistryPacketUtils registryPacketUtils, CommandArgumentTypeRegistry commandArgumentTypeRegistry) {
         PacketRegistry r = registryPacketUtils.getPacketRegistry();
         int av = ProtocolVersion.ALL_VERSION.getProtocolVersionCode();
 
@@ -254,7 +259,7 @@ public class Main {
         registryPacketUtils.registerByAutoMapping(Key.key("minecraft:system_chat"), ProtocolState.PLAY, ProtocolDirection.CLIENTBOUND, ClientboundSystemChatPacket::new);
         r.registerListener(ClientboundSystemChatPacket.class, "default", new ClientboundSystemChatPacket.Listener());
 
-        registryPacketUtils.registerByAutoMapping(Key.key("minecraft:commands"), ProtocolState.PLAY, ProtocolDirection.CLIENTBOUND, ClientboundCommandsPacket::new);
+        registryPacketUtils.registerByAutoMapping(Key.key("minecraft:commands"), ProtocolState.PLAY, ProtocolDirection.CLIENTBOUND, () -> new ClientboundCommandsPacket(commandArgumentTypeRegistry));
         r.registerListener(ClientboundCommandsPacket.class, "default", new ClientboundCommandsPacket.Listener());
 
         registryPacketUtils.registerByAutoMapping(Key.key("minecraft:command_suggestions"), ProtocolState.PLAY, ProtocolDirection.CLIENTBOUND, ClientboundCommandSuggestionsPacket::new);

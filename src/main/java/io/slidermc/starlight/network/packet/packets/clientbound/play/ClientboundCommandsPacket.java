@@ -12,6 +12,7 @@ import io.slidermc.starlight.api.translate.TranslateManager;
 import io.slidermc.starlight.network.client.StarlightMinecraftClient;
 import io.slidermc.starlight.network.codec.utils.MinecraftCodecUtils;
 import io.slidermc.starlight.network.command.ArgumentTypeData;
+import io.slidermc.starlight.network.command.CommandArgumentTypeRegistry;
 import io.slidermc.starlight.network.command.CommandNodeData;
 import io.slidermc.starlight.network.context.AttributeKeys;
 import io.slidermc.starlight.network.context.ConnectionContext;
@@ -28,6 +29,9 @@ public class ClientboundCommandsPacket implements IMinecraftPacket {
     private List<CommandNodeData> nodes;
     private int rootIndex;
 
+    /** 命令参数类型注册表，用于按协议版本换算参数类型 ID */
+    private CommandArgumentTypeRegistry registry;
+
     /** 在 mergeProxyCommands 期间共享，避免污染内部方法签名 */
     private transient TranslateManager translateManager;
 
@@ -36,13 +40,21 @@ public class ClientboundCommandsPacket implements IMinecraftPacket {
         this.rootIndex = 0;
     }
 
+    /**
+     * @param registry 命令参数类型注册表
+     */
+    public ClientboundCommandsPacket(CommandArgumentTypeRegistry registry) {
+        this();
+        this.registry = registry;
+    }
+
     @Override
     public void decode(ByteBuf byteBuf, ProtocolVersion protocolVersion) {
         int nodeCount = MinecraftCodecUtils.readVarInt(byteBuf);
         nodes = new ArrayList<>(nodeCount);
         for (int i = 0; i < nodeCount; i++) {
             CommandNodeData nodeData = new CommandNodeData();
-            nodeData.read(byteBuf);
+            nodeData.read(byteBuf, protocolVersion, registry);
             nodes.add(nodeData);
         }
         rootIndex = MinecraftCodecUtils.readVarInt(byteBuf);
@@ -52,7 +64,7 @@ public class ClientboundCommandsPacket implements IMinecraftPacket {
     public void encode(ByteBuf byteBuf, ProtocolVersion protocolVersion) {
         MinecraftCodecUtils.writeVarInt(byteBuf, nodes.size());
         for (CommandNodeData node : nodes) {
-            node.write(byteBuf);
+            node.write(byteBuf, protocolVersion);
         }
         MinecraftCodecUtils.writeVarInt(byteBuf, rootIndex);
     }
@@ -146,7 +158,7 @@ public class ClientboundCommandsPacket implements IMinecraftPacket {
         }
 
         for (CommandNode<IStarlightCommandSource> node : nodeList) {
-            nodes.add(CommandNodeData.fromBrigadierNode(node, nodeIndices));
+            nodes.add(CommandNodeData.fromBrigadierNode(node, nodeIndices, registry));
         }
         rootIndex = 0;
     }
@@ -194,7 +206,7 @@ public class ClientboundCommandsPacket implements IMinecraftPacket {
             data.setName(lit.getLiteral());
         } else if (node instanceof ArgumentCommandNode<?, ?> arg) {
             data.setName(arg.getName());
-            data.setArgumentType(ArgumentTypeData.fromBrigadierType(arg.getType()));
+            data.setArgumentType(ArgumentTypeData.fromBrigadierType(registry, arg.getType()));
             if (arg.getCustomSuggestions() != null) {
                 flags |= CommandNodeData.FLAG_HAS_SUGGESTIONS;
                 data.setSuggestionsType("minecraft:ask_server");
@@ -226,6 +238,7 @@ public class ClientboundCommandsPacket implements IMinecraftPacket {
             RootCommandNode<IStarlightCommandSource> proxyRoot = proxy.getCommandDispatcher().getRoot();
             ConnectionContext context = ctx.channel().attr(AttributeKeys.DOWNSTREAM_CONNECTION_CONTEXT).get().getClient().getPlayerChannel().attr(AttributeKeys.CONNECTION_CONTEXT).get();
 
+            packet.registry = proxy.getCommandArgumentTypeRegistry();
             context.cacheCommandTree(packet.getNodes(), packet.getRootIndex());
 
             packet.mergeProxyCommands(proxyRoot, proxy.getTranslateManager(), context.getPlayer());
