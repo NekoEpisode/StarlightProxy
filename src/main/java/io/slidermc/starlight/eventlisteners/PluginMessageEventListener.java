@@ -2,6 +2,7 @@ package io.slidermc.starlight.eventlisteners;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.slidermc.starlight.StarlightProxy;
 import io.slidermc.starlight.api.event.EventHandler;
 import io.slidermc.starlight.api.event.EventListener;
 import io.slidermc.starlight.api.event.EventPriority;
@@ -17,6 +18,12 @@ public class PluginMessageEventListener implements EventListener {
     private static final Key BRAND = Key.key("minecraft:brand");
     private static final Logger log = LoggerFactory.getLogger(PluginMessageEventListener.class);
 
+    private final StarlightProxy proxy;
+
+    public PluginMessageEventListener(StarlightProxy proxy) {
+        this.proxy = proxy;
+    }
+
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onPluginMessage(ReceivePluginMessageEvent event) {
         if (event.getDirection() == ProtocolDirection.CLIENTBOUND) { // 往客户端方向
@@ -26,7 +33,12 @@ public class PluginMessageEventListener implements EventListener {
                 ByteBuf byteBuf = Unpooled.buffer();
                 byteBuf.writeBytes(event.getData());
                 String brand = MinecraftCodecUtils.readString(byteBuf);
-                brand = "Starlight -> " + brand; // 拼接新brand
+                String configBrand = proxy.getConfig().getBrand();
+                if (configBrand == null) {
+                    event.setResultWithPluginMessageResult(PluginMessageResult.FORWARD); // 如果是null直接转发下游brand
+                    return;
+                }
+                brand = configBrand.replaceAll("%downstream%", brand); // 拼接新brand
                 byteBuf.release();
                 byteBuf = Unpooled.buffer();
                 MinecraftCodecUtils.writeString(byteBuf, brand); // 写入新brand

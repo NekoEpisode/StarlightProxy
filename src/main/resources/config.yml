@@ -8,6 +8,7 @@ proxy:
   forward-type: "none" # IP转发的格式, 支持modern(Velocity现代转发), none(不使用转发)
   forward-secret: "" # IP转发的密钥，仅当forward-type为"modern"时有效
   motd: "<gradient:#FFE100:#383500>Starlight Proxy - Full rewrote!</gradient>" # MOTD，支持MiniMessage语法
+  brand: "Starlight -> %downstream%" # 显示的brand，%downstream%会被替换为下游brand，null则不修改下游brand
   language: "zh_cn" # 默认语言 (可选: zh_cn, en_us, 或其他插件注册的新语言)
   logging-command: false # 是否记录玩家的命令操作; 注意: 这可能导致信息泄露或性能问题，谨慎开启
   compress-threshold: 256 # 启用数据包压缩的阈值

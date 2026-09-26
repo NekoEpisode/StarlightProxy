@@ -181,7 +181,7 @@ public class Main {
         proxy.getCommandManager().register(new PermCommand(proxy));
 
         // 注册内置监听器
-        proxy.getEventManager().register("pluginmessage-1", new PluginMessageEventListener());
+        proxy.getEventManager().register("pluginmessage-1", new PluginMessageEventListener(proxy));
 
         Runtime.getRuntime().addShutdownHook(new Thread(proxy::shutdown, "starlight-shutdown"));
 

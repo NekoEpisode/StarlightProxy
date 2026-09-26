@@ -23,6 +23,7 @@ public class StarlightConfig {
     private final String ipForwardType;
     private final String forwardSecret;
     private final String motd;
+    private final String brand;
     private final String language;
     private final boolean loggingCommand;
     private final int compressThreshold;
@@ -35,7 +36,7 @@ public class StarlightConfig {
     public record ServerEntry(String address) {}
 
     public StarlightConfig(String host, int port, int maxPlayers, boolean onlineMode,
-                           boolean encryption, String ipForwardType, String forwardSecret, String motd,
+                           boolean encryption, String ipForwardType, String forwardSecret, String motd, String brand,
                            String language, boolean loggingCommand, int compressThreshold, String iconFilePath,
                            Map<String, ServerEntry> servers, Map<String, String> forcedHost) {
         this.host = host;
@@ -46,6 +47,7 @@ public class StarlightConfig {
         this.ipForwardType = ipForwardType;
         this.forwardSecret = forwardSecret;
         this.motd = motd;
+        this.brand = brand;
         this.language = language;
         this.loggingCommand = loggingCommand;
         this.compressThreshold = compressThreshold;
@@ -95,6 +97,7 @@ public class StarlightConfig {
         String ipForwardType         = (String)   proxy.get("forward-type");
         String forwardSecret         = (String)   proxy.get("forward-secret");
         String motd                  = (String)   proxy.get("motd");
+        String brand                 = (String)   proxy.get("brand");
         String language              = (String)   proxy.get("language");
         boolean loggingCommand       = (boolean)  proxy.get("logging-command");
         int compressThreshold        = (int)      proxy.get("compress-threshold");
@@ -122,7 +125,7 @@ public class StarlightConfig {
         log.debug("Force Hosts: {}", forcedHost);
 
         return new StarlightConfig(host, port, maxPlayers, onlineMode, encryption, ipForwardType, forwardSecret,
-                motd, language, loggingCommand, compressThreshold, iconFilePath, servers,
+                motd, brand, language, loggingCommand, compressThreshold, iconFilePath, servers,
                 forcedHost);
     }
 
@@ -138,10 +141,11 @@ public class StarlightConfig {
     public String getForwardType()        { return ipForwardType; }
     public String getForwardSecret()      { return forwardSecret; }
     public String getMotd()               { return motd; }
+    public String getBrand()              { return brand; }
     public String getLanguage()           { return language; }
     public boolean isLoggingCommand()     { return loggingCommand; }
     public int getCompressThreshold()     { return compressThreshold; }
-    public String getIconFilePath()        { return iconFilePath; }
+    public String getIconFilePath()       { return iconFilePath; }
     public Map<String, ServerEntry> getServers() { return servers; }
     public Map<String, String> getForcedHost() { return forcedHost; }
 }
