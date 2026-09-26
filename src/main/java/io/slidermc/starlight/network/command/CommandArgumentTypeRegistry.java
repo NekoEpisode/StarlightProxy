@@ -38,6 +38,11 @@ import java.util.concurrent.ConcurrentHashMap;
  * 连续且不重复。校验失败会在启动阶段抛出 {@link IllegalStateException}，避免带着错误的映射表运行
  * 而把玩家客户端的命令树解析成乱码。
  *
+ * <p>某个协议版本没有对应文件时，该版本的参数类型<b>不会被猜测</b>：{@link #read(int, int)} 与
+ * {@link #write(int, ArgumentType)} 会直接抛异常，启动时也会给出警告。因为 {@link ArgumentType}
+ * 的声明顺序是 Starlight 的内部语义 ID（含版本相关类型），拿它当线路 ID 表用会静默解析出错误的
+ * 参数类型，危害远大于显式失败。
+ *
  * <p>线程安全：所有对照表在启动时一次性构建，之后只读；{@link #loadMappings()} 必须在服务器开始
  * 接受连接之前调用完毕。
  */
@@ -122,7 +127,7 @@ public class CommandArgumentTypeRegistry {
             if (loaded.contains(code)) {
                 continue;
             }
-            log.warn(t("starlight.logging.warn.argument_type.missing_version"), version.name(), code);
+            log.warn(t("starlight.logging.warn.argument_type.missing_version"), version.name(), code, code);
         }
 
         log.info(t("starlight.logging.info.argument_type.load_complete"), loaded.size(), System.currentTimeMillis() - start);
@@ -242,19 +247,10 @@ public class CommandArgumentTypeRegistry {
      * @param protocolVersion 协议版本号
      * @param protocolId      线上参数类型 ID
      * @return 对应的语义类型
-     * @throws IllegalArgumentException 该 ID 在此协议版本中不存在时
+     * @throws IllegalArgumentException 该协议版本没有映射，或该 ID 在此协议版本中不存在时
      */
     public ArgumentType read(int protocolVersion, int protocolId) {
-        ArgumentType[] types = byProtocolVersion.get(protocolVersion);
-        if (types == null) {
-            // 未提供该版本的映射文件时按语义 ID 直接解读，保证既有的未知版本行为不变
-            ArgumentType[] fallback = fallbackTypes();
-            if (protocolId < 0 || protocolId >= fallback.length) {
-                throw new IllegalArgumentException(
-                        "Unknown parser ID: " + protocolId + " (protocol " + protocolVersion + ", no mapping loaded)");
-            }
-            return fallback[protocolId];
-        }
+        ArgumentType[] types = requireMapping(protocolVersion);
         if (protocolId < 0 || protocolId >= types.length) {
             throw new IllegalArgumentException(
                     "Unknown parser ID: " + protocolId + " (protocol " + protocolVersion + ")");
@@ -268,14 +264,10 @@ public class CommandArgumentTypeRegistry {
      * @param protocolVersion 协议版本号
      * @param type            语义类型
      * @return 线上参数类型 ID
-     * @throws IllegalArgumentException 该类型在此协议版本中不存在时
+     * @throws IllegalArgumentException 该协议版本没有映射，或该类型在此协议版本中不存在时
      */
     public int write(int protocolVersion, ArgumentType type) {
-        int[] reversed = byProtocolVersionReversed.get(protocolVersion);
-        if (reversed == null) {
-            // 未提供该版本的映射文件时按语义 ID 直接写出
-            return type.ordinal();
-        }
+        int[] reversed = requireReversedMapping(protocolVersion);
         int protocolId = reversed[type.ordinal()];
         if (protocolId < 0) {
             throw new IllegalArgumentException(
@@ -285,11 +277,37 @@ public class CommandArgumentTypeRegistry {
     }
 
     /**
-     * 未提供映射文件时的兜底类型表：语义 ID 与线上 ID 一致。
+     * 取某个协议版本的类型表，没有映射时拒绝处理。
      *
-     * @return 语义 ID 对应的类型数组
+     * <p>这里刻意不做"按枚举顺序猜测"的兜底：{@link ArgumentType} 的声明顺序是 Starlight 的内部
+     * 语义 ID，其中包含只在特定版本存在的类型，把它直接当作线路 ID 表会把参数类型解析成完全错误的
+     * 类型（例如把 26.3 的 {@code feature} 解析成 {@code dialog}）。错误的命令树会让客户端在补全或
+     * 执行命令时出现难以排查的问题，因此宁可显式失败。
+     *
+     * @param protocolVersion 协议版本号
+     * @return 该协议版本的类型表
+     * @throws IllegalArgumentException 该协议版本没有映射文件时
      */
-    private static ArgumentType[] fallbackTypes() {
-        return ArgumentType.values();
+    private ArgumentType[] requireMapping(int protocolVersion) {
+        ArgumentType[] types = byProtocolVersion.get(protocolVersion);
+        if (types == null) {
+            throw new IllegalArgumentException("No command argument type mapping loaded for protocol " + protocolVersion);
+        }
+        return types;
+    }
+
+    /**
+     * 取某个协议版本的语义类型到线上 ID 的反查表，没有映射时拒绝处理。
+     *
+     * @param protocolVersion 协议版本号
+     * @return 该协议版本的反查表
+     * @throws IllegalArgumentException 该协议版本没有映射文件时
+     */
+    private int[] requireReversedMapping(int protocolVersion) {
+        int[] reversed = byProtocolVersionReversed.get(protocolVersion);
+        if (reversed == null) {
+            throw new IllegalArgumentException("No command argument type mapping loaded for protocol " + protocolVersion);
+        }
+        return reversed;
     }
 }
