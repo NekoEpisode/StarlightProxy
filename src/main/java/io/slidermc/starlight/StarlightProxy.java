@@ -9,6 +9,7 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.slidermc.starlight.api.channel.ChannelRegistry;
 import io.slidermc.starlight.api.command.CommandManager;
 import io.slidermc.starlight.api.command.StarlightCommand;
 import io.slidermc.starlight.api.command.source.IStarlightCommandSource;
@@ -59,6 +60,7 @@ public class StarlightProxy {
     private final ProxyExecutors executors = new ProxyExecutors();
     private final EventManager eventManager;
     private final PluginManager pluginManager;
+    private final ChannelRegistry channelRegistry;
     private volatile PermissionService permissionService;
 
     private EventLoopGroup bossGroup;
@@ -86,6 +88,7 @@ public class StarlightProxy {
             throw new RuntimeException("Failed to initialize EncryptionManager", e);
         }
         eventManager = new EventManager(executors.getEventExecutor(), translateManager);
+        channelRegistry = new ChannelRegistry(translateManager);
     }
 
     void start() {
@@ -260,6 +263,13 @@ public class StarlightProxy {
      */
     public EventManager getEventManager() {
         return eventManager;
+    }
+
+    /**
+     * 返回插件消息通道注册表，代理会把它与客户端声明的通道一起下发给下游服务器。
+     */
+    public ChannelRegistry getChannelRegistry() {
+        return channelRegistry;
     }
 
     /**

@@ -6,6 +6,7 @@ import io.slidermc.starlight.StarlightProxy;
 import io.slidermc.starlight.api.event.events.helper.PluginMessageResult;
 import io.slidermc.starlight.network.codec.utils.MinecraftCodecUtils;
 import io.slidermc.starlight.network.context.AttributeKeys;
+import io.slidermc.starlight.network.packet.ChannelRegisterHandler;
 import io.slidermc.starlight.network.packet.IMinecraftPacket;
 import io.slidermc.starlight.network.packet.listener.IPacketListener;
 import io.slidermc.starlight.network.protocolenum.ProtocolDirection;
@@ -56,6 +57,10 @@ public class ServerboundPluginMessageConfigurationPacket implements IMinecraftPa
     public static class Listener implements IPacketListener<ServerboundPluginMessageConfigurationPacket> {
         @Override
         public void handle(ServerboundPluginMessageConfigurationPacket packet, ChannelHandlerContext ctx, StarlightProxy proxy) {
+            if (ChannelRegisterHandler.handle(packet.key, packet.data, ctx, proxy)) {
+                return;
+            }
+
             EventUtils.createPluginMessageEventAndAsyncFire(ProtocolDirection.SERVERBOUND, packet.key, packet.data, proxy, ctx.channel())
                     .whenComplete((event, throwable) -> {
                         PluginMessageResult pluginMessageResult = PluginMessageResult.NONE;
