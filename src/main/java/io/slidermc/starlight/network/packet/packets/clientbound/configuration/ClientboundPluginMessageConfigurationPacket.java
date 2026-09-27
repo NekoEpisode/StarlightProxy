@@ -57,7 +57,7 @@ public class ClientboundPluginMessageConfigurationPacket implements IMinecraftPa
     public static class Listener implements IPacketListener<ClientboundPluginMessageConfigurationPacket> {
         @Override
         public void handle(ClientboundPluginMessageConfigurationPacket packet, ChannelHandlerContext ctx, StarlightProxy proxy) {
-            EventUtils.createPluginMessageEventAndAsyncFire(ProtocolDirection.CLIENTBOUND, packet.key, packet.data, proxy)
+            EventUtils.createPluginMessageEventAndAsyncFire(ProtocolDirection.CLIENTBOUND, packet.key, packet.data, proxy, ctx.channel())
                     .whenComplete((event, throwable) -> {
                         PluginMessageResult pluginMessageResult = PluginMessageResult.NONE;
 

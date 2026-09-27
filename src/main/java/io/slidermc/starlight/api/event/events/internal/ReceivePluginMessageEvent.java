@@ -1,5 +1,6 @@
 package io.slidermc.starlight.api.event.events.internal;
 
+import io.netty.channel.Channel;
 import io.slidermc.starlight.api.event.events.helper.PluginMessageResult;
 import io.slidermc.starlight.api.event.events.interfaces.ICancellableEvent;
 import io.slidermc.starlight.api.event.events.interfaces.IDirectionEvent;
@@ -10,15 +11,17 @@ import net.kyori.adventure.key.Key;
 public class ReceivePluginMessageEvent implements IDirectionEvent, ICancellableEvent, IResultfulEvent {
     private volatile Key key;
     private volatile byte[] data;
+    private final Channel channel;
 
     private volatile int result = PluginMessageResult.NONE.getCode();
 
     private final ProtocolDirection direction;
 
-    public ReceivePluginMessageEvent(ProtocolDirection direction, Key key, byte[] data) {
+    public ReceivePluginMessageEvent(ProtocolDirection direction, Key key, byte[] data, Channel channel) {
         this.direction = direction;
         this.key = key;
         this.data = data;
+        this.channel = channel;
     }
 
     @Override
@@ -71,5 +74,9 @@ public class ReceivePluginMessageEvent implements IDirectionEvent, ICancellableE
 
     public void setData(byte[] data) {
         this.data = data;
+    }
+
+    public Channel getChannel() {
+        return channel;
     }
 }

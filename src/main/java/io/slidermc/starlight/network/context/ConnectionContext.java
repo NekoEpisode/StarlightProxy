@@ -97,6 +97,14 @@ public class ConnectionContext {
         return player;
     }
 
+    /**
+     * 返回上游玩家连接。登录阶段即可使用，因为在 ProxiedPlayer 创建之前
+     * 插件只能通过它获取远程地址等连接信息。
+     */
+    public Channel getChannel() {
+        return channel;
+    }
+
     public void setPlayer(ProxiedPlayer player) {
         this.player = player;
     }
