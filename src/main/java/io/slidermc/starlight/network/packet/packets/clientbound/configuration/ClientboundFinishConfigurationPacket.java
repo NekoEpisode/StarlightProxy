@@ -49,10 +49,14 @@ public class ClientboundFinishConfigurationPacket implements IMinecraftPacket {
         }
 
         /**
-         * 把代理注册的通道与客户端声明的通道一并声明给下游服务器。
+         * 把「代理注册的通道 ∪ 客户端声明的通道」中尚未下发的部分声明给下游服务器。
          *
          * <p>下游的 {@code CraftPlayer#sendPluginMessage} 只允许发送客户端已声明的通道，而原版客户端
          * 不会处理代理发出的 register 包，因此通道声明必须由代理直接下发给下游。
+         *
+         * <p>该包在下游每次进入 PLAY 前都会到达，因此服务器切换后的新下游同样会在这里收到全量声明
+         * （{@code setDownstreamChannel} 会清空已下发状态）；而插件在玩家游戏期间新注册的通道，
+         * 也会在最近一次时机作为差集补发出去。
          */
         private void announceChannels(ChannelHandlerContext ctx, StarlightMinecraftClient client,
                                      StarlightProxy proxy) {
@@ -64,18 +68,21 @@ public class ClientboundFinishConfigurationPacket implements IMinecraftPacket {
 
             Set<Key> channels = new LinkedHashSet<>(proxy.getChannelRegistry().getChannels());
             channels.addAll(playerContext.getClientChannels());
-            if (channels.isEmpty()) {
+
+            Set<Key> pending = playerContext.diffAnnounced(channels);
+            if (pending.isEmpty()) {
                 return;
             }
 
+            playerContext.setAnnouncedChannels(channels);
+
             try {
-                byte[] payload = ChannelPayload.write(channels);
                 ctx.channel().writeAndFlush(new ServerboundPluginMessageConfigurationPacket(
-                        ChannelPayload.REGISTER_CHANNEL, payload));
-                log.debug("已向 {} 声明 {} 个插件消息通道", client.getAddress(), channels.size());
+                        ChannelPayload.REGISTER_CHANNEL, ChannelPayload.write(pending)));
+                log.debug("已向 {} 声明 {} 个插件消息通道", client.getAddress(), pending.size());
             } catch (Exception e) {
                 log.error(proxy.getTranslateManager().translate(
-                        "starlight.logging.error.channel.announce_failed"), channels.size(), e);
+                        "starlight.logging.error.channel.announce_failed"), pending.size(), e);
             }
         }
     }

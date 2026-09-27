@@ -205,12 +205,22 @@ public class PluginManager {
     /**
      * 按顺序对所有已启用插件调用 {@link IPlugin#onReload(StarlightProxy)}。
      *
+     * <p>调用插件回调之前会先释放该插件此前注册的监听器、命令与插件消息通道：
+     * 这些资源由框架持有，不在插件回调的职责范围内，而默认的 {@code onReload} 实现是
+     * "onDisable + onEnable"，插件重新注册时会与旧注册项叠加（监听器被调用两次、
+     * 通道永久累积）。注意此处只做框架级清理，不额外触发 {@code onDisable}——
+     * 默认实现里已经会调用它。
+     *
+     * <p>因此覆写了 {@code onReload} 且不调用 {@code super.onReload(...)} 的插件需要自行
+     * 完成"注销旧资源 → 注册新资源"，框架只保证旧资源在回调前已被清理。
+     *
      * @param proxy 代理实例
      */
     public void reloadAll(StarlightProxy proxy) {
         for (PluginContainer container : orderedPlugins) {
             if (container.isEnabled()) {
                 try {
+                    releasePluginResources(container);
                     container.plugin().onReload(proxy);
                     log.info(t("starlight.logging.info.plugin.reloaded"), container.description().id());
                 } catch (Throwable e) {
@@ -611,11 +621,22 @@ public class PluginManager {
             log.error(t("starlight.logging.error.plugin.on_disable_failed"), container.description().id(), e);
         }
         container.setEnabled(false);
-        if (proxy != null) {
-            proxy.getEventManager().unregisterAll(container.plugin());
-            proxy.getCommandManager().unregisterAll(container.description().id());
-            proxy.getChannelRegistry().unregisterAll(container.description().id());
+        releasePluginResources(container);
+    }
+
+    /**
+     * 释放由框架替插件持有的资源：监听器、命令、以及插件消息通道。
+     *
+     * <p>这些不在任何插件回调里，因此必须由管理器在"插件不再持有资源"时显式调用。
+     * 禁用与重载都会走到这里，避免重载时旧监听器/旧通道残留。
+     */
+    private void releasePluginResources(PluginContainer container) {
+        if (proxy == null) {
+            return;
         }
+        proxy.getEventManager().unregisterAll(container.plugin());
+        proxy.getCommandManager().unregisterAll(container.description().id());
+        proxy.getChannelRegistry().unregisterAll(container.description().id());
     }
 
     /** 便捷方法，减少重复的 translateManager.translate() 调用。 */

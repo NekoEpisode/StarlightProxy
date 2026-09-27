@@ -20,8 +20,13 @@ import java.util.Set;
  * <p>必须同步处理：通道集合要在下游的 {@code finish_configuration} 之前备齐，否则代理下发通道声明
  * 时会漏掉客户端侧的部分。因此这里不走异步的事件总线。
  *
- * <p>这两个通道的包不再向下游转发：代理会把"自己注册的通道 ∪ 客户端声明的通道"聚合后统一下发，
- * 转发原始包只会让同一通道被声明两次。
+ * <p>记录之后是否把原始包转发给下游，取决于下游连接是否已经就绪：
+ * <ul>
+ *   <li>已就绪（PLAY 阶段）：放行，由通用的插件消息流程转发。客户端在游戏中途才声明的通道
+ *       必须立刻同步给下游，否则下游会认为该通道未知而丢弃其上的消息。</li>
+ *   <li>未就绪（配置阶段或下游尚未建立）：吞掉该包。此时无法写入下游，而代理在
+ *       {@code finish_configuration} 时会把自己的通道与该连接已知的客户端通道聚合后统一下发。</li>
+ * </ul>
  */
 public final class ChannelRegisterHandler {
 
@@ -37,13 +42,13 @@ public final class ChannelRegisterHandler {
     }
 
     /**
-     * 若该包是通道注册/注销则处理后返回 {@code true}，调用方应停止后续的通用插件消息流程。
+     * 记录客户端声明的通道，并判断该包是否还需继续走通用的插件消息流程。
      *
      * @param key   插件消息通道
      * @param data  载荷
      * @param ctx   收到该包的连接上下文
      * @param proxy 代理实例
-     * @return 是否已由本处理器消费
+     * @return {@code true} 表示该包已被消费、不应再转发；{@code false} 表示应继续转发给下游
      */
     public static boolean handle(Key key, byte[] data, ChannelHandlerContext ctx, StarlightProxy proxy) {
         boolean register = REGISTER.equals(key);
@@ -75,7 +80,9 @@ public final class ChannelRegisterHandler {
         }
 
         fireEvent(context, proxy, added);
-        return true;
+
+        // 下游尚未建立时无法转发，此时由 finish_configuration 的聚合下发负责
+        return context.getDownstreamChannel() == null;
     }
 
     /**

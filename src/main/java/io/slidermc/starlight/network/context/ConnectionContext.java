@@ -13,6 +13,7 @@ import io.slidermc.starlight.network.packet.packets.clientbound.play.Clientbound
 import io.slidermc.starlight.network.protocolenum.ProtocolState;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -51,6 +52,9 @@ public class ConnectionContext {
 
     /** 客户端通过 minecraft:register 声明过的插件消息通道 */
     private final Set<Key> clientChannels = ConcurrentHashMap.newKeySet();
+
+    /** 已下发给当前下游连接的通道，用于判断注册表变化后是否需要补发 */
+    private final Set<Key> announcedChannels = ConcurrentHashMap.newKeySet();
 
     /** 后端命令树的深拷贝缓存，用于权限更新后重建命令树 */
     private volatile List<CommandNodeData> cachedCommandNodes;
@@ -121,6 +125,8 @@ public class ConnectionContext {
 
     public void setDownstreamChannel(Channel downstreamChannel) {
         this.downstreamChannel = downstreamChannel;
+        // 新下游对旧连接上的通道声明一无所知，必须重新下发
+        this.announcedChannels.clear();
     }
 
     public CompletableFuture<Void> getPendingReconfiguration() {
@@ -196,6 +202,29 @@ public class ConnectionContext {
      */
     public Set<Key> getClientChannels() {
         return Set.copyOf(clientChannels);
+    }
+
+    /**
+     * 替换"已下发给当前下游"的通道集合。切换下游连接时需要先清空，因为新下游对旧连接的声明一无所知。
+     *
+     * @param channels 本次已下发的通道
+     */
+    public void setAnnouncedChannels(Set<Key> channels) {
+        announcedChannels.clear();
+        announcedChannels.addAll(channels);
+    }
+
+    /**
+     * 计算相对已下发集合新增的通道。用于插件在玩家进入游戏后注册通道时补发给下游，
+     * 否则下游会把这些通道上的消息当作未知通道丢弃。
+     *
+     * @param current 当前的完整通道集合
+     * @return 尚未下发的通道，全部已下发时为空集
+     */
+    public Set<Key> diffAnnounced(Set<Key> current) {
+        Set<Key> pending = new HashSet<>(current);
+        pending.removeAll(announcedChannels);
+        return pending;
     }
 
     public void cacheCommandTree(List<CommandNodeData> nodes, int rootIndex) {
