@@ -97,12 +97,14 @@ public interface IPlugin {
      * 该方法保证不会读到代理或其它插件的同名资源。插件打包的默认配置文件
      * （如 {@code config.yml}）应通过此方法读取。
      *
+     * <p><b>该约定仅对基于 JAR 的插件成立。</b>内存插件（{@link PluginBase} 及其子类）没有
+     * 独立的 JAR，因此没有"自身资源"这一概念，其实现返回 {@code null}；
+     * 需要读取类路径资源的内存插件请自行使用 {@code getClass().getClassLoader()}。
+     *
      * <p>调用方负责关闭返回的流。
      *
      * @param path 资源路径，相对于JAR根目录，可带或不带前导 {@code /}
-     * @return 资源流，不存在时返回 {@code null}
+     * @return 资源流；资源不存在，或该插件不是 JAR 插件时返回 {@code null}
      */
-    default InputStream getResourceAsStream(String path) {
-        return null;
-    }
+    InputStream getResourceAsStream(String path);
 }

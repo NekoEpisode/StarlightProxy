@@ -3,6 +3,7 @@ package io.slidermc.starlight.api.event;
 import io.slidermc.starlight.api.event.events.interfaces.ICancellableEvent;
 import io.slidermc.starlight.api.plugin.IPlugin;
 import io.slidermc.starlight.api.translate.TranslateManager;
+import io.slidermc.starlight.utils.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -240,7 +241,9 @@ public class EventManager {
                 handler.method().invoke(handler.listener(), event);
             } catch (Throwable e) {
                 // 捕获 Throwable：监听器抛出的 Error（如 NoClassDefFoundError）也必须被隔离，
-                // 否则会穿透到 Netty 事件循环或插件生命周期调用方
+                // 否则会穿透到 Netty 事件循环或插件生命周期调用方；
+                // 但 JVM 级致命错误必须继续向上传播
+                ExceptionUtils.rethrowIfFatal(e);
                 log.error(translateManager.translate("starlight.logging.error.event.handler_threw"),
                         handler.sourceId(), handler.listenerId(),
                         event.getClass().getSimpleName(), e);

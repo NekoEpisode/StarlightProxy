@@ -5,6 +5,7 @@ import io.slidermc.starlight.api.plugin.IPlugin;
 import io.slidermc.starlight.api.plugin.PluginDescription;
 import io.slidermc.starlight.api.plugin.PluginLoadException;
 import io.slidermc.starlight.api.translate.TranslateManager;
+import io.slidermc.starlight.utils.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
@@ -213,6 +214,7 @@ public class PluginManager {
                     container.plugin().onReload(proxy);
                     log.info(t("starlight.logging.info.plugin.reloaded"), container.description().id());
                 } catch (Throwable e) {
+                    ExceptionUtils.rethrowIfFatal(e);
                     log.error(t("starlight.logging.error.plugin.on_reload_failed"), container.description().id(), e);
                 }
             }
@@ -253,8 +255,10 @@ public class PluginManager {
             return null;
         }
 
-        // 使用 getResource 而非 getResourceAsStream，以便显式区分"资源不存在"与"打开失败"
-        URL resource = container.classLoader().getResource(normalized);
+        // 必须用 findResource：PluginClassLoader#getResource 在插件自身 jar 中找不到时会回退到
+        // 父加载器，从而把代理的同名资源（如 config.yml）当成插件资源返回。
+        // findResource 只查询该插件自己的 URL，符合"只读本插件资源"的约定。
+        URL resource = container.classLoader().findResource(normalized);
         if (resource == null) {
             return null;
         }
@@ -570,7 +574,8 @@ public class PluginManager {
         try {
             container.plugin().onLoad(translateManager);
         } catch (Throwable e) {
-            // 同 invokeOnEnable：插件抛出的 Error 不能终止代理
+            // 同 invokeOnEnable：插件抛出的 Error 不能终止代理，但致命错误要放行
+            ExceptionUtils.rethrowIfFatal(e);
             log.error(t("starlight.logging.error.plugin.on_load_failed"), container.description().id(), e);
             invokeOnDisable(container);
             orderedPlugins.remove(container);
@@ -589,7 +594,9 @@ public class PluginManager {
             log.info(t("starlight.logging.info.plugin.enabled"), container.description().id(), container.description().version());
         } catch (Throwable e) {
             // 必须捕获 Throwable：插件代码抛出的 NoClassDefFoundError / NoSuchMethodError 等
-            // 属于 Error 而非 Exception，漏掉会让异常穿透到 Main 并终止整个代理
+            // 属于 Error 而非 Exception，漏掉会让异常穿透到 Main 并终止整个代理；
+            // 但 JVM 级致命错误（OutOfMemoryError 等）必须继续向上传播
+            ExceptionUtils.rethrowIfFatal(e);
             log.error(t("starlight.logging.error.plugin.on_enable_failed"), container.description().id(), e);
             invokeOnDisable(container);
         }
@@ -600,6 +607,7 @@ public class PluginManager {
             container.plugin().onDisable();
             log.info(t("starlight.logging.info.plugin.disabled"), container.description().id());
         } catch (Throwable e) {
+            ExceptionUtils.rethrowIfFatal(e);
             log.error(t("starlight.logging.error.plugin.on_disable_failed"), container.description().id(), e);
         }
         container.setEnabled(false);

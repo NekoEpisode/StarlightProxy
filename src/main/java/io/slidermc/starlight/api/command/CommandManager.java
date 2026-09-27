@@ -7,6 +7,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.tree.CommandNode;
 import io.slidermc.starlight.StarlightProxy;
 import io.slidermc.starlight.api.command.source.IStarlightCommandSource;
+import io.slidermc.starlight.utils.ExceptionUtils;
 import io.slidermc.starlight.utils.MiniMessageUtils;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.slf4j.Logger;
@@ -161,7 +162,9 @@ public class CommandManager {
                     Placeholder.parsed("message", e.getMessage())));
             return 0;
         } catch (Throwable e) {
-            // 捕获 Throwable：插件命令实现抛出的 Error 不能终结代理
+            // 捕获 Throwable：插件命令实现抛出的 Error 不能终结代理；
+            // 但 JVM 级致命错误必须继续向上传播
+            ExceptionUtils.rethrowIfFatal(e);
             log.error(proxy.getTranslateManager().translate("starlight.logging.error.error_on_executing_command"), input, e);
             return 0;
         }

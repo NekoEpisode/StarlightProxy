@@ -71,16 +71,18 @@ public abstract class PluginBase implements IPlugin {
     }
 
     /**
-     * 读取资源。内存插件没有独立的JAR，因此这里回退到插件自身的类加载器，
-     * 与 {@code getClass().getClassLoader().getResourceAsStream(...)} 行为一致。
+     * 返回 {@code null}：内存插件没有独立的JAR，不存在"插件自身资源"这一概念。
      *
-     * @param path 资源路径，相对于类路径根，可带或不带前导 {@code /}
-     * @return 资源流，不存在时返回 {@code null}
+     * <p>此处刻意不回退到 {@code getClass().getClassLoader()}：那会把代理类路径上的同名资源
+     * （如 {@code config.yml}）当作插件资源返回，与 {@link IPlugin#getResourceAsStream(String)}
+     * 的约定相矛盾。需要读取类路径资源的内存插件请直接使用自己的类加载器。
+     *
+     * @param path 资源路径，会被忽略
+     * @return 始终为 {@code null}
      */
     @Override
     public InputStream getResourceAsStream(String path) {
-        String normalized = path != null && path.startsWith("/") ? path.substring(1) : path;
-        return getClass().getClassLoader().getResourceAsStream(normalized);
+        return null;
     }
 
     /**
