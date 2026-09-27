@@ -9,6 +9,7 @@ import io.slidermc.starlight.plugin.PluginManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.InputStream;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -67,6 +68,21 @@ public abstract class PluginBase implements IPlugin {
     @Override
     public final Logger getLogger() {
         return logger;
+    }
+
+    /**
+     * 返回 {@code null}：内存插件没有独立的JAR，不存在"插件自身资源"这一概念。
+     *
+     * <p>此处刻意不回退到 {@code getClass().getClassLoader()}：那会把代理类路径上的同名资源
+     * （如 {@code config.yml}）当作插件资源返回，与 {@link IPlugin#getResourceAsStream(String)}
+     * 的约定相矛盾。需要读取类路径资源的内存插件请直接使用自己的类加载器。
+     *
+     * @param path 资源路径，会被忽略
+     * @return 始终为 {@code null}
+     */
+    @Override
+    public InputStream getResourceAsStream(String path) {
+        return null;
     }
 
     /**
