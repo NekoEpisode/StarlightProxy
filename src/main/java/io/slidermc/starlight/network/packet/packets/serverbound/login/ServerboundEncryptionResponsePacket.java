@@ -140,7 +140,7 @@ public class ServerboundEncryptionResponsePacket implements IMinecraftPacket {
                     disconnect(ctx, "Login denied");
                     return;
                 }
-                LoginHelper.completeLogin(ctx, proxy, gpEvent.getGameProfile());
+                LoginHelper.completeLogin(ctx, proxy, gpEvent.getGameProfile(), gpEvent.isOnlineMode());
                 return;
             }
 
@@ -184,7 +184,7 @@ public class ServerboundEncryptionResponsePacket implements IMinecraftPacket {
                             disconnect(ctx, "Login denied");
                             return;
                         }
-                        LoginHelper.completeLogin(ctx, proxy, gpEvent.getGameProfile());
+                        LoginHelper.completeLogin(ctx, proxy, gpEvent.getGameProfile(), gpEvent.isOnlineMode());
                     }))
                     .exceptionally(ex -> {
                         ctx.channel().eventLoop().execute(() -> {

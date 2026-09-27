@@ -141,7 +141,7 @@ public class ServerboundLoginStartPacket implements IMinecraftPacket {
                     disconnect(ctx);
                     return;
                 }
-                LoginHelper.completeLogin(ctx, proxy, gpEvent.getGameProfile());
+                LoginHelper.completeLogin(ctx, proxy, gpEvent.getGameProfile(), gpEvent.isOnlineMode());
             }
         }
 

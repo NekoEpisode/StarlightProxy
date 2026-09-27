@@ -30,12 +30,15 @@ public final class LoginHelper {
     /**
      * 完成登录流程。
      *
-     * @param ctx     上游客户端的 ChannelHandlerContext
-     * @param proxy   代理实例
-     * @param profile 已确定的 GameProfile（离线或正版均可）
+     * @param ctx        上游客户端的 ChannelHandlerContext
+     * @param proxy      代理实例
+     * @param profile    已确定的 GameProfile（离线或正版均可）
+     * @param onlineMode 本次登录是否通过了 Mojang 正版验证，
+     *                   应取自 {@link io.slidermc.starlight.api.event.events.internal.GameProfileRequestEvent#isOnlineMode()}
      */
-    public static void completeLogin(ChannelHandlerContext ctx, StarlightProxy proxy, GameProfile profile) {
-        ProxiedPlayer player = new ProxiedPlayer(profile, ctx.channel(), proxy, true);
+    public static void completeLogin(ChannelHandlerContext ctx, StarlightProxy proxy, GameProfile profile,
+                                     boolean onlineMode) {
+        ProxiedPlayer player = new ProxiedPlayer(profile, ctx.channel(), proxy, true, onlineMode);
         log.debug("已创建ProxiedPlayer对象: {}", player);
         player.getConnectionContext().setPlayer(player);
         proxy.getPlayerManager().addPlayer(player);

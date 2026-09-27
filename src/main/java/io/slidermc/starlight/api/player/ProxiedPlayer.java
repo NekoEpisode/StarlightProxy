@@ -47,12 +47,25 @@ public class ProxiedPlayer implements IStarlightCommandSource {
     private volatile ProxiedServer previousServer;
 
     private volatile boolean isOnline;
+    /** 此连接登录时是否通过了 Mojang 正版验证，登录完成后不再改变 */
+    private final boolean onlineMode;
 
-    public ProxiedPlayer(GameProfile gameProfile, Channel channel, StarlightProxy proxy, boolean isOnline) {
+    /**
+     * 创建一个玩家对象。
+     *
+     * @param gameProfile 最终确定的游戏档案（可能是离线档案、加密离线档案或 Mojang 返回的档案）
+     * @param channel     上游玩家连接
+     * @param proxy       代理实例
+     * @param isOnline    连接当前是否存活
+     * @param onlineMode  本次登录是否通过了 Mojang 正版验证，见 {@link #isOnlineMode()}
+     */
+    public ProxiedPlayer(GameProfile gameProfile, Channel channel, StarlightProxy proxy, boolean isOnline,
+                         boolean onlineMode) {
         this.gameProfile = gameProfile;
         this.channel = channel;
         this.proxy = proxy;
         this.isOnline = isOnline;
+        this.onlineMode = onlineMode;
     }
 
     public CompletableFuture<Void> connect(ProxiedServer target) {
@@ -309,6 +322,24 @@ public class ProxiedPlayer implements IStarlightCommandSource {
         return getConnectionContext().getTranslation(key);
     }
 
+    /**
+     * 返回此连接登录时是否通过了 Mojang 正版验证。
+     *
+     * <p>该值取自登录时实际发生的结果，与
+     * {@link io.slidermc.starlight.api.event.events.internal.GameProfileRequestEvent#isOnlineMode()} 一致，
+     * 并不等同于全局 {@code online-mode} 配置：全局开启时连接未必走正版验证，
+     * 全局关闭时插件也可通过
+     * {@link io.slidermc.starlight.api.event.events.internal.PreLoginEvent#forceOnlineMode()} 强制走正版验证。
+     *
+     * <p>不能简单地用 {@link GameProfile#uuid()} 是否等于离线 UUID 来判断，
+     * 因为插件可以在 GameProfileRequestEvent 中主动把正版 UUID 改写为离线 UUID。
+     *
+     * @return 通过正版验证返回 true；离线、或仅加密但未验证返回 false
+     */
+    public boolean isOnlineMode() {
+        return onlineMode;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -331,6 +362,7 @@ public class ProxiedPlayer implements IStarlightCommandSource {
                 ", contextMap=" + contextMap +
                 ", currentServer=" + currentServer +
                 ", previousServer=" + previousServer +
+                ", onlineMode=" + onlineMode +
                 '}';
     }
 
