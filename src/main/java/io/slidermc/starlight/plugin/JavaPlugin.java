@@ -7,6 +7,7 @@ import io.slidermc.starlight.api.event.EventListener;
 import io.slidermc.starlight.api.plugin.IPlugin;
 import io.slidermc.starlight.api.plugin.PluginDescription;
 import io.slidermc.starlight.api.translate.TranslateManager;
+import net.kyori.adventure.key.Key;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -90,6 +91,23 @@ public abstract class JavaPlugin implements IPlugin {
             return null;
         }
         return pluginManager.getPluginResource(description.id(), path);
+    }
+
+    @Override
+    public final void registerChannel(Key... channels) {
+        requireProxy().getChannelRegistry().register(channels);
+    }
+
+    @Override
+    public final void unregisterChannel(Key... channels) {
+        requireProxy().getChannelRegistry().unregister(channels);
+    }
+
+    private StarlightProxy requireProxy() {
+        if (proxy == null) {
+            throw new IllegalStateException("The proxy is not available before onEnable");
+        }
+        return proxy;
     }
 
     /**

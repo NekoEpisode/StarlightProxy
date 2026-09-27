@@ -6,6 +6,7 @@ import io.slidermc.starlight.api.command.StarlightCommand;
 import io.slidermc.starlight.api.event.EventListener;
 import io.slidermc.starlight.api.translate.TranslateManager;
 import io.slidermc.starlight.plugin.PluginManager;
+import net.kyori.adventure.key.Key;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -83,6 +84,31 @@ public abstract class PluginBase implements IPlugin {
     @Override
     public InputStream getResourceAsStream(String path) {
         return null;
+    }
+
+    /**
+     * 内存插件不拥有插件消息通道，调用即抛出 {@link UnsupportedOperationException}。
+     *
+     * <p>内存插件寄居在某个 JAR 插件的类加载器中，让它可以向代理的全局通道注册表写入，
+     * 会出现"宿主被禁用后通道仍然存在"的所有权错位。需要通道的内存插件应由其宿主 JAR 插件声明。
+     *
+     * @throws UnsupportedOperationException 始终抛出
+     */
+    @Override
+    public void registerChannel(Key... channels) {
+        throw new UnsupportedOperationException(
+                "In-memory plugins cannot own plugin channels; register them from the host JAR plugin");
+    }
+
+    /**
+     * 内存插件不拥有插件消息通道，调用即抛出 {@link UnsupportedOperationException}。
+     *
+     * @throws UnsupportedOperationException 始终抛出
+     */
+    @Override
+    public void unregisterChannel(Key... channels) {
+        throw new UnsupportedOperationException(
+                "In-memory plugins cannot own plugin channels; register them from the host JAR plugin");
     }
 
     /**

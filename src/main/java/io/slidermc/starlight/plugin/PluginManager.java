@@ -614,6 +614,7 @@ public class PluginManager {
         if (proxy != null) {
             proxy.getEventManager().unregisterAll(container.plugin());
             proxy.getCommandManager().unregisterAll(container.description().id());
+            proxy.getChannelRegistry().unregisterAll(container.description().id());
         }
     }
 

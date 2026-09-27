@@ -4,6 +4,7 @@ import io.slidermc.starlight.StarlightProxy;
 import io.slidermc.starlight.api.command.StarlightCommand;
 import io.slidermc.starlight.api.event.EventListener;
 import io.slidermc.starlight.api.translate.TranslateManager;
+import net.kyori.adventure.key.Key;
 import org.slf4j.Logger;
 
 import java.io.InputStream;
@@ -89,6 +90,29 @@ public interface IPlugin {
      * 返回插件专属日志记录器，名称为 {@code plugin.<插件名>}。
      */
     Logger getLogger();
+
+    /**
+     * 注册插件消息通道。
+     *
+     * <p>代理会在玩家连接下游服务器时，把注册表中的通道主动声明给下游，使下游插件能够向代理
+     * 发送该通道上的插件消息。未注册的通道会被下游（Paper 的 {@code CraftPlayer#sendPluginMessage}）
+     * 静默丢弃，代理侧完全收不到。
+     *
+     * <p>通道命名空间应与插件 ID 一致，便于插件卸载时按命名空间批量清理，
+     * 也与代理自身的通道命名约定统一。
+     *
+     * @param channels 待注册的通道
+     * @throws IllegalArgumentException 若任一通道位于保留命名空间，见
+     *                                  {@link io.slidermc.starlight.api.channel.ChannelRegistry#RESERVED_NAMESPACE}
+     */
+    void registerChannel(Key... channels);
+
+    /**
+     * 注销插件消息通道。
+     *
+     * @param channels 待注销的通道
+     */
+    void unregisterChannel(Key... channels);
 
     /**
      * 读取插件<b>自身</b>JAR内的资源。

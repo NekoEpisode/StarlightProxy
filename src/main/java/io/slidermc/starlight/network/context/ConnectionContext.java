@@ -15,8 +15,11 @@ import io.slidermc.starlight.network.protocolenum.ProtocolState;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 
+import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,6 +48,9 @@ public class ConnectionContext {
     private volatile String pendingUsername;
     /** 当 PreLoginEvent 强制此连接走正版验证时设为 true，覆盖全局 offline-mode 配置 */
     private volatile boolean perConnectionOnlineMode;
+
+    /** 客户端通过 minecraft:register 声明过的插件消息通道 */
+    private final Set<Key> clientChannels = ConcurrentHashMap.newKeySet();
 
     /** 后端命令树的深拷贝缓存，用于权限更新后重建命令树 */
     private volatile List<CommandNodeData> cachedCommandNodes;
@@ -156,6 +162,40 @@ public class ConnectionContext {
 
     public void setPerConnectionOnlineMode(boolean perConnectionOnlineMode) {
         this.perConnectionOnlineMode = perConnectionOnlineMode;
+    }
+
+    /**
+     * 记录客户端声明的一个插件消息通道。
+     *
+     * @param channel 通道
+     * @return 若该通道此前未被记录则返回 true
+     */
+    public boolean addClientChannel(Key channel) {
+        return clientChannels.add(channel);
+    }
+
+    /**
+     * 移除客户端已注销的插件消息通道。
+     *
+     * @param channel 通道
+     * @return 若该通道此前已被记录则返回 true
+     */
+    public boolean removeClientChannel(Key channel) {
+        return clientChannels.remove(channel);
+    }
+
+    /**
+     * @return 客户端声明过的通道数量的实时值，用于上限判断
+     */
+    public int getClientChannelCount() {
+        return clientChannels.size();
+    }
+
+    /**
+     * @return 客户端声明过的通道的不可变快照
+     */
+    public Set<Key> getClientChannels() {
+        return Set.copyOf(clientChannels);
     }
 
     public void cacheCommandTree(List<CommandNodeData> nodes, int rootIndex) {
