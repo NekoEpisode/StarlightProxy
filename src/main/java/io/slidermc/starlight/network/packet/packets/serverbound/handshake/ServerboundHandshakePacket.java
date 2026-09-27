@@ -3,6 +3,7 @@ package io.slidermc.starlight.network.packet.packets.serverbound.handshake;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.slidermc.starlight.StarlightProxy;
+import io.slidermc.starlight.api.event.events.internal.PlayerHandshakeEvent;
 import io.slidermc.starlight.network.codec.utils.MinecraftCodecUtils;
 import io.slidermc.starlight.network.context.AttributeKeys;
 import io.slidermc.starlight.network.context.ConnectionContext;
@@ -86,26 +87,44 @@ public class ServerboundHandshakePacket implements IMinecraftPacket {
             context.getHandshakeInformation().setOriginalProtocolVersion(packet.protocolVersion);
             context.getHandshakeInformation().setProtocolVersion(ProtocolVersion.getByProtocolVersionCode(packet.protocolVersion));
             log.debug("已设置协议版本号: {}", context.getHandshakeInformation().getProtocolVersion().name());
-            context.getHandshakeInformation().setNextState(NextState.getById(packet.nextState));
+
+            NextState nextState = NextState.getById(packet.nextState);
+            context.getHandshakeInformation().setNextState(nextState);
             log.debug("原始握手地址: {}", packet.serverAddress);
+
+            // 在解析 serverAddress 之前记录并广播，插件需要拿到未被 ? 切分的原始串
+            if (proxy.getConfig().isPassThroughHostname()) {
+                context.setHandshakeAddress(packet.serverAddress);
+            }
+            PlayerHandshakeEvent handshakeEvent = new PlayerHandshakeEvent(
+                    context, packet.serverAddress, packet.serverPort, nextState,
+                    context.getEffectiveDownstreamAddress());
+            proxy.getEventManager().fire(handshakeEvent);
+            if (handshakeEvent.isDownstreamAddressOverridden()) {
+                context.setDownstreamAddress(handshakeEvent.getDownstreamAddress());
+            }
+            if (context.getEffectiveDownstreamAddress() != null) {
+                log.debug("下游握手地址: {}", context.getEffectiveDownstreamAddress());
+            }
+
             ServerHost host = ServerHost.parseFrom(packet.getServerAddress());
             context.getHandshakeInformation().setServerHost(host);
             log.debug("解析到的ServerHost: {}", host);
             context.getHandshakeInformation().setServerPort(packet.getServerPort());
-            switch (packet.nextState) {
-                case 1 -> {
+            switch (nextState) {
+                case STATUS -> {
                     // Status
                     log.debug("Next State: STATUS");
                     context.setInboundState(ProtocolState.STATUS);
                     context.setOutboundState(ProtocolState.STATUS);
                 }
-                case 2 -> {
+                case LOGIN -> {
                     // Login
                     log.debug("Next State: LOGIN");
                     context.setInboundState(ProtocolState.LOGIN);
                     context.setOutboundState(ProtocolState.LOGIN);
                 }
-                case 3 -> {
+                case TRANSFER -> {
                     // Transfer
                     log.debug("Next State: Transfer");
                     context.setInboundState(ProtocolState.LOGIN);

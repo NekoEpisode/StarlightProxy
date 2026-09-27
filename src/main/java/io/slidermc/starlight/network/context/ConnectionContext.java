@@ -44,6 +44,18 @@ public class ConnectionContext {
     /** Set by ModernServerSwitcher before sending StartConfiguration; completed by ServerboundConfigurationAckPacket.Listener. */
     private volatile CompletableFuture<Void> pendingReconfiguration;
     private volatile ClientInformation clientInformation;
+    /**
+     * 客户端握手包中的原始 {@code serverAddress}，不做任何切分。
+     *
+     * <p>不能复用 {@link HandshakeInformation#getServerHost()}：{@link ServerHost#parseFrom(String)}
+     * 会按 {@code ?} 拆分，而该字段里可能附带以 {@code \0} 分隔的外部数据（例如 Geyser 写入的
+     * Floodgate 加密串），其内容完全可能包含 {@code ?} 或 {@code &}。
+     *
+     * <p>为 {@code null} 表示本次连接不透传客户端地址，下游握手沿用后端配置中的地址。
+     */
+    private volatile String handshakeAddress;
+    /** 插件指定的下游握手地址，优先级高于 {@link #handshakeAddress}；为 {@code null} 表示未指定。 */
+    private volatile String downstreamAddress;
     private volatile byte[] verifyToken;
     /** 正版验证流程中暂存的用户名，EncryptionResponse.Listener 使用后可清除 */
     private volatile String pendingUsername;
@@ -143,6 +155,57 @@ public class ConnectionContext {
 
     public void setClientInformation(ClientInformation clientInformation) {
         this.clientInformation = clientInformation;
+    }
+
+    /**
+     * 记录客户端握手包中的原始地址，供后续构造下游握手时透传。
+     *
+     * @param handshakeAddress 原始 {@code serverAddress}；为 {@code null} 表示不透传
+     */
+    public void setHandshakeAddress(String handshakeAddress) {
+        this.handshakeAddress = handshakeAddress;
+    }
+
+    /**
+     * @return 客户端握手包中的原始地址；未记录或未启用透传时为 {@code null}
+     */
+    public String getHandshakeAddress() {
+        return handshakeAddress;
+    }
+
+    /**
+     * 指定下游握手使用的地址，覆盖客户端原始地址。
+     *
+     * @param downstreamAddress 下游握手地址；为 {@code null} 表示撤销指定，回退到客户端原始地址
+     */
+    public void setDownstreamAddress(String downstreamAddress) {
+        this.downstreamAddress = downstreamAddress;
+    }
+
+    /**
+     * 返回下游握手实际应使用的地址。
+     *
+     * <p>优先级：插件指定的 {@link #downstreamAddress} &gt; 客户端原始地址
+     * {@link #handshakeAddress}。两者均不可用时返回 {@code null}，调用方应回退到后端配置中的地址。
+     *
+     * <p>客户端原始地址中的 {@code ?query} 部分会被剥离：它是代理侧的虚拟主机信息，
+     * 不应出现在发给后端的握手里。
+     *
+     * @return 下游握手地址，或 {@code null} 表示沿用后端配置地址
+     */
+    public String getEffectiveDownstreamAddress() {
+        String explicit = this.downstreamAddress;
+        if (explicit != null) {
+            return explicit;
+        }
+
+        String raw = this.handshakeAddress;
+        if (raw == null) {
+            return null;
+        }
+
+        int question = raw.indexOf('?');
+        return question < 0 ? raw : raw.substring(0, question);
     }
 
     public byte[] getVerifyToken() {

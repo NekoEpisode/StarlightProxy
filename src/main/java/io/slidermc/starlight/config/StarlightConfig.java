@@ -28,6 +28,7 @@ public class StarlightConfig {
     private final boolean loggingCommand;
     private final int compressThreshold;
     private final String iconFilePath;
+    private final boolean passThroughHostname;
 
     private final Map<String, ServerEntry> servers;
 
@@ -38,6 +39,7 @@ public class StarlightConfig {
     public StarlightConfig(String host, int port, int maxPlayers, boolean onlineMode,
                            boolean encryption, String ipForwardType, String forwardSecret, String motd, String brand,
                            String language, boolean loggingCommand, int compressThreshold, String iconFilePath,
+                           boolean passThroughHostname,
                            Map<String, ServerEntry> servers, Map<String, String> forcedHost) {
         this.host = host;
         this.port = port;
@@ -52,6 +54,7 @@ public class StarlightConfig {
         this.loggingCommand = loggingCommand;
         this.compressThreshold = compressThreshold;
         this.iconFilePath = iconFilePath;
+        this.passThroughHostname = passThroughHostname;
         this.servers = Collections.unmodifiableMap(servers);
         this.forcedHost = Collections.unmodifiableMap(forcedHost);
     }
@@ -102,6 +105,8 @@ public class StarlightConfig {
         boolean loggingCommand       = (boolean)  proxy.get("logging-command");
         int compressThreshold        = (int)      proxy.get("compress-threshold");
         String iconFilePath          = (String)   proxy.get("icon-file-path");
+        Object passThroughRaw        = proxy.get("pass-through-hostname");
+        boolean passThroughHostname  = passThroughRaw == null || (boolean) passThroughRaw;
 
         Map<String, ServerEntry> servers = new LinkedHashMap<>();
         Object serversRaw = root.get("servers");
@@ -125,8 +130,8 @@ public class StarlightConfig {
         log.debug("Force Hosts: {}", forcedHost);
 
         return new StarlightConfig(host, port, maxPlayers, onlineMode, encryption, ipForwardType, forwardSecret,
-                motd, brand, language, loggingCommand, compressThreshold, iconFilePath, servers,
-                forcedHost);
+                motd, brand, language, loggingCommand, compressThreshold, iconFilePath, passThroughHostname,
+                servers, forcedHost);
     }
 
     // -------------------------------------------------------------------------
@@ -146,6 +151,17 @@ public class StarlightConfig {
     public boolean isLoggingCommand()     { return loggingCommand; }
     public int getCompressThreshold()     { return compressThreshold; }
     public String getIconFilePath()       { return iconFilePath; }
+
+    /**
+     * 是否把客户端握手里的地址透传给下游服务器。
+     *
+     * <p>开启时下游握手使用客户端请求的地址（含 {@code \0} 之后附加的数据），
+     * 使后端的虚拟主机配置与依赖该字段的插件（如 Floodgate）能够正常工作；
+     * 关闭时沿用后端配置中的地址，并忽略客户端地址。
+     *
+     * @return 启用透传返回 {@code true}，默认为 {@code true}
+     */
+    public boolean isPassThroughHostname() { return passThroughHostname; }
     public Map<String, ServerEntry> getServers() { return servers; }
     public Map<String, String> getForcedHost() { return forcedHost; }
 }

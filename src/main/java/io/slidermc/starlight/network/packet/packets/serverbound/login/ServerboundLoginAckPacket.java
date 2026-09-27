@@ -73,7 +73,9 @@ public class ServerboundLoginAckPacket implements IMinecraftPacket {
                     client.login(
                             context.getHandshakeInformation().getProtocolVersion(),
                             context.getPlayer().getGameProfile().username(),
-                            context.getPlayer().getGameProfile().uuid()
+                            context.getPlayer().getGameProfile().uuid(),
+                            // 非透传且无人改写时为 null，login() 内部回退到后端配置地址
+                            context.getEffectiveDownstreamAddress()
                     ).whenComplete((result, loginThrowable) -> {
                         if (loginThrowable != null) {
                             log.error(proxy.getTranslateManager().translate("starlight.logging.error.downstream_login_failed"), loginThrowable);

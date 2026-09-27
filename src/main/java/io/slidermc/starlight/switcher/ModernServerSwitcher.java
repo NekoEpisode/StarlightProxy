@@ -39,7 +39,9 @@ public class ModernServerSwitcher {
                         return newClient.login(
                                 ctx.getHandshakeInformation().getProtocolVersion(),
                                 player.getGameProfile().username(),
-                                player.getGameProfile().uuid()
+                                player.getGameProfile().uuid(),
+                                // 切服复用同一连接的握手地址，插件写入的下游地址在此继续生效
+                                ctx.getEffectiveDownstreamAddress()
                         );
                     })
                     .thenCompose(result -> switch (result) {

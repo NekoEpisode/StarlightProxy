@@ -125,17 +125,29 @@ public class StarlightMinecraftClient {
         return f != null && !f.isDone();
     }
 
-    public CompletableFuture<LoginResult> login(ProtocolVersion protocolVersion, String name, UUID uuid) {
+    /**
+     * 向该下游连接发起登录。
+     *
+     * @param protocolVersion   客户端使用的协议版本，原样转发给下游
+     * @param name              登录用户名
+     * @param uuid              登录 UUID
+     * @param handshakeAddress  握手包中的 {@code serverAddress}；为 {@code null} 时回退到
+     *                          {@link #getAddress()} 中的主机名
+     * @return 登录结果
+     */
+    public CompletableFuture<LoginResult> login(ProtocolVersion protocolVersion, String name, UUID uuid,
+                                                String handshakeAddress) {
         if (channel == null) {
             return CompletableFuture.completedFuture(new LoginResult.Error(
                     new IllegalStateException("Channel not connected")));
         }
         loginFuture = new CompletableFuture<>();
+        String address = handshakeAddress != null ? handshakeAddress : this.address.getHostName();
         try {
             channel.writeAndFlush(new ServerboundHandshakePacket(
                     protocolVersion.getProtocolVersionCode(),
-                    address.getHostName(),
-                    (short) address.getPort(),
+                    address,
+                    (short) this.address.getPort(),
                     2
             )).addListener(_ -> {
                 this.protocolVersion = protocolVersion;

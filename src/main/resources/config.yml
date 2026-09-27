@@ -13,6 +13,7 @@ proxy:
   logging-command: false # 是否记录玩家的命令操作; 注意: 这可能导致信息泄露或性能问题，谨慎开启
   compress-threshold: 256 # 启用数据包压缩的阈值
   icon-file-path: "./icon.png" # 服务器图标的文件路径
+  pass-through-hostname: true # 是否将客户端请求的地址透传给下游服务器; 关闭时下游握手使用servers中配置的地址
   allow-transfer: false # 是否允许Transfer连接
 
 forced-host:
