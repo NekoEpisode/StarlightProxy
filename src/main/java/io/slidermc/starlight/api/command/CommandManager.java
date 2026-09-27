@@ -160,7 +160,8 @@ public class CommandManager {
                     proxy.getTranslateManager().translate("starlight.command.error"),
                     Placeholder.parsed("message", e.getMessage())));
             return 0;
-        } catch (Exception e) {
+        } catch (Throwable e) {
+            // 捕获 Throwable：插件命令实现抛出的 Error 不能终结代理
             log.error(proxy.getTranslateManager().translate("starlight.logging.error.error_on_executing_command"), input, e);
             return 0;
         }

@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -74,6 +75,21 @@ public abstract class JavaPlugin implements IPlugin {
     @Override
     public final Logger getLogger() {
         return logger;
+    }
+
+    /**
+     * 读取本插件JAR内的资源，只查询插件自己的JAR，不会被代理的
+     * {@code config.yml} 等同名资源遮蔽。插件打包的默认配置文件应通过此方法读取。
+     *
+     * @param path 资源路径，相对于JAR根目录，可带或不带前导 {@code /}
+     * @return 资源流，不存在时返回 {@code null}
+     */
+    @Override
+    public final InputStream getResourceAsStream(String path) {
+        if (pluginManager == null) {
+            return null;
+        }
+        return pluginManager.getPluginResource(description.id(), path);
     }
 
     /**

@@ -11,6 +11,7 @@ import org.yaml.snakeyaml.Yaml;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
@@ -211,7 +212,7 @@ public class PluginManager {
                 try {
                     container.plugin().onReload(proxy);
                     log.info(t("starlight.logging.info.plugin.reloaded"), container.description().id());
-                } catch (Exception e) {
+                } catch (Throwable e) {
                     log.error(t("starlight.logging.error.plugin.on_reload_failed"), container.description().id(), e);
                 }
             }
@@ -229,6 +230,51 @@ public class PluginManager {
                 .filter(c -> c.description().id().equals(id))
                 .map(PluginContainer::plugin)
                 .findFirst();
+    }
+
+    /**
+     * 读取指定插件自身JAR内的资源。
+     *
+     * <p>与通过插件类的类加载器读取相比，该方法只查询该插件自己的JAR，
+     * 因此不会被代理或其它插件的同名资源遮蔽。
+     *
+     * @param id   插件 ID（唯一标识符，非显示名称）
+     * @param path 资源路径，相对于JAR根目录，可带或不带前导 {@code /}
+     * @return 资源流，插件不存在、为内存插件或资源不存在时返回 {@code null}
+     */
+    public InputStream getPluginResource(String id, String path) {
+        PluginContainer container = findContainer(id);
+        if (container == null || !container.isJarPlugin()) {
+            return null;
+        }
+
+        String normalized = normalizeResourcePath(path);
+        if (normalized == null) {
+            return null;
+        }
+
+        // 使用 getResource 而非 getResourceAsStream，以便显式区分"资源不存在"与"打开失败"
+        URL resource = container.classLoader().getResource(normalized);
+        if (resource == null) {
+            return null;
+        }
+
+        try {
+            return resource.openStream();
+        } catch (IOException e) {
+            log.debug("无法打开插件资源 [{}] (插件: {})", normalized, id, e);
+            return null;
+        }
+    }
+
+    /**
+     * 去掉资源路径的前导 {@code /}，因为 {@link ClassLoader} 要求相对路径。
+     */
+    private static String normalizeResourcePath(String path) {
+        if (path == null) {
+            return null;
+        }
+        return path.startsWith("/") ? path.substring(1) : path;
     }
 
     /**
@@ -523,7 +569,8 @@ public class PluginManager {
     private void invokeOnLoad(PluginContainer container) {
         try {
             container.plugin().onLoad(translateManager);
-        } catch (Exception e) {
+        } catch (Throwable e) {
+            // 同 invokeOnEnable：插件抛出的 Error 不能终止代理
             log.error(t("starlight.logging.error.plugin.on_load_failed"), container.description().id(), e);
             invokeOnDisable(container);
             orderedPlugins.remove(container);
@@ -540,7 +587,9 @@ public class PluginManager {
             container.plugin().onEnable(proxy);
             container.setEnabled(true);
             log.info(t("starlight.logging.info.plugin.enabled"), container.description().id(), container.description().version());
-        } catch (Exception e) {
+        } catch (Throwable e) {
+            // 必须捕获 Throwable：插件代码抛出的 NoClassDefFoundError / NoSuchMethodError 等
+            // 属于 Error 而非 Exception，漏掉会让异常穿透到 Main 并终止整个代理
             log.error(t("starlight.logging.error.plugin.on_enable_failed"), container.description().id(), e);
             invokeOnDisable(container);
         }
@@ -550,7 +599,7 @@ public class PluginManager {
         try {
             container.plugin().onDisable();
             log.info(t("starlight.logging.info.plugin.disabled"), container.description().id());
-        } catch (Exception e) {
+        } catch (Throwable e) {
             log.error(t("starlight.logging.error.plugin.on_disable_failed"), container.description().id(), e);
         }
         container.setEnabled(false);

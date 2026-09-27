@@ -23,6 +23,10 @@ final class PluginContainer {
     PluginDescription description() { return description; }
     IPlugin plugin() { return plugin; }
     PluginClassLoader classLoader() { return classLoader; }
+
+    /** 是否为从JAR加载的插件（内存插件没有类加载器）。 */
+    boolean isJarPlugin() { return classLoader != null; }
+
     boolean isEnabled() { return enabled; }
     void setEnabled(boolean enabled) { this.enabled = enabled; }
 }

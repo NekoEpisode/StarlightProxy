@@ -6,6 +6,8 @@ import io.slidermc.starlight.api.event.EventListener;
 import io.slidermc.starlight.api.translate.TranslateManager;
 import org.slf4j.Logger;
 
+import java.io.InputStream;
+
 /**
  * 所有插件（无论来自JAR还是内存注册）的统一接口。
  *
@@ -87,4 +89,20 @@ public interface IPlugin {
      * 返回插件专属日志记录器，名称为 {@code plugin.<插件名>}。
      */
     Logger getLogger();
+
+    /**
+     * 读取插件<b>自身</b>JAR内的资源。
+     *
+     * <p>与直接使用 {@code getClass().getClassLoader().getResourceAsStream(...)} 不同，
+     * 该方法保证不会读到代理或其它插件的同名资源。插件打包的默认配置文件
+     * （如 {@code config.yml}）应通过此方法读取。
+     *
+     * <p>调用方负责关闭返回的流。
+     *
+     * @param path 资源路径，相对于JAR根目录，可带或不带前导 {@code /}
+     * @return 资源流，不存在时返回 {@code null}
+     */
+    default InputStream getResourceAsStream(String path) {
+        return null;
+    }
 }
