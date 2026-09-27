@@ -1,6 +1,5 @@
 package io.slidermc.starlight.network.context;
 
-import io.slidermc.starlight.StarlightProxy;
 import net.kyori.adventure.key.Key;
 import org.junit.jupiter.api.Test;
 
