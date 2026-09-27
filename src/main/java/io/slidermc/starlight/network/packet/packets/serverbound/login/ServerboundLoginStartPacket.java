@@ -73,10 +73,13 @@ public class ServerboundLoginStartPacket implements IMinecraftPacket {
             ConnectionContext context = ctx.channel().attr(AttributeKeys.CONNECTION_CONTEXT).get();
             if (context.getHandshakeInformation().getProtocolVersion() == ProtocolVersion.UNKNOWN) {
                 log.debug("不支持的版本，踢出");
-                ctx.channel().writeAndFlush(new ClientboundDisconnectLoginPacket(
-                        Component.text("Unsupported protocol version: " + context.getHandshakeInformation().getOriginalProtocolVersion())
-                                .color(NamedTextColor.RED)
-                )).addListener(_ -> ctx.channel().close());
+                Component component = Component.text("Unsupported protocol version: " + context.getHandshakeInformation().getOriginalProtocolVersion());
+                if ((context.getHandshakeInformation().getOriginalProtocolVersion() & 0x40000000) != 0) {
+                    component = component.append(Component.text("\n(Are you using snapshot versions?)"));
+                }
+                component = component.color(NamedTextColor.RED);
+                ctx.channel().writeAndFlush(new ClientboundDisconnectLoginPacket(component))
+                        .addListener(_ -> ctx.channel().close());
                 return;
             }
 
