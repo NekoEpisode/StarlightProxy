@@ -122,10 +122,14 @@ public class ServerboundEncryptionResponsePacket implements IMinecraftPacket {
             }
 
             // 4. 根据 online-mode 决定是否请求 Mojang
+            // 注意此处的加密管道已经在上方装好：即使下面因为强制离线而跳过验证，
+            // 连接依然是加密的（Starlight 支持离线连接走加密）。
             String username = context.getPendingUsername();
             context.setPendingUsername(null);
 
-            boolean isOnlineMode = proxy.getConfig().isOnlineMode() || context.isPerConnectionOnlineMode();
+            // 强制离线优先于一切：基岩版客户端没有 Mojang 会话，无法完成验证
+            boolean isOnlineMode = !context.isPerConnectionOfflineMode()
+                    && (proxy.getConfig().isOnlineMode() || context.isPerConnectionOnlineMode());
 
             if (!isOnlineMode) {
                 log.debug("加密通道已建立，跳过 Mojang 验证（离线模式）");

@@ -61,6 +61,8 @@ public class ConnectionContext {
     private volatile String pendingUsername;
     /** 当 PreLoginEvent 强制此连接走正版验证时设为 true，覆盖全局 offline-mode 配置 */
     private volatile boolean perConnectionOnlineMode;
+    /** 当 PreLoginEvent 强制此连接跳过 Mojang 验证时设为 true，覆盖全局 online-mode 配置 */
+    private volatile boolean perConnectionOfflineMode;
 
     /** 客户端通过 minecraft:register 声明过的插件消息通道 */
     private final Set<Key> clientChannels = ConcurrentHashMap.newKeySet();
@@ -231,6 +233,24 @@ public class ConnectionContext {
 
     public void setPerConnectionOnlineMode(boolean perConnectionOnlineMode) {
         this.perConnectionOnlineMode = perConnectionOnlineMode;
+    }
+
+    /**
+     * 此连接是否被强制跳过 Mojang 验证。
+     *
+     * <p>与 {@link #isPerConnectionOnlineMode()} 互斥：两者同时为 true 时离线优先，
+     * 因为无法对一个没有 Mojang 会话的客户端（如基岩版）发起验证。
+     *
+     * <p>与加密无关：是否加密由全局 {@code encryption} 配置单独决定。
+     *
+     * @return 强制离线返回 true
+     */
+    public boolean isPerConnectionOfflineMode() {
+        return perConnectionOfflineMode;
+    }
+
+    public void setPerConnectionOfflineMode(boolean perConnectionOfflineMode) {
+        this.perConnectionOfflineMode = perConnectionOfflineMode;
     }
 
     /**

@@ -28,7 +28,9 @@ public class PreLoginEvent implements IStarlightEvent {
         /** 拒绝登录 */
         DENIED,
         /** 强制走正版验证 */
-        FORCE_ONLINE
+        FORCE_ONLINE,
+        /** 强制跳过正版验证 */
+        FORCE_OFFLINE
     }
 
     private final ConnectionContext connection;
@@ -67,6 +69,20 @@ public class PreLoginEvent implements IStarlightEvent {
         return result == PreLoginResult.FORCE_ONLINE;
     }
 
+    /**
+     * 此连接是否被强制跳过 Mojang 验证。
+     *
+     * <p>用于无法完成正版验证的客户端（如通过 Geyser 接入的基岩版玩家）。
+     *
+     * <p>只影响验证，不影响加密：是否对连接加密由全局 {@code encryption} 配置单独决定，
+     * 两者相互独立。
+     *
+     * @return 强制离线返回 true
+     */
+    public boolean isForceOfflineMode() {
+        return result == PreLoginResult.FORCE_OFFLINE;
+    }
+
     public Component getDenyReason() {
         return denyReason;
     }
@@ -78,6 +94,15 @@ public class PreLoginEvent implements IStarlightEvent {
 
     public void forceOnlineMode() {
         this.result = PreLoginResult.FORCE_ONLINE;
+    }
+
+    /**
+     * 强制此连接跳过 Mojang 验证，覆盖全局 {@code online-mode}。
+     *
+     * <p>档案将使用离线 UUID。是否加密不受此方法影响，由全局 {@code encryption} 决定。
+     */
+    public void forceOfflineMode() {
+        this.result = PreLoginResult.FORCE_OFFLINE;
     }
 
     /**

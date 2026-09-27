@@ -38,21 +38,46 @@ public abstract class StarlightCommand {
     private final String usage;
     private final boolean descriptionAsKey;
     private final boolean usageAsKey;
+    /** 由外部框架预先构建的根节点；非 {@code null} 时 {@link #build()} 直接返回它。 */
+    private final LiteralArgumentBuilder<IStarlightCommandSource> prebuiltNode;
     private final Set<String> aliases = new LinkedHashSet<>();
 
     protected StarlightCommand(CommandMeta meta) {
+        this(meta, null);
+    }
+
+    /**
+     * 包装一个已经构建好的 Brigadier 节点。
+     *
+     * <p>用于把外部命令框架（如 Cloud）生成的节点接入代理命令系统：
+     * 节点本身由该框架负责构建，{@link #build()} 直接返回它，不再调用子类的构建逻辑。
+     *
+     * @param meta          命令元数据
+     * @param prebuiltNode  已构建的根节点；为 {@code null} 时退回抽象的 {@link #build()}
+     */
+    protected StarlightCommand(CommandMeta meta, LiteralArgumentBuilder<IStarlightCommandSource> prebuiltNode) {
         this.key = meta.key();
         this.description = meta.description();
         this.usage = meta.usage();
         this.descriptionAsKey = meta.descriptionAsKey();
         this.usageAsKey = meta.usageAsKey();
+        this.prebuiltNode = prebuiltNode;
         this.aliases.addAll(meta.aliases());
     }
 
     /**
      * 构建并返回命令节点。根节点的 literal 名称应与 {@link #getName()} 一致。
+     *
+     * <p>若本实例是通过 {@link #StarlightCommand(CommandMeta, LiteralArgumentBuilder)} 创建的
+     * 包装器，则直接返回预先构建的节点。
      */
-    public abstract LiteralArgumentBuilder<IStarlightCommandSource> build();
+    public LiteralArgumentBuilder<IStarlightCommandSource> build() {
+        if (prebuiltNode == null) {
+            throw new UnsupportedOperationException(
+                    "Command '" + getName() + "' neither provides a prebuilt node nor overrides build()");
+        }
+        return prebuiltNode;
+    }
 
     public Key getKey() { return key; }
 

@@ -98,7 +98,8 @@ public class ServerboundLoginStartPacket implements IMinecraftPacket {
 
             Runnable loginAction = () -> {
                 if (!ctx.channel().isActive()) return;
-                doLogin(ctx, proxy, packet, context, preLoginEvent.isForceOnlineMode());
+                doLogin(ctx, proxy, packet, context,
+                        preLoginEvent.isForceOnlineMode(), preLoginEvent.isForceOfflineMode());
             };
 
             if (!preLoginEvent.hasIntents()) {
@@ -110,15 +111,38 @@ public class ServerboundLoginStartPacket implements IMinecraftPacket {
             }
         }
 
+        /**
+         * 执行登录决策。
+         *
+         * <p>这里有两个相互独立的维度
+         * <ul>
+         *   <li><b>是否加密</b> —— 由全局 {@code encryption} 配置决定。Starlight 允许离线连接
+         *       也走加密，所以进入本方法的上半分支并不等于"正版验证"。</li>
+         *   <li><b>是否向 Mojang 验证</b> —— 由 {@code forceOnline} / {@code forceOffline} /
+         *       全局 {@code online-mode} 共同决定，实际判定发生在
+         *       {@code ServerboundEncryptionResponsePacket}，那里此时已经装好加密管道。</li>
+         * </ul>
+         *
+         * <p>因此 {@code forceOffline} 的语义是"跳过 Mojang 验证"，而<b>不是</b>"跳过加密"。
+         * 它只改变档案来源（离线 UUID），加密与否取决于 {@code encryption}。
+         * 基岩版客户端没有 Mojang 会话，必须走这条路。
+         *
+         * @param forceOnline  强制走正版验证
+         * @param forceOffline 强制跳过 Mojang 验证
+         */
         private static void doLogin(ChannelHandlerContext ctx, StarlightProxy proxy,
                                      ServerboundLoginStartPacket packet, ConnectionContext context,
-                                     boolean forceOnline) {
+                                     boolean forceOnline, boolean forceOffline) {
             if (forceOnline || proxy.getConfig().isEncryption()) {
                 if (forceOnline) {
                     context.setPerConnectionOnlineMode(true);
                 }
+                if (forceOffline) {
+                    context.setPerConnectionOfflineMode(true);
+                }
                 log.debug("玩家 {} 进入{}流程", packet.getUsername(),
-                        (forceOnline || proxy.getConfig().isOnlineMode()) ? "正版验证" : "加密登录");
+                        (forceOnline || (proxy.getConfig().isOnlineMode() && !forceOffline))
+                                ? "正版验证" : "加密登录");
                 context.setPendingUsername(packet.getUsername());
                 byte[] verifyToken = proxy.getEncryptionManager().generateVerifyToken();
                 context.setVerifyToken(verifyToken);
