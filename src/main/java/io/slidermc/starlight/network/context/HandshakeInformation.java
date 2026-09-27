@@ -6,7 +6,7 @@ import io.slidermc.starlight.network.protocolenum.ProtocolVersion;
 public class HandshakeInformation {
     private int originalProtocolVersion;
     private ProtocolVersion protocolVersion;
-    private String serverAddress;
+    private ServerHost serverHost;
     private short serverPort;
     private NextState nextState;
 
@@ -18,12 +18,12 @@ public class HandshakeInformation {
         this.protocolVersion = protocolVersion;
     }
 
-    public String getServerAddress() {
-        return serverAddress;
+    public ServerHost getServerHost() {
+        return serverHost;
     }
 
-    public void setServerAddress(String serverAddress) {
-        this.serverAddress = serverAddress;
+    public void setServerHost(ServerHost serverHost) {
+        this.serverHost = serverHost;
     }
 
     public short getServerPort() {
