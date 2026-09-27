@@ -43,8 +43,8 @@ public class ServerboundLoginAckPacket implements IMinecraftPacket {
 
             ProxiedServer server = proxy.getServerManager().getForceHostDefaultServer();
 
-            String handshakeServerAddr = context.getHandshakeInformation().getServerAddress().trim();
-            log.debug("握手时虚拟主机地址: {}", handshakeServerAddr);
+            String handshakeServerAddr = context.getHandshakeInformation().getServerHost().getServerAddress().trim();
+            log.debug("握手时虚拟主机地址: {} (raw: {})", handshakeServerAddr, context.getHandshakeInformation().getServerHost().getRaw());
             ProxiedServer server1 = proxy.getServerManager().getForceHostServer(handshakeServerAddr);
             if (server1 != null) {
                 server = server1;
