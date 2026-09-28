@@ -43,7 +43,7 @@ public final class LoginHelper {
         player.getConnectionContext().setPlayer(player);
         proxy.getPlayerManager().addPlayer(player);
         PlayerLoginEvent playerLoginEvent = new PlayerLoginEvent(player);
-        proxy.getEventManager().fireAsync(playerLoginEvent).thenRun(() -> { // 异步call, 防止拖慢Netty
+        proxy.getEventManager().fire(playerLoginEvent).thenRun(() -> {
             Runnable loginAction = () -> {
                 log.info(
                         proxy.getTranslateManager().translate("starlight.logging.info.player.join"),

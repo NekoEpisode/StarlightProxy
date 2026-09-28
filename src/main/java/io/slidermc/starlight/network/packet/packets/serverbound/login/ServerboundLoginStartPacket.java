@@ -84,25 +84,17 @@ public class ServerboundLoginStartPacket implements IMinecraftPacket {
             }
 
             PreLoginEvent preLoginEvent = new PreLoginEvent(context, packet.getUsername());
-            proxy.getEventManager().fire(preLoginEvent);
 
-            Runnable loginAction = () -> {
-                if (!ctx.channel().isActive()) return;
-                if (preLoginEvent.isDenied()) {
-                    denyLogin(ctx, preLoginEvent.getDenyReason());
-                    return;
-                }
-                doLogin(ctx, proxy, packet, context,
-                        preLoginEvent.isForceOnlineMode(), preLoginEvent.isForceOfflineMode());
-            };
-
-            if (!preLoginEvent.hasIntents()) {
-                loginAction.run();
-            } else {
-                preLoginEvent.tryComplete();
-                preLoginEvent.getCompletionFuture().thenRun(() ->
-                        ctx.channel().eventLoop().execute(loginAction));
-            }
+            proxy.getEventManager().fire(preLoginEvent).thenRun(() ->
+                    ctx.channel().eventLoop().execute(() -> {
+                        if (!ctx.channel().isActive()) return;
+                        if (preLoginEvent.isDenied()) {
+                            denyLogin(ctx, preLoginEvent.getDenyReason());
+                            return;
+                        }
+                        doLogin(ctx, proxy, packet, context,
+                                preLoginEvent.isForceOnlineMode(), preLoginEvent.isForceOfflineMode());
+                    }));
         }
 
         private static void denyLogin(ChannelHandlerContext ctx, Component reason) {

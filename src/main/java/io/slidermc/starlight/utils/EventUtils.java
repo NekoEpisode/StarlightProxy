@@ -12,6 +12,6 @@ public class EventUtils {
     public static CompletableFuture<ReceivePluginMessageEvent> createPluginMessageEventAndAsyncFire(ProtocolDirection direction,
                                                                                                     Key key, byte[] data, StarlightProxy proxy, Channel channel) {
         ReceivePluginMessageEvent pluginMessageEvent = new ReceivePluginMessageEvent(direction, key, data, channel);
-        return proxy.getEventManager().fireAsync(pluginMessageEvent);
+        return proxy.getEventManager().fire(pluginMessageEvent);
     }
 }

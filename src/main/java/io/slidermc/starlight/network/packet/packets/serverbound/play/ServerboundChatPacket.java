@@ -129,7 +129,7 @@ public class ServerboundChatPacket implements IMinecraftPacket {
             ConnectionContext context = ctx.channel().attr(AttributeKeys.CONNECTION_CONTEXT).get();
             ProxiedPlayer player = context.getPlayer();
             PlayerChatEvent event = new PlayerChatEvent(player, packet.message);
-            proxy.getEventManager().fireAsync(event).whenComplete((chatEvent, throwable) -> {
+            proxy.getEventManager().fire(event).whenComplete((chatEvent, throwable) -> {
                 Runnable action = () -> {
                     if (throwable != null) {
                         log.warn("PlayerChatEvent dispatch failed for {}", player.getGameProfile().username(), throwable); // TODO: 改为使用翻译

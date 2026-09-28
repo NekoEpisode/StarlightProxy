@@ -132,12 +132,8 @@ public class ServerboundEncryptionResponsePacket implements IMinecraftPacket {
                         java.util.List.of()
                 );
                 GameProfileRequestEvent gpEvent = new GameProfileRequestEvent(context, offlineProfile, false);
-                proxy.getEventManager().fire(gpEvent);
-                if (gpEvent.isCancelled()) {
-                    disconnect(ctx, "Login denied");
-                    return;
-                }
-                LoginHelper.completeLogin(ctx, proxy, gpEvent.getGameProfile(), gpEvent.isOnlineMode());
+                proxy.getEventManager().fire(gpEvent).thenRun(() ->
+                        ctx.channel().eventLoop().execute(() -> completeLoginWithProfile(ctx, proxy, gpEvent)));
                 return;
             }
 
@@ -176,12 +172,9 @@ public class ServerboundEncryptionResponsePacket implements IMinecraftPacket {
 
                         log.debug("Mojang 验证成功，玩家: {} ({})", profile.username(), profile.uuid());
                         GameProfileRequestEvent gpEvent = new GameProfileRequestEvent(context, profile, true);
-                        proxy.getEventManager().fire(gpEvent);
-                        if (gpEvent.isCancelled()) {
-                            disconnect(ctx, "Login denied");
-                            return;
-                        }
-                        LoginHelper.completeLogin(ctx, proxy, gpEvent.getGameProfile(), gpEvent.isOnlineMode());
+                        // 同上：事件定稿后投回 event loop 继续，避免阻塞工作线程
+                        proxy.getEventManager().fire(gpEvent).thenRun(() ->
+                                ctx.channel().eventLoop().execute(() -> completeLoginWithProfile(ctx, proxy, gpEvent)));
                     }))
                     .exceptionally(ex -> {
                         ctx.channel().eventLoop().execute(() -> {
@@ -190,6 +183,28 @@ public class ServerboundEncryptionResponsePacket implements IMinecraftPacket {
                         });
                         return null;
                     });
+        }
+
+        /**
+         * 在档案事件定稿后完成登录。
+         *
+         * <p>必须在事件定稿之后调用：处理器可能改写档案或取消登录，这些状态只有在事件完成后才确定。
+         *
+         * @param ctx    通道上下文
+         * @param proxy  代理实例
+         * @param gpEvent 已定稿的档案请求事件
+         */
+        private static void completeLoginWithProfile(ChannelHandlerContext ctx,
+                                                     StarlightProxy proxy,
+                                                     GameProfileRequestEvent gpEvent) {
+            if (!ctx.channel().isActive()) {
+                return;
+            }
+            if (gpEvent.isCancelled()) {
+                disconnect(ctx, "Login denied");
+                return;
+            }
+            LoginHelper.completeLogin(ctx, proxy, gpEvent.getGameProfile(), gpEvent.isOnlineMode());
         }
 
         private static GameProfile parseMojangProfile(String json) {

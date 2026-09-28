@@ -37,7 +37,7 @@ public class ServerboundFinishConfigurationAckPacket implements IMinecraftPacket
                 log.debug("下游Outbound设置为PLAY [4]");
 
                 PlayerServerConnectedEvent event = new PlayerServerConnectedEvent(context.getPlayer(), context.getPlayer().getPreviousServer().orElse(null), context.getPlayer().getCurrentServer().orElse(null));
-                proxy.getEventManager().fireAsync(event);
+                proxy.getEventManager().fireAndForget(event);
             });
         }
     }

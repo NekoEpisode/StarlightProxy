@@ -11,6 +11,7 @@ import java.lang.reflect.Method;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Consumer;
 
 /**
  * 事件总线，负责监听器的注册、注销与事件派发。
@@ -53,13 +54,13 @@ public class EventManager {
      * 已注册处理器的内部记录，按事件类型分组，每组按优先级降序排列。
      * key: 事件类型 Class，value: 该类型下所有已注册的处理器（已排序）
      */
-    private final Map<Class<? extends IStarlightEvent>, List<RegisteredHandler>> handlerMap = new ConcurrentHashMap<>();
+    private final Map<Class<? extends IStarlightEvent>, List<Invocation>> handlerMap = new ConcurrentHashMap<>();
 
     /**
      * 来源ID（{@code "pluginId::listenerId"} 或 {@code "__starlight_kernel__::listenerId"}）
-     * 到该监听器产生的所有 {@link RegisteredHandler} 的映射，用于快速注销。
+     * 到该监听器产生的所有 {@link Invocation} 的映射，用于快速注销。
      */
-    private final Map<String, List<RegisteredHandler>> listenerIndex = new ConcurrentHashMap<>();
+    private final Map<String, List<Invocation>> listenerIndex = new ConcurrentHashMap<>();
 
     /**
      * 插件 ID 到该插件所有监听器来源 key 的映射，用于批量注销。
@@ -67,27 +68,39 @@ public class EventManager {
     private final Map<String, Set<String>> pluginListenerKeys = new ConcurrentHashMap<>();
 
     /**
-     * 默认用于异步派发的 Executor。可通过构造器注入（推荐在 {@link io.slidermc.starlight.StarlightProxy}
-     * 构造时传入 {@link io.slidermc.starlight.executor.ProxyExecutors#getEventExecutor()}）。
+     * 事件执行器。
+     *
+     * <p>用于运行声明了 {@link EventHandler#async()} 的处理器。Starlight 传入的是虚拟线程执行器，
+     * 因此单个处理器的阻塞不会占用平台线程。
      */
-    private final Executor defaultExecutor;
+    private final Executor eventExecutor;
     private final TranslateManager translateManager;
 
     /**
-     * 构造一个使用公共 ForkJoinPool 作为默认异步执行器的 EventManager。
+     * 构造一个使用公共 ForkJoinPool 作为事件执行器的 EventManager。
      */
     public EventManager(TranslateManager translateManager) {
         this(ForkJoinPool.commonPool(), translateManager);
     }
 
     /**
-     * 构造一个使用指定 Executor 作为默认异步执行器的 EventManager。
+     * 构造一个使用指定 Executor 作为事件执行器的 EventManager。
      *
-     * @param defaultExecutor 默认用于 {@link #fireAsync(IStarlightEvent)} 的 Executor
+     * @param eventExecutor  用于执行声明了 {@link EventHandler#async()} 的处理器的 Executor
+     * @param translateManager 翻译管理器
      */
-    public EventManager(Executor defaultExecutor, TranslateManager translateManager) {
-        this.defaultExecutor = Objects.requireNonNull(defaultExecutor, "defaultExecutor");
+    public EventManager(Executor eventExecutor, TranslateManager translateManager) {
+        this.eventExecutor = Objects.requireNonNull(eventExecutor, "eventExecutor");
         this.translateManager = Objects.requireNonNull(translateManager, "translateManager");
+    }
+
+    /**
+     * 返回事件执行器，用于运行声明了 {@link EventHandler#async()} 的处理器。
+     *
+     * @return 事件执行器
+     */
+    Executor eventExecutor() {
+        return eventExecutor;
     }
 
     /**
@@ -173,17 +186,17 @@ public class EventManager {
      */
     public void unregisterAll(IPlugin plugin) {
         String pluginId = plugin.getDescription().name();
-        String pluginIdForLog = null;
+        String pluginIdForLog;
 
         registryLock.lock();
         try {
             Set<String> keys = pluginListenerKeys.remove(pluginId);
             if (keys == null) return;
             for (String key : keys) {
-                List<RegisteredHandler> handlers = listenerIndex.remove(key);
+                List<Invocation> handlers = listenerIndex.remove(key);
                 if (handlers == null) continue;
-                for (RegisteredHandler handler : handlers) {
-                    List<RegisteredHandler> list = handlerMap.get(handler.eventType());
+                for (Invocation handler : handlers) {
+                    List<Invocation> list = handlerMap.get(handler.eventType());
                     if (list != null) {
                         list.remove(handler);
                     }
@@ -202,81 +215,95 @@ public class EventManager {
     /**
      * 派发一个事件，按优先级从高到低依次调用所有已注册的处理器。
      *
-     * <p>默认情况下（{@code polymorphic = false}）仅精确匹配事件类型；
-     * 若处理器在注解中声明了 {@code polymorphic = true}，则该处理器采用继承关系匹配，
-     * 事件类型为其参数类型的子类时同样会被触发。
+     * <p>默认情况下（{@code polymorphic = false}）仅精确匹配事件类型；若处理器声明了
+     * {@code polymorphic = true}，则采用继承关系匹配，事件类型为其参数类型的子类时同样会被触发。
      *
-     * <p>若事件实现了 {@link ICancellableEvent}，且某处理器设置了 {@code ignoreCancelled = true}，
-     * 则该事件被取消后该处理器将被跳过。
+     * <p>处理器可以暂停派发：返回带有 {@link Continuation} 的 {@link EventTask} 后，派发会在
+     * 该处理器处暂停，直到它恢复。暂停不阻塞任何线程，且不影响其余处理器的执行顺序。
+     *
+     * <p>返回的 future 在<b>所有</b>处理器（含异步恢复的）都完成后完成，携带传入的事件实例。
+     * 需要同步结果时调用 {@link CompletableFuture#join()}；需要串接后续动作时使用
+     * {@link CompletableFuture#thenAccept(Consumer)}。
+     *
+     * <p>若事件实现了 {@link ICancellableEvent} 并在派发过程中被取消，派发会立即终止，
+     * 后续处理器不再被调用。
+     *
+     * <p><b>不要在 Netty 事件循环线程上阻塞等待返回的 future。</b>处理器可以暂停派发，
+     * 而工作线程数量有限（见 {@code NioEventLoopGroup} 的构造），若干个连接同时等待就会让
+     * 整个代理停摆。事件循环上的调用方应改用链式续跑：
+     * <pre>{@code
+     * eventManager.fire(event).thenRun(() ->
+     *         ctx.channel().eventLoop().execute(() -> continueHandling(event)));
+     * }</pre>
+     * 若处理逻辑无法改为异步（例如同步签名的 API），应改用
+     * {@link #fireSync(IStarlightEvent)}，它会在处理器试图暂停时立即失败而不是永久阻塞。
      *
      * @param event 要派发的事件
      * @param <E>   事件类型
-     * @return 传入的事件实例（便于链式调用）
+     * @return 在事件定稿后完成的 future，携带传入的事件实例
      */
-    public <E extends IStarlightEvent> E fire(E event) {
-        Class<? extends IStarlightEvent> exactType = event.getClass();
-        List<RegisteredHandler> allMatches = new ArrayList<>();
+    public <E extends IStarlightEvent> CompletableFuture<E> fire(E event) {
+        CompletableFuture<E> future = new CompletableFuture<>();
+        EventDispatch.dispatch(this, event, collectHandlers(event), future);
+        return future;
+    }
 
-        for (Map.Entry<Class<? extends IStarlightEvent>, List<RegisteredHandler>> entry : handlerMap.entrySet()) {
-            boolean isExact = entry.getKey() == exactType;
-            for (RegisteredHandler handler : entry.getValue()) {
-                // 精确匹配的处理器始终包含；多态处理器额外检查继承关系
-                if (isExact || (handler.polymorphic() && entry.getKey().isAssignableFrom(exactType))) {
-                    allMatches.add(handler);
-                }
-            }
-        }
-
-        if (allMatches.isEmpty()) return event;
-
-        allMatches.sort(Comparator.comparingInt(h -> -h.priority().getOrder()));
-
-        for (RegisteredHandler handler : allMatches) {
-            if (handler.ignoreCancelled()
-                    && event instanceof ICancellableEvent c
-                    && c.isCancelled()) {
-                continue;
-            }
-            try {
-                handler.method().invoke(handler.listener(), event);
-            } catch (Throwable e) {
-                // 捕获 Throwable：监听器抛出的 Error（如 NoClassDefFoundError）也必须被隔离，
-                // 否则会穿透到 Netty 事件循环或插件生命周期调用方；
-                // 但 JVM 级致命错误必须继续向上传播
-                ExceptionUtils.rethrowIfFatal(e);
-                log.error(translateManager.translate("starlight.logging.error.event.handler_threw"),
-                        handler.sourceId(), handler.listenerId(),
-                        event.getClass().getSimpleName(), e);
-            }
-        }
+    /**
+     * 同步派发一个事件，直接返回事件实例。
+     *
+     * <p>用于无法改为异步的调用点（例如返回 {@code boolean} 的同步 API）：若某个处理器试图
+     * 暂停派发，本方法会立即抛出 {@link IllegalStateException}，而不是让调用方永久阻塞。
+     *
+     * <p>仅在<b>确定没有处理器会暂停</b>时使用，否则应改用 {@link #fire(IStarlightEvent)}
+     * 的链式形式。
+     *
+     * @param event 要派发的事件
+     * @param <E>   事件类型
+     * @return 传入的事件实例
+     * @throws IllegalStateException 若有处理器暂停了派发
+     */
+    public <E extends IStarlightEvent> E fireSync(E event) {
+        EventDispatch.dispatchSync(this, event, collectHandlers(event));
         return event;
     }
 
     /**
-     * 异步派发事件，使用默认公共线程池（ForkJoinPool.commonPool）。
-     * 派发序列在异步线程中按顺序执行，语义等同于 {@link #fire(IStarlightEvent)}，
-     * 但不阻塞调用方线程。
+     * 派发一个事件但不关心完成时机。
+     *
+     * <p>语义与 {@link #fire(IStarlightEvent)} 相同，只是不产生完成信号。适用于纯通知型事件。
      *
      * @param event 要派发的事件
-     * @param <E>   事件类型
-     * @return 在异步执行完成后完成的 CompletableFuture，返回传入事件实例
      */
-    public <E extends IStarlightEvent> CompletableFuture<E> fireAsync(E event) {
-        return CompletableFuture.supplyAsync(() -> fire(event), defaultExecutor);
+    public void fireAndForget(IStarlightEvent event) {
+        EventDispatch.dispatch(this, event, collectHandlers(event), null);
     }
 
     /**
-     * 使用指定的 {@link Executor} 在异步线程中顺序执行事件派发。
-     * 建议传入 {@link io.slidermc.starlight.executor.ProxyExecutors#getEventExecutor()}，
-     * 以使用虚拟线程池执行事件处理。
+     * 收集该事件命中的处理器，按优先级降序排列。
      *
-     * @param event    要派发的事件
-     * @param executor 用于执行的线程池
-     * @param <E>      事件类型
-     * @return 在异步执行完成后完成的 CompletableFuture，返回传入事件实例
+     * @param event 事件实例
+     * @return 命中的处理器；无命中时返回 {@code null}
      */
-    public <E extends IStarlightEvent> CompletableFuture<E> fireAsync(E event, Executor executor) {
-        return CompletableFuture.supplyAsync(() -> fire(event), executor);
+    private List<Invocation> collectHandlers(IStarlightEvent event) {
+        Class<? extends IStarlightEvent> exactType = event.getClass();
+        List<Invocation> matches = new ArrayList<>();
+
+        for (Map.Entry<Class<? extends IStarlightEvent>, List<Invocation>> entry : handlerMap.entrySet()) {
+            boolean isExact = entry.getKey() == exactType;
+            for (Invocation handler : entry.getValue()) {
+                // 精确匹配的处理器始终包含；多态处理器额外检查继承关系
+                if (isExact || (handler.polymorphic() && entry.getKey().isAssignableFrom(exactType))) {
+                    matches.add(handler);
+                }
+            }
+        }
+
+        if (matches.isEmpty()) {
+            return null;
+        }
+
+        matches.sort(Comparator.comparingInt(h -> -h.priority().getOrder()));
+        return List.copyOf(matches);
     }
 
     /**
@@ -286,41 +313,27 @@ public class EventManager {
      * @return 处理器数量
      */
     public int getHandlerCount(Class<? extends IStarlightEvent> eventType) {
-        List<RegisteredHandler> list = handlerMap.get(eventType);
+        List<Invocation> list = handlerMap.get(eventType);
         return list == null ? 0 : list.size();
     }
 
     private void registerInternal(String sourceId, String listenerId, io.slidermc.starlight.api.event.EventListener listener) {
         String key = compositeKey(sourceId, listenerId);
-        List<RegisteredHandler> existing = listenerIndex.putIfAbsent(key, List.of());
+        List<Invocation> existing = listenerIndex.putIfAbsent(key, List.of());
         if (existing != null) {
             String pattern = translateManager.translate("starlight.logging.error.event.listener_id_duplicate");
             throw new IllegalArgumentException(formatTranslated(pattern, listenerId, sourceId));
         }
 
-        List<RegisteredHandler> discovered = new ArrayList<>();
+        List<Invocation> discovered = new ArrayList<>();
         for (Method method : listener.getClass().getMethods()) {
             EventHandler annotation = method.getAnnotation(EventHandler.class);
             if (annotation == null) continue;
-            if (method.getParameterCount() != 1) {
-                log.warn(translateManager.translate("starlight.logging.warn.event.handler_param_count_invalid"),
-                        listener.getClass().getName(), method.getName());
-                continue;
+
+            Invocation invocation = resolveInvocation(sourceId, listenerId, listener, method, annotation);
+            if (invocation != null) {
+                discovered.add(invocation);
             }
-            Class<?> paramType = method.getParameterTypes()[0];
-            if (!IStarlightEvent.class.isAssignableFrom(paramType)) {
-                log.warn(translateManager.translate("starlight.logging.warn.event.handler_param_type_invalid"),
-                        listener.getClass().getName(), method.getName(), paramType.getName());
-                continue;
-            }
-            @SuppressWarnings("unchecked")
-            Class<? extends IStarlightEvent> eventType = (Class<? extends IStarlightEvent>) paramType;
-            method.setAccessible(true);
-            RegisteredHandler handler = new RegisteredHandler(
-                    sourceId, listenerId, listener, method, eventType,
-                    annotation.priority(), annotation.ignoreCancelled(), annotation.polymorphic()
-            );
-            discovered.add(handler);
         }
 
         if (discovered.isEmpty()) {
@@ -331,8 +344,8 @@ public class EventManager {
         }
 
         listenerIndex.put(key, discovered);
-        for (RegisteredHandler handler : discovered) {
-            List<RegisteredHandler> newList = handlerMap.computeIfAbsent(handler.eventType(), k -> new CopyOnWriteArrayList<>());
+        for (Invocation handler : discovered) {
+            List<Invocation> newList = handlerMap.computeIfAbsent(handler.eventType(), k -> new CopyOnWriteArrayList<>());
             newList.add(handler);
             replaceWithSortedCopy(handler.eventType(), newList);
         }
@@ -340,15 +353,70 @@ public class EventManager {
                 listenerId, sourceId, discovered.size());
     }
 
+    /**
+     * 校验一个被 {@link EventHandler} 标注的方法，并解析为可派发的 {@link Invocation}。
+     *
+     * @param sourceId   来源标识
+     * @param listenerId 监听器 ID
+     * @param listener   监听器实例
+     * @param method     被标注的方法
+     * @param annotation 方法上的注解
+     * @return 解析结果；方法签名不合法时返回 {@code null} 并记录警告
+     */
+    private Invocation resolveInvocation(
+            String sourceId,
+            String listenerId,
+            io.slidermc.starlight.api.event.EventListener listener,
+            Method method,
+            EventHandler annotation
+    ) {
+        Class<?>[] parameters = method.getParameterTypes();
+        boolean wantsContinuation = parameters.length == 2
+                && Continuation.class.isAssignableFrom(parameters[1]);
+
+        if (parameters.length < 1 || parameters.length > 2 || (parameters.length == 2 && !wantsContinuation)) {
+            log.warn(translateManager.translate("starlight.logging.warn.event.handler_param_count_invalid"),
+                    listener.getClass().getName(), method.getName());
+            return null;
+        }
+
+        if (!IStarlightEvent.class.isAssignableFrom(parameters[0])) {
+            log.warn(translateManager.translate("starlight.logging.warn.event.handler_param_type_invalid"),
+                    listener.getClass().getName(), method.getName(), parameters[0].getName());
+            return null;
+        }
+
+        Class<?> returnType = method.getReturnType();
+        boolean returnsTask = EventTask.class.isAssignableFrom(returnType);
+        if (!returnsTask && returnType != void.class) {
+            log.warn(translateManager.translate("starlight.logging.warn.event.handler_return_type_invalid"),
+                    listener.getClass().getName(), method.getName(), returnType.getName());
+            return null;
+        }
+
+        @SuppressWarnings("unchecked")
+        Class<? extends IStarlightEvent> eventType = (Class<? extends IStarlightEvent>) parameters[0];
+        method.setAccessible(true);
+
+        // 声明了 async 或返回需要换线程的任务，都视为必须异步执行
+        boolean requiresAsync = annotation.async();
+
+        return new Invocation(
+                sourceId, listenerId, listener, method, eventType,
+                annotation.priority(), annotation.acceptsCancelled(), annotation.polymorphic(),
+                wantsContinuation, returnsTask, requiresAsync
+        );
+    }
+
     private void unregisterInternal(String sourceId, String listenerId) {
         String key = compositeKey(sourceId, listenerId);
-        List<RegisteredHandler> handlers = listenerIndex.remove(key);
+        List<Invocation> handlers = listenerIndex.remove(key);
         if (handlers == null) {
             log.warn(translateManager.translate("starlight.logging.warn.event.unregister_nonexistent"), listenerId, sourceId);
             return;
         }
-        for (RegisteredHandler handler : handlers) {
-            List<RegisteredHandler> list = handlerMap.get(handler.eventType());
+        for (Invocation handler : handlers) {
+            List<Invocation> list = handlerMap.get(handler.eventType());
             if (list != null) {
                 list.remove(handler);
             }
@@ -360,8 +428,8 @@ public class EventManager {
      * 将指定事件类型的处理器列表替换为按优先级降序排列的新 {@link CopyOnWriteArrayList}。
      * 避免 COW 列表的 {@code sort()} 非线程安全问题。
      */
-    private void replaceWithSortedCopy(Class<? extends IStarlightEvent> eventType, List<RegisteredHandler> currentList) {
-        List<RegisteredHandler> sorted = new ArrayList<>(currentList);
+    private void replaceWithSortedCopy(Class<? extends IStarlightEvent> eventType, List<Invocation> currentList) {
+        List<Invocation> sorted = new ArrayList<>(currentList);
         sorted.sort(Comparator.comparingInt(h -> -h.priority().getOrder()));
         handlerMap.put(eventType, new CopyOnWriteArrayList<>(sorted));
     }
@@ -391,7 +459,15 @@ public class EventManager {
     }
 
     /**
-     * 已注册的单个事件处理器的内部记录。
+     * 已注册的单个事件处理器的内部记录，负责把反射调用适配成一次派发调用。
+     *
+     * <p>支持的处理器签名在注册期解析并固化为具体行为，派发期不再做任何反射判断：
+     * <ul>
+     *   <li>{@code void m(E)} —— 同步完成</li>
+     *   <li>{@code void m(E, Continuation)} —— 必须自行恢复</li>
+     *   <li>{@code EventTask m(E)} —— 由返回值决定是否暂停</li>
+     *   <li>{@code EventTask m(E, Continuation)} —— 由返回值决定，并可直接使用该凭据</li>
+     * </ul>
      *
      * @param sourceId        来源标识（插件 ID 或内核标识）
      * @param listenerId      监听器 ID
@@ -399,18 +475,56 @@ public class EventManager {
      * @param method          被 {@link EventHandler} 标注的处理方法
      * @param eventType       该方法监听的事件类型
      * @param priority        优先级
-     * @param ignoreCancelled 是否在事件被取消时跳过
+     * @param acceptsCancelled 事件被取消后是否仍然调用
      * @param polymorphic     是否启用多态匹配
+     * @param wantsContinuation 方法是否接收 {@link Continuation} 参数
+     * @param returnsTask     方法是否返回 {@link EventTask}
+     * @param requiresAsync   是否要求换线程执行
      */
-    private record RegisteredHandler(
+    record Invocation(
             String sourceId,
             String listenerId,
             EventListener listener,
             Method method,
             Class<? extends IStarlightEvent> eventType,
             EventPriority priority,
-            boolean ignoreCancelled,
-            boolean polymorphic
-    ) {}
+            boolean acceptsCancelled,
+            boolean polymorphic,
+            boolean wantsContinuation,
+            boolean returnsTask,
+            boolean requiresAsync
+    ) {
+
+        /**
+         * 本次处理是否可能暂停派发。
+         *
+         * <p>只有返回 {@link EventTask} 的处理方法才能暂停：返回 {@code void} 的方法无论是否接收
+         * {@link Continuation}，都必须在返回前完成处理（同步恢复由派发循环直接继续）。
+         *
+         * @return 可能暂停时返回 {@code true}
+         */
+        boolean canSuspend() {
+            return returnsTask;
+        }
+
+        /**
+         * 调用处理器。
+         *
+         * <p>若方法返回 {@link EventTask}，则执行之；否则本次处理在方法返回时即结束。
+         *
+         * @param event        事件实例
+         * @param continuation 供处理器暂停派发使用的凭据
+         * @throws Throwable 处理器或其返回的任务抛出的异常
+         */
+        void complete(IStarlightEvent event, Continuation continuation) throws Throwable {
+            Object result = wantsContinuation
+                    ? method.invoke(listener, event, continuation)
+                    : method.invoke(listener, event);
+
+            if (returnsTask) {
+                ((EventTask) result).execute(continuation);
+            }
+        }
+    }
 }
 
