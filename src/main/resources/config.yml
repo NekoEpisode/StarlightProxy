@@ -14,6 +14,7 @@ proxy:
   compress-threshold: 256 # 启用数据包压缩的阈值
   icon-file-path: "./icon.png" # 服务器图标的文件路径
   pass-through-hostname: true # 是否将客户端请求的地址透传给下游服务器; 关闭时下游握手使用servers中配置的地址
+  protocol-error-shown: false # 是否输出协议解析失败的日志; 扫描器、非Minecraft客户端以及连接中断时的残包都会触发解析失败，属于常见噪音，排查协议问题时再打开
   allow-transfer: false # 是否允许Transfer连接
 
 forced-host:

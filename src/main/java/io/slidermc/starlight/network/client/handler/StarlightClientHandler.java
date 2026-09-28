@@ -60,6 +60,12 @@ public class StarlightClientHandler extends ChannelInboundHandlerAdapter {
             client.disconnect();
             log.debug("Exceptionally disconnected from server", cause);
         }
+
+        if (!proxy.getConfig().isProtocolErrorShown()) {
+            // 同上游：解析失败多为噪音，需要排查协议问题时把 protocol-error-shown 打开
+            log.debug("Error on downstream connection", cause);
+            return;
+        }
         log.error(proxy.getTranslateManager().translate("starlight.logging.error.error_on_downstream_connection"), cause);
     }
 }

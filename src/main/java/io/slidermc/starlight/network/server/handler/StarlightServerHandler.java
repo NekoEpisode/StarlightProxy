@@ -14,6 +14,8 @@ import io.slidermc.starlight.network.packet.RawPacket;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.PrintWriter;
+
 public class StarlightServerHandler extends ChannelInboundHandlerAdapter {
     private static final Logger log = LoggerFactory.getLogger(StarlightServerHandler.class);
     private final PacketRegistry packetRegistry;
@@ -71,6 +73,21 @@ public class StarlightServerHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        log.error(proxy.getTranslateManager().translate("starlight.logging.error.error_on_upstream"), cause);
+        if (!proxy.getConfig().isProtocolErrorShown()) {
+            // 解析失败多为扫描器、非 Minecraft 客户端或连接中断时的残包，属于常见噪音。
+            // 需要排查协议问题时把 protocol-error-shown 打开。
+            log.debug("Error on upstream connection", cause);
+            return;
+        }
+
+        String message = proxy.getTranslateManager().translate("starlight.logging.error.error_on_upstream");
+        log.error(message, cause);
+
+        // 控制台接管日志输出后会重写多行内容，堆栈可能在重写过程中丢失，
+        // 表现为"只看到一行错误、不知道原因"。上游异常通常来自连接生命周期问题，
+        // 堆栈是唯一线索，因此额外直接写到 stderr，不经由日志管线。
+        PrintWriter fallback = new PrintWriter(System.err, true);
+        fallback.println(message);
+        cause.printStackTrace(fallback);
     }
 }

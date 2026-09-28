@@ -29,6 +29,7 @@ public class StarlightConfig {
     private final int compressThreshold;
     private final String iconFilePath;
     private final boolean passThroughHostname;
+    private final boolean protocolErrorShown;
 
     private final Map<String, ServerEntry> servers;
 
@@ -39,7 +40,7 @@ public class StarlightConfig {
     public StarlightConfig(String host, int port, int maxPlayers, boolean onlineMode,
                            boolean encryption, String ipForwardType, String forwardSecret, String motd, String brand,
                            String language, boolean loggingCommand, int compressThreshold, String iconFilePath,
-                           boolean passThroughHostname,
+                           boolean passThroughHostname, boolean protocolErrorShown,
                            Map<String, ServerEntry> servers, Map<String, String> forcedHost) {
         this.host = host;
         this.port = port;
@@ -55,6 +56,7 @@ public class StarlightConfig {
         this.compressThreshold = compressThreshold;
         this.iconFilePath = iconFilePath;
         this.passThroughHostname = passThroughHostname;
+        this.protocolErrorShown = protocolErrorShown;
         this.servers = Collections.unmodifiableMap(servers);
         this.forcedHost = Collections.unmodifiableMap(forcedHost);
     }
@@ -107,6 +109,8 @@ public class StarlightConfig {
         String iconFilePath          = (String)   proxy.get("icon-file-path");
         Object passThroughRaw        = proxy.get("pass-through-hostname");
         boolean passThroughHostname  = passThroughRaw == null || (boolean) passThroughRaw;
+        Object protocolErrorRaw      = proxy.get("protocol-error-shown");
+        boolean protocolErrorShown   = protocolErrorRaw != null && (boolean) protocolErrorRaw;
 
         Map<String, ServerEntry> servers = new LinkedHashMap<>();
         Object serversRaw = root.get("servers");
@@ -131,7 +135,7 @@ public class StarlightConfig {
 
         return new StarlightConfig(host, port, maxPlayers, onlineMode, encryption, ipForwardType, forwardSecret,
                 motd, brand, language, loggingCommand, compressThreshold, iconFilePath, passThroughHostname,
-                servers, forcedHost);
+                protocolErrorShown, servers, forcedHost);
     }
 
     // -------------------------------------------------------------------------
@@ -162,6 +166,16 @@ public class StarlightConfig {
      * @return 启用透传返回 {@code true}，默认为 {@code true}
      */
     public boolean isPassThroughHostname() { return passThroughHostname; }
+
+    /**
+     * 是否输出协议解析失败的日志。
+     *
+     * <p>扫描器、非 Minecraft 客户端以及连接中断时残留的半包都会触发解析失败，
+     * 这些属于常见噪音而非真实故障，因此默认关闭。排查协议问题时再打开。
+     *
+     * @return 开启时返回 {@code true}
+     */
+    public boolean isProtocolErrorShown()  { return protocolErrorShown; }
     public Map<String, ServerEntry> getServers() { return servers; }
     public Map<String, String> getForcedHost() { return forcedHost; }
 }

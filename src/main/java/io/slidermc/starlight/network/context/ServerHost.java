@@ -41,6 +41,16 @@ public final class ServerHost {
         return args.containsKey(key);
     }
 
+    /**
+     * 解析握手包里的服务器地址（虚拟主机）。
+     *
+     * <p>地址可以为空：部分客户端（含 Geyser 的探测连接）会发送空地址，含义是"未指定虚拟主机"，
+     * 此时所有查询都返回空、由调用方回退到默认服务器。空地址不是错误，因此不抛异常。
+     *
+     * @param raw 握手包中的原始地址，可包含 {@code ?} 查询串
+     * @return 解析结果
+     * @throws IllegalArgumentException 地址超过 {@value #MAX_BYTES} 字节时抛出
+     */
     public static ServerHost parseFrom(String raw) {
         Objects.requireNonNull(raw, "raw");
 
@@ -58,10 +68,6 @@ public final class ServerHost {
         } else {
             serverAddress = raw.substring(0, question);
             query = raw.substring(question + 1);
-        }
-
-        if (serverAddress.isEmpty()) {
-            throw new IllegalArgumentException("Server address is empty");
         }
 
         Map<String, Optional<String>> args = new LinkedHashMap<>();

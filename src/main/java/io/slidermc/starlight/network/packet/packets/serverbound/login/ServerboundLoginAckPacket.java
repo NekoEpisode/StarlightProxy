@@ -1,6 +1,7 @@
 package io.slidermc.starlight.network.packet.packets.serverbound.login;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.slidermc.starlight.StarlightProxy;
@@ -12,6 +13,7 @@ import io.slidermc.starlight.network.context.ConnectionContext;
 import io.slidermc.starlight.network.packet.IMinecraftPacket;
 import io.slidermc.starlight.network.packet.listener.IPacketListener;
 import io.slidermc.starlight.network.packet.packets.clientbound.configuration.ClientboundDisconnectConfigurationPacket;
+import io.slidermc.starlight.network.packet.packets.serverbound.configuration.ServerboundClientInformationConfigurationPacket;
 import io.slidermc.starlight.network.protocolenum.ProtocolState;
 import io.slidermc.starlight.network.protocolenum.ProtocolVersion;
 import io.slidermc.starlight.utils.MiniMessageUtils;
@@ -95,6 +97,7 @@ public class ServerboundLoginAckPacket implements IMinecraftPacket {
                                 context.setDownstreamChannel(client.getChannel());
                                 context.getPlayer().setCurrentServer(finalServer);
                                 context.getPlayer().setPreviousServer(null);
+                                resendClientInformation(context, client.getChannel());
                                 // 下游登录完成，恢复读取，之前 buffer 的 CONFIGURATION 包现在开始转发
                                 ctx.channel().config().setAutoRead(true);
                             }
@@ -124,6 +127,25 @@ public class ServerboundLoginAckPacket implements IMinecraftPacket {
                 ctx.channel().config().setAutoRead(true);
                 kickWithConfigDisconnect(ctx, buildConnectFailedMessage(proxy, context.getLocale(), server));
             }
+        }
+
+        /**
+         * 把已缓存的客户端设置补发给下游。
+         *
+         * <p>客户端进入 CONFIGURATION 后会立即发送 {@code ClientInformation}，而该包可能在下游
+         * 连接建立之前就到达——此时没有可写的下游 channel，只能把设置留在连接上下文里。
+         * 若不在此补发，下游服务器就拿不到玩家的语言、视距等信息，首个连接的玩家尤其容易命中
+         * （下游冷启动使这个时间窗口最大）。
+         *
+         * @param context    连接上下文
+         * @param downstream 已完成登录的下游 channel
+         */
+        private static void resendClientInformation(ConnectionContext context, Channel downstream) {
+            context.getClientInformation().ifPresentOrElse(
+                    info -> downstream.writeAndFlush(
+                            new ServerboundClientInformationConfigurationPacket(info)),
+                    () -> log.debug("No ClientInformation to resend for {}",
+                            context.getPlayer().getGameProfile().username()));
         }
 
         private static Component buildConnectFailedMessage(StarlightProxy proxy, String locale, ProxiedServer server) {
