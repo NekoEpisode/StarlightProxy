@@ -29,6 +29,26 @@ public class ConsoleManager implements AutoCloseable {
     private static final Logger log = LoggerFactory.getLogger(ConsoleManager.class);
     private static final String PROMPT = "> ";
 
+    /**
+     * 代理自身日志的格式。
+     *
+     * <p>必须与 {@code log4j2.xml} 的 {@code LOG_PATTERN_COLOR} 保持一致。
+     */
+    private static final String DEFAULT_PATTERN =
+            "%highlight{[%d{HH:mm:ss} %-5level]: %msg%n}"
+                    + "{FATAL=red, ERROR=red, WARN=yellow, INFO=white, DEBUG=white, TRACE=white}";
+
+    /**
+     * 插件日志的格式，比默认格式多一列 {@code %logger{1}}。
+     *
+     * <p>必须与 {@code log4j2.xml} 的 {@code PLUGIN_PATTERN_COLOR} 保持一致。
+     * 控制台接管输出后所有 logger 共用同一个 appender，因此格式靠
+     * {@link PluginAwarePatternSelector} 按 logger 名分流，不能再依赖配置里的两个 appender。
+     */
+    private static final String PLUGIN_PATTERN =
+            "%highlight{[%d{HH:mm:ss} %-5level] [%logger{1}]: %msg%n}"
+                    + "{FATAL=red, ERROR=red, WARN=yellow, INFO=white, DEBUG=white, TRACE=white}";
+
     private final StarlightProxy proxy;
     private final ConsoleCommandSource consoleSource;
     private final Terminal terminal;
@@ -75,7 +95,8 @@ public class ConsoleManager implements AutoCloseable {
         Configuration config = ctx.getConfiguration();
 
         PatternLayout layout = PatternLayout.newBuilder()
-                .withPattern("%highlight{[%d{HH:mm:ss} %-5level]: %msg%n}{FATAL=red, ERROR=red, WARN=yellow, INFO=white, DEBUG=white, TRACE=white}")
+                .withPatternSelector(new PluginAwarePatternSelector(config, PLUGIN_PATTERN, DEFAULT_PATTERN))
+                .withPattern(DEFAULT_PATTERN)
                 .build();
 
         OutputStreamAppender appender = OutputStreamAppender.newBuilder()
@@ -185,7 +206,8 @@ public class ConsoleManager implements AutoCloseable {
         Configuration config = ctx.getConfiguration();
 
         PatternLayout layout = PatternLayout.newBuilder()
-                .withPattern("%highlight{[%d{HH:mm:ss} %-5level]: %msg%n}{FATAL=red, ERROR=red, WARN=yellow, INFO=white, DEBUG=white, TRACE=white}")
+                .withPatternSelector(new PluginAwarePatternSelector(config, PLUGIN_PATTERN, DEFAULT_PATTERN))
+                .withPattern(DEFAULT_PATTERN)
                 .build();
 
         OutputStreamAppender directAppender = OutputStreamAppender.newBuilder()
