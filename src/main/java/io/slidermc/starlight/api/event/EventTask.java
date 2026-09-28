@@ -36,6 +36,9 @@ public interface EventTask {
      * <p>默认 {@code false}，表示事件系统可以在调用方线程上直接执行。若处理器会进行阻塞式
      * 调用，应返回 {@code true}，以免阻塞事件派发的调用方线程。
      *
+     * <p>事件系统会读取本方法的返回值：返回 {@code true} 的任务会被移交到事件执行器上运行。
+     * {@link #async(Runnable)} 即依赖这一点。
+     *
      * @return 需要换线程时返回 {@code true}
      */
     default boolean requiresAsync() {
@@ -50,7 +53,28 @@ public interface EventTask {
      * @return 表示无需等待的任务
      */
     static EventTask completed() {
-        return Continuation::resume;
+        return COMPLETED;
+    }
+
+    /**
+     * {@link #completed()} 的共享实例。
+     *
+     * <p>该任务在返回时立即恢复派发，因此<b>即使没有任何地方识别它也不会挂起派发</b>——
+     * 这是必须的兜底：本系统没有超时机制，一旦漏检就会永久挂起且无法中断。
+     *
+     * <p>{@link #isCompleted(EventTask)} 提供的身份识别只是同步派发路径的优化，
+     * 不得成为正确性的前提。
+     */
+    EventTask COMPLETED = Continuation::resume;
+
+    /**
+     * 判断给定任务是否为 {@link #completed()} 返回的空任务。
+     *
+     * @param task 待判断的任务；可为 {@code null}
+     * @return 是空任务时返回 {@code true}
+     */
+    static boolean isCompleted(final EventTask task) {
+        return task == COMPLETED;
     }
 
     /**
@@ -78,7 +102,8 @@ public interface EventTask {
     /**
      * 一个在事件执行器（虚拟线程）上运行的任务。
      *
-     * <p>适用于会阻塞的处理器。无论任务是否抛出异常，派发都会恢复。
+     * <p>适用于会阻塞的处理器：{@link #requiresAsync()} 返回 {@code true}，因此事件系统
+     * 会把它移交到事件执行器，不占用调用方线程。无论任务是否抛出异常，派发都会恢复。
      *
      * @param task 要执行的动作
      * @return 强制异步执行的任务

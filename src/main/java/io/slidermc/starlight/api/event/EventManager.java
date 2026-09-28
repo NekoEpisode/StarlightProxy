@@ -3,7 +3,6 @@ package io.slidermc.starlight.api.event;
 import io.slidermc.starlight.api.event.events.interfaces.ICancellableEvent;
 import io.slidermc.starlight.api.plugin.IPlugin;
 import io.slidermc.starlight.api.translate.TranslateManager;
-import io.slidermc.starlight.utils.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -101,6 +100,18 @@ public class EventManager {
      */
     Executor eventExecutor() {
         return eventExecutor;
+    }
+
+    /**
+     * 返回翻译管理器。
+     *
+     * <p>包内可见：派发过程中的非 debug 日志同样需要走翻译，而 {@link EventDispatch}
+     * 与本类的内部 record 都无法直接访问本字段。
+     *
+     * @return 翻译管理器
+     */
+    TranslateManager translateManager() {
+        return translateManager;
     }
 
     /**
@@ -496,34 +507,45 @@ public class EventManager {
     ) {
 
         /**
-         * 本次处理是否可能暂停派发。
+         * 处理器标识，用于日志。
          *
-         * <p>只有返回 {@link EventTask} 的处理方法才能暂停：返回 {@code void} 的方法无论是否接收
-         * {@link Continuation}，都必须在返回前完成处理（同步恢复由派发循环直接继续）。
+         * <p>返回值是<b>单个</b>字符串（{@code 来源ID::监听器ID#方法名}），对应翻译文案里的
+         * <b>一个</b> {@code {}} 占位符。不要试图把它拆成多个占位符的参数。
          *
-         * @return 可能暂停时返回 {@code true}
+         * @return 形如 {@code 来源ID::监听器ID#方法名} 的标识
          */
-        boolean canSuspend() {
-            return returnsTask;
+        String describe() {
+            return sourceId + "::" + listenerId + "#" + method.getName();
         }
 
         /**
-         * 调用处理器。
+         * 调用处理器，返回它声明的任务。
          *
-         * <p>若方法返回 {@link EventTask}，则执行之；否则本次处理在方法返回时即结束。
+         * <p>返回 {@code null} 表示处理器已同步完成，无需暂停。
          *
-         * @param event        事件实例
-         * @param continuation 供处理器暂停派发使用的凭据
-         * @throws Throwable 处理器或其返回的任务抛出的异常
+         * @param event            事件实例
+         * @param continuation     供处理器暂停派发使用的凭据
+         * @param translateManager 用于输出告警的翻译管理器
+         * @return 处理器返回的任务；返回 {@code void} 或返回 {@code null} 时为 {@code null}
+         * @throws Throwable 处理器自身抛出的异常
          */
-        void complete(IStarlightEvent event, Continuation continuation) throws Throwable {
+        EventTask complete(IStarlightEvent event, Continuation continuation,
+                           TranslateManager translateManager) throws Throwable {
             Object result = wantsContinuation
                     ? method.invoke(listener, event, continuation)
                     : method.invoke(listener, event);
 
-            if (returnsTask) {
-                ((EventTask) result).execute(continuation);
+            if (!returnsTask) {
+                return null;
             }
+            if (result == null) {
+                // 声明返回 EventTask 却给出 null：等同于同步完成。
+                // 不能静默忽略，否则该处理器看起来"暂停"了却永远不会恢复。
+                log.warn(translateManager.translate("starlight.logging.warn.event.handler_returned_null"),
+                        listener.getClass().getName(), method.getName());
+                return null;
+            }
+            return (EventTask) result;
         }
     }
 }

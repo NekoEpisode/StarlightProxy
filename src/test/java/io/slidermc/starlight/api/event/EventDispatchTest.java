@@ -387,6 +387,153 @@ class EventDispatchTest {
     }
 
     @Test
+    void taskReturningHandlerThatThrowsDoesNotHang() {
+        // 处理器体抛出异常时必须继续派发：它已无法再恢复，等待 resume() 会永久挂起
+        List<String> order = new ArrayList<>();
+
+        eventManager.register("throws-before-task", new EventListener() {
+            @EventHandler(priority = EventPriority.HIGH)
+            public EventTask onSimple(SimpleEvent event) {
+                throw new IllegalStateException("expected");
+            }
+        });
+        eventManager.register("after-throwing-task-handler", new EventListener() {
+            @EventHandler(priority = EventPriority.LOW)
+            public void onSimple(SimpleEvent event) {
+                order.add("after");
+            }
+        });
+
+        eventManager.fire(new SimpleEvent()).join();
+
+        assertEquals(List.of("after"), order);
+    }
+
+    @Test
+    void taskReturningHandlerWithContinuationThatThrowsDoesNotHang() {
+        List<String> order = new ArrayList<>();
+
+        eventManager.register("throws-with-continuation", new EventListener() {
+            @EventHandler(priority = EventPriority.HIGH)
+            public EventTask onSimple(SimpleEvent event, Continuation continuation) {
+                throw new IllegalStateException("expected");
+            }
+        });
+        eventManager.register("after-throwing-continuation-handler", new EventListener() {
+            @EventHandler(priority = EventPriority.LOW)
+            public void onSimple(SimpleEvent event) {
+                order.add("after");
+            }
+        });
+
+        eventManager.fire(new SimpleEvent()).join();
+
+        assertEquals(List.of("after"), order);
+    }
+
+    @Test
+    void eventTaskThatThrowsDoesNotHang() {
+        List<String> order = new ArrayList<>();
+
+        eventManager.register("task-throws", new EventListener() {
+            @EventHandler(priority = EventPriority.HIGH)
+            public EventTask onSimple(SimpleEvent event) {
+                return continuation -> {
+                    throw new IllegalStateException("expected");
+                };
+            }
+        });
+        eventManager.register("after-task-throws", new EventListener() {
+            @EventHandler(priority = EventPriority.LOW)
+            public void onSimple(SimpleEvent event) {
+                order.add("after");
+            }
+        });
+
+        eventManager.fire(new SimpleEvent()).join();
+
+        assertEquals(List.of("after"), order);
+    }
+
+    @Test
+    void handlerReturningNullTaskDoesNotHang() {
+        List<String> order = new ArrayList<>();
+
+        eventManager.register("returns-null", new EventListener() {
+            @EventHandler(priority = EventPriority.HIGH)
+            public EventTask onSimple(SimpleEvent event) {
+                return null;
+            }
+        });
+        eventManager.register("after-null-task", new EventListener() {
+            @EventHandler(priority = EventPriority.LOW)
+            public void onSimple(SimpleEvent event) {
+                order.add("after");
+            }
+        });
+
+        eventManager.fire(new SimpleEvent()).join();
+
+        assertEquals(List.of("after"), order);
+    }
+
+    @Test
+    void fireSyncAcceptsCompletedTask() {
+        // EventTask.completed() 是给同步处理器用的，fireSync 必须接受它
+        List<String> order = new ArrayList<>();
+
+        eventManager.register("sync-completed", new EventListener() {
+            @EventHandler(priority = EventPriority.HIGH)
+            public EventTask onSimple(SimpleEvent event) {
+                order.add("completed");
+                return EventTask.completed();
+            }
+        });
+        eventManager.register("after-sync-completed", new EventListener() {
+            @EventHandler(priority = EventPriority.LOW)
+            public void onSimple(SimpleEvent event) {
+                order.add("after");
+            }
+        });
+
+        eventManager.fireSync(new SimpleEvent());
+
+        assertEquals(List.of("completed", "after"), order);
+    }
+
+    @Test
+    void fireSyncRejectsSuspendingHandler() {
+        eventManager.register("suspends", new EventListener() {
+            @EventHandler
+            public EventTask onSimple(SimpleEvent event) {
+                return EventTask.withContinuation(c -> {});
+            }
+        });
+
+        assertThrows(IllegalStateException.class, () -> eventManager.fireSync(new SimpleEvent()));
+    }
+
+    @Test
+    void taskAsyncRunsOffTheCallingThread() {
+        // EventTask.async(...) 声明必须换线程：不能 inline 跑在调用方线程上
+        AtomicReference<String> taskThread = new AtomicReference<>();
+        String callingThread = Thread.currentThread().getName();
+
+        eventManager.register("task-async", new EventListener() {
+            @EventHandler
+            public EventTask onSimple(SimpleEvent event) {
+                return EventTask.async(() -> taskThread.set(Thread.currentThread().getName()));
+            }
+        });
+
+        eventManager.fire(new SimpleEvent()).join();
+
+        assertNotNull(taskThread.get());
+        assertFalse(callingThread.equals(taskThread.get()),
+                "EventTask.async 不应在调用方线程执行");
+    }
+
+    @Test
     void voidHandlerThatTakesContinuationStillCompletes() {
         List<String> order = new ArrayList<>();
 
