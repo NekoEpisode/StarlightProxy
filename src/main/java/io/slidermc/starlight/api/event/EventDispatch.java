@@ -5,6 +5,7 @@ import io.slidermc.starlight.utils.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.PrintWriter;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -102,6 +103,32 @@ final class EventDispatch {
     }
 
     /**
+     * 记录事件处理器抛出的异常。
+     *
+     * <p>控制台在接管 log4j2 输出后会重写多行内容，异常堆栈有可能在重写过程中丢失，
+     * 导致排查时只看到一行消息、无从定位。因此这里额外把堆栈直接写到 {@code stderr}，
+     * 不经由日志系统——堆栈对本项目排查问题过于关键，不能依赖日志管线的正确性。
+     *
+     * @param manager 事件管理器，用于取得翻译
+     * @param handler 抛出异常的处理器
+     * @param event   正在派发的事件
+     * @param t       抛出的异常
+     */
+    private static void logHandlerFailure(final EventManager manager,
+                                          final EventManager.Invocation handler,
+                                          final IStarlightEvent event,
+                                          final Throwable t) {
+        String eventName = event.getClass().getSimpleName();
+        log.error(manager.translateManager()
+                        .translate("starlight.logging.error.event.handler_threw"),
+                handler.describe(), eventName, t);
+
+        PrintWriter fallback = new PrintWriter(System.err, true);
+        fallback.println("[event] " + handler.describe() + " threw while handling " + eventName);
+        t.printStackTrace(fallback);
+    }
+
+    /**
      * 同步执行处理器，遇到"返回后才能恢复"的情况即报告失败。
      *
      * <p>判定依据是处理器<b>是否真的挂起</b>，而不是它是否声明了暂停能力：
@@ -134,9 +161,7 @@ final class EventDispatch {
                 if (detector.afterExecute()) {
                     return true;
                 }
-                log.error(manager.translateManager()
-                                .translate("starlight.logging.error.event.handler_threw"),
-                        handler.describe(), event.getClass().getSimpleName(), t);
+                logHandlerFailure(manager, handler, event, t);
                 continue;
             }
 
@@ -270,9 +295,7 @@ final class EventDispatch {
                 task = handler.complete(event, pause, manager.translateManager());
             } catch (Throwable t) {
                 ExceptionUtils.rethrowIfFatal(t);
-                log.error(manager.translateManager()
-                                .translate("starlight.logging.error.event.handler_threw"),
-                        handler.describe(), event.getClass().getSimpleName(), t);
+                logHandlerFailure(manager, handler, event, t);
                 // 异常退出：不等待恢复，直接推进
                 continue;
             }
@@ -450,9 +473,7 @@ final class EventDispatch {
 
         @Override
         public void resumeWithException(final Throwable exception) {
-            log.error(manager.translateManager()
-                            .translate("starlight.logging.error.event.handler_threw"),
-                    handlers.get(index).describe(), event.getClass().getSimpleName(), exception);
+            logHandlerFailure(manager, handlers.get(index), event, exception);
             resume();
         }
 

@@ -443,6 +443,10 @@ public class PluginManager {
             throw new PluginLoadException(formatTranslated(t("starlight.logging.error.plugin.classloader_create_failed"), jarPath.getFileName()), e);
         }
 
+        // 必须在加载插件主类之前注册：插件可能在静态初始化阶段就使用其它插件的类，
+        // 若此时对方不在注册表中，兄弟查找会失败
+        classLoader.addToClassLoaders();
+
         Class<?> mainClass;
         try {
             mainClass = classLoader.loadClass(description.main());
