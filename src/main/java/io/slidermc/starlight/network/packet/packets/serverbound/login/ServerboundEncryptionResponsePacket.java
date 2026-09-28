@@ -81,7 +81,6 @@ public class ServerboundEncryptionResponsePacket implements IMinecraftPacket {
             ConnectionContext context = ctx.channel().attr(AttributeKeys.CONNECTION_CONTEXT).get();
             var encryption = proxy.getEncryptionManager();
 
-            // 1. RSA 解密 sharedSecret 和 verifyToken
             byte[] sharedSecret;
             byte[] decryptedToken;
             try {
@@ -93,7 +92,6 @@ public class ServerboundEncryptionResponsePacket implements IMinecraftPacket {
                 return;
             }
 
-            // 2. 校验 verifyToken
             if (!Arrays.equals(decryptedToken, context.getVerifyToken())) {
                 log.warn(proxy.getTranslateManager().translate("starlight.logging.warn.encryption.verify_token_mismatch"));
                 disconnect(ctx, "Invalid verify token");
@@ -102,7 +100,6 @@ public class ServerboundEncryptionResponsePacket implements IMinecraftPacket {
             // 清除已使用的 token
             context.setVerifyToken(null);
 
-            // 3. 安装 AES 加密 pipeline（必须在发任何后续包之前完成）
             try {
                 ctx.pipeline().addBefore(
                         InternalConfig.HANDLER_FRAME,
@@ -121,15 +118,11 @@ public class ServerboundEncryptionResponsePacket implements IMinecraftPacket {
                 return;
             }
 
-            // 4. 根据 online-mode 决定是否请求 Mojang
-            // 注意此处的加密管道已经在上方装好：即使下面因为强制离线而跳过验证，
-            // 连接依然是加密的（Starlight 支持离线连接走加密）。
             String username = context.getPendingUsername();
             context.setPendingUsername(null);
 
-            // 强制离线优先于一切：基岩版客户端没有 Mojang 会话，无法完成验证
-            boolean isOnlineMode = !context.isPerConnectionOfflineMode()
-                    && (proxy.getConfig().isOnlineMode() || context.isPerConnectionOnlineMode());
+            boolean isOnlineMode = context.isPerConnectionOnlineMode()
+                    || (!context.isPerConnectionOfflineMode() && proxy.getConfig().isOnlineMode());
 
             if (!isOnlineMode) {
                 log.debug("加密通道已建立，跳过 Mojang 验证（离线模式）");

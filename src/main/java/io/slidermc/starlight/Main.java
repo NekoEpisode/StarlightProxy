@@ -312,6 +312,9 @@ public class Main {
         registryPacketUtils.registerByAutoMapping(Key.key("minecraft:chat_command"), ProtocolState.PLAY, ProtocolDirection.SERVERBOUND, ServerboundChatCommandPacket::new);
         r.registerListener(ServerboundChatCommandPacket.class, "default", new ServerboundChatCommandPacket.Listener());
 
+        registryPacketUtils.registerByAutoMapping(Key.key("minecraft:chat_command_signed"), ProtocolState.PLAY, ProtocolDirection.SERVERBOUND, ServerboundChatCommandSignedPacket::new);
+        r.registerListener(ServerboundChatCommandSignedPacket.class, "default", new ServerboundChatCommandSignedPacket.Listener());
+
         registryPacketUtils.registerByAutoMapping(Key.key("minecraft:command_suggestion"), ProtocolState.PLAY, ProtocolDirection.SERVERBOUND, ServerboundCommandSuggestionPacket::new);
         r.registerListener(ServerboundCommandSuggestionPacket.class, "default", new ServerboundCommandSuggestionPacket.Listener());
 

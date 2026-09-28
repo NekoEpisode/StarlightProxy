@@ -7,13 +7,16 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.tree.CommandNode;
 import io.slidermc.starlight.StarlightProxy;
 import io.slidermc.starlight.api.command.source.IStarlightCommandSource;
+import io.slidermc.starlight.api.player.ProxiedPlayer;
 import io.slidermc.starlight.utils.ExceptionUtils;
 import io.slidermc.starlight.utils.MiniMessageUtils;
+import io.slidermc.starlight.utils.StringUtils;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -144,6 +147,59 @@ public class CommandManager {
         synchronized (lock) {
             return dispatcher.getRoot().getChild(name.toLowerCase()) != null;
         }
+    }
+
+    /**
+     * 尝试把一条玩家输入当作代理命令处理。
+     *
+     * <p>判定顺序：
+     * <ol>
+     *   <li>命令名为空，或不是已注册的代理命令 → 返回 {@code false}，交由调用方按原样处理</li>
+     *   <li>玩家无权使用该命令 → 返回 {@code false}，交由调用方按原样处理，
+     *       以免暴露代理命令的存在</li>
+     *   <li>否则异步执行并返回 {@code true}，调用方不应再转发该输入</li>
+     * </ol>
+     *
+     * @param input  不含前导 {@code /} 的命令文本
+     * @param player 发起该命令的玩家
+     * @return 该输入已被作为代理命令消费时返回 {@code true}
+     */
+    public boolean dispatch(String input, ProxiedPlayer player) {
+        if (input == null || player == null) {
+            return false;
+        }
+
+        String normalized = input.trim();
+        if (normalized.isEmpty()) {
+            return false;
+        }
+
+        String commandName = normalized.split(" ")[0];
+        if (!hasCommand(commandName)) {
+            return false;
+        }
+
+        CommandNode<IStarlightCommandSource> node = getDispatcher().getRoot().getChild(commandName);
+        if (node != null && !node.canUse(player)) {
+            return false;
+        }
+
+        if (proxy != null && proxy.getConfig().isLoggingCommand()) {
+            String logCommand = normalized.length() > 256
+                    ? StringUtils.truncateByCharCount(normalized, 256) + "..."
+                    : normalized;
+            log.info(proxy.getTranslateManager().translate("starlight.logging.info.player_executed_command"),
+                    player.getGameProfile().username(), "/" + logCommand);
+        }
+
+        CompletableFuture.runAsync(
+                () -> execute(normalized, player),
+                proxy.getExecutors().getCommandExecutor()
+        ).exceptionally(throwable -> {
+            log.error(t("starlight.logging.error.error_on_executing_command"), normalized, throwable);
+            return null;
+        });
+        return true;
     }
 
     /**

@@ -7,6 +7,7 @@ import io.slidermc.starlight.api.event.events.internal.PlayerChatEvent;
 import io.slidermc.starlight.api.player.ProxiedPlayer;
 import io.slidermc.starlight.network.codec.utils.MinecraftCodecUtils;
 import io.slidermc.starlight.network.context.AttributeKeys;
+import io.slidermc.starlight.network.context.ConnectionContext;
 import io.slidermc.starlight.network.packet.IMinecraftPacket;
 import io.slidermc.starlight.network.packet.listener.IPacketListener;
 import io.slidermc.starlight.network.protocolenum.ProtocolVersion;
@@ -125,7 +126,8 @@ public class ServerboundChatPacket implements IMinecraftPacket {
     public static class Listener implements IPacketListener<ServerboundChatPacket> {
         @Override
         public void handle(ServerboundChatPacket packet, ChannelHandlerContext ctx, StarlightProxy proxy) {
-            ProxiedPlayer player = ctx.channel().attr(AttributeKeys.CONNECTION_CONTEXT).get().getPlayer();
+            ConnectionContext context = ctx.channel().attr(AttributeKeys.CONNECTION_CONTEXT).get();
+            ProxiedPlayer player = context.getPlayer();
             PlayerChatEvent event = new PlayerChatEvent(player, packet.message);
             proxy.getEventManager().fireAsync(event).whenComplete((chatEvent, throwable) -> {
                 Runnable action = () -> {
