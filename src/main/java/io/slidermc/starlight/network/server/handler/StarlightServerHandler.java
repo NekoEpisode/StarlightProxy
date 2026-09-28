@@ -61,7 +61,7 @@ public class StarlightServerHandler extends ChannelInboundHandlerAdapter {
             io.netty.channel.Channel downstream = context != null ? context.getDownstreamChannel() : null;
             if (downstream != null && downstream.isActive()) {
                 downstream.writeAndFlush(rawPacket);
-            } else {
+            } else if (proxy.getConfig().isProtocolErrorShown()) {
                 log.warn(proxy.getTranslateManager().translate("starlight.logging.warn.packet.received_raw_but_no_downstream_channel"));
             }
         } else if (msg instanceof IMinecraftPacket packet) {

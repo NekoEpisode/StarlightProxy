@@ -43,7 +43,7 @@ public class StarlightClientHandler extends ChannelInboundHandlerAdapter {
             io.netty.channel.Channel playerChannel = client.getPlayerChannel();
             if (playerChannel != null && playerChannel.isActive()) {
                 playerChannel.writeAndFlush(rawPacket);
-            } else {
+            } else if (proxy.getConfig().isProtocolErrorShown()) {
                 log.warn(proxy.getTranslateManager().translate("starlight.logging.warn.packet.received_raw_but_no_player_channel"));
             }
         } else if (msg instanceof IMinecraftPacket packet) {

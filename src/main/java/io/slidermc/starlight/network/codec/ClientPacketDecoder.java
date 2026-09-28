@@ -3,6 +3,7 @@ package io.slidermc.starlight.network.codec;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
+import io.slidermc.starlight.StarlightProxy;
 import io.slidermc.starlight.network.client.StarlightMinecraftClient;
 import io.slidermc.starlight.network.codec.utils.MinecraftCodecUtils;
 import io.slidermc.starlight.network.packet.IMinecraftPacket;
@@ -28,10 +29,12 @@ public class ClientPacketDecoder extends ByteToMessageDecoder {
     private static final Logger log = LoggerFactory.getLogger(ClientPacketDecoder.class);
     private final PacketRegistry packetRegistry;
     private final StarlightMinecraftClient client;
+    private final StarlightProxy proxy;
 
-    public ClientPacketDecoder(PacketRegistry packetRegistry, StarlightMinecraftClient client) {
+    public ClientPacketDecoder(PacketRegistry packetRegistry, StarlightMinecraftClient client, StarlightProxy proxy) {
         this.packetRegistry = packetRegistry;
         this.client = client;
+        this.proxy = proxy;
     }
 
     @Override
@@ -68,7 +71,8 @@ public class ClientPacketDecoder extends ByteToMessageDecoder {
                 list.add(new RawPacket(raw));
             } else {
                 // LOGIN/STATUS 阶段不允许未知包，直接丢弃
-                log.warn("Unknown CLIENTBOUND packet 0x{} in state {}, dropping", Integer.toHexString(packetId), inboundState);
+                if (proxy.getConfig().isProtocolErrorShown())
+                    log.warn("Unknown CLIENTBOUND packet 0x{} in state {}, dropping", Integer.toHexString(packetId), inboundState);
                 byteBuf.readerIndex(contentStart + length);
             }
             return;

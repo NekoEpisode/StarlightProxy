@@ -81,7 +81,8 @@ public class ServerPacketDecoder extends ByteToMessageDecoder {
                 list.add(new RawPacket(raw));
             } else {
                 // HANDSHAKE/LOGIN/STATUS 阶段不允许未知包，直接丢弃
-                log.warn("Unknown SERVERBOUND packet 0x{} in state {}, dropping", Integer.toHexString(packetId), inboundState);
+                if (proxy.getConfig().isProtocolErrorShown())
+                    log.warn("Unknown SERVERBOUND packet 0x{} in state {}, dropping", Integer.toHexString(packetId), inboundState);
                 byteBuf.readerIndex(contentStart + length);
             }
             return;
