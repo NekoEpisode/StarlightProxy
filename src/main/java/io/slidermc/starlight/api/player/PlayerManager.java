@@ -26,9 +26,29 @@ public class PlayerManager {
         return nameToPlayer.get(name);
     }
 
-    public synchronized void addPlayer(ProxiedPlayer player) {
-        uuidToPlayer.put(player.getGameProfile().uuid(), player);
-        nameToPlayer.put(player.getGameProfile().username(), player);
+    /**
+     * 尝试把玩家加入索引；同名或同 UUID 已在时拒绝。
+     *
+     * <p>检查与插入在同一个 {@code synchronized} 块内完成。<b>不可拆成"先查再插"</b>：两条同名连接
+     * 并发登录时，分开的检查会让两者都通过，后到者覆盖先到者，而先到者此时可能已经建好了下游连接。
+     *
+     * <p>UUID 与用户名都要查，它们拦截的是不同情况：UUID 相同是同一账号重复连接，
+     * 用户名相同而 UUID 不同是盗用他人名字。
+     *
+     * @param player 待加入的玩家
+     * @return 加入成功返回 {@code true}；UUID 或用户名已被占用时返回 {@code false}，索引保持不变
+     */
+    public synchronized boolean tryAddPlayer(ProxiedPlayer player) {
+        UUID uuid = player.getGameProfile().uuid();
+        String username = player.getGameProfile().username();
+
+        if (uuidToPlayer.containsKey(uuid) || nameToPlayer.containsKey(username)) {
+            return false;
+        }
+
+        uuidToPlayer.put(uuid, player);
+        nameToPlayer.put(username, player);
+        return true;
     }
 
     public synchronized ProxiedPlayer removePlayer(UUID uuid) {

@@ -18,8 +18,10 @@ import io.slidermc.starlight.network.packet.IMinecraftPacket;
 import io.slidermc.starlight.network.packet.listener.IPacketListener;
 import io.slidermc.starlight.network.packet.packets.clientbound.login.ClientboundDisconnectLoginPacket;
 import io.slidermc.starlight.network.packet.packets.serverbound.login.helper.LoginHelper;
-import io.slidermc.starlight.network.protocolenum.ProtocolVersion;import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
+import io.slidermc.starlight.network.protocolenum.ProtocolVersion;
+import io.slidermc.starlight.utils.MiniMessageUtils;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -88,13 +90,13 @@ public class ServerboundEncryptionResponsePacket implements IMinecraftPacket {
                 decryptedToken = encryption.decryptRSA(packet.getVerifyToken());
             } catch (Exception e) {
                 log.warn(proxy.getTranslateManager().translate("starlight.logging.warn.encryption.rsa_decrypt_failed"), e);
-                disconnect(ctx, "Encryption error");
+                disconnect(ctx, proxy, "starlight.disconnect.encryption_error");
                 return;
             }
 
             if (!Arrays.equals(decryptedToken, context.getVerifyToken())) {
                 log.warn(proxy.getTranslateManager().translate("starlight.logging.warn.encryption.verify_token_mismatch"));
-                disconnect(ctx, "Invalid verify token");
+                disconnect(ctx, proxy, "starlight.disconnect.invalid_verify_token");
                 return;
             }
             // 清除已使用的 token
@@ -114,7 +116,7 @@ public class ServerboundEncryptionResponsePacket implements IMinecraftPacket {
                 log.debug("上游加密通道已启用");
             } catch (Exception e) {
                 log.error(proxy.getTranslateManager().translate("starlight.logging.error.encryption.pipeline_install_failed"), e);
-                disconnect(ctx, "Encryption setup failed");
+                disconnect(ctx, proxy, "starlight.disconnect.encryption_setup_failed");
                 return;
             }
 
@@ -142,7 +144,7 @@ public class ServerboundEncryptionResponsePacket implements IMinecraftPacket {
                 serverIdHash = encryption.computeServerIdHash("", sharedSecret);
             } catch (Exception e) {
                 log.error(proxy.getTranslateManager().translate("starlight.logging.error.encryption.hash_compute_failed"), e);
-                disconnect(ctx, "Encryption error");
+                disconnect(ctx, proxy, "starlight.disconnect.encryption_error");
                 return;
             }
 
@@ -156,7 +158,7 @@ public class ServerboundEncryptionResponsePacket implements IMinecraftPacket {
                     .thenAccept(response -> ctx.channel().eventLoop().execute(() -> {
                         if (response.statusCode() != 200) {
                             log.warn(proxy.getTranslateManager().translate("starlight.logging.warn.encryption.mojang_auth_failed"), response.statusCode(), username);
-                            disconnect(ctx, "Failed to verify username!");
+                            disconnect(ctx, proxy, "starlight.disconnect.session_verify_failed");
                             return;
                         }
 
@@ -166,7 +168,7 @@ public class ServerboundEncryptionResponsePacket implements IMinecraftPacket {
                             profile = parseMojangProfile(response.body());
                         } catch (Exception e) {
                             log.error(proxy.getTranslateManager().translate("starlight.logging.error.encryption.mojang_response_parse_failed"), e);
-                            disconnect(ctx, "Failed to parse session response");
+                            disconnect(ctx, proxy, "starlight.disconnect.session_parse_failed");
                             return;
                         }
 
@@ -179,7 +181,7 @@ public class ServerboundEncryptionResponsePacket implements IMinecraftPacket {
                     .exceptionally(ex -> {
                         ctx.channel().eventLoop().execute(() -> {
                             log.error(proxy.getTranslateManager().translate("starlight.logging.error.encryption.session_server_request_failed"), ex);
-                            disconnect(ctx, "Failed to contact authentication server");
+                            disconnect(ctx, proxy, "starlight.disconnect.auth_server_unreachable");
                         });
                         return null;
                     });
@@ -201,7 +203,7 @@ public class ServerboundEncryptionResponsePacket implements IMinecraftPacket {
                 return;
             }
             if (gpEvent.isCancelled()) {
-                disconnect(ctx, "Login denied");
+                disconnect(ctx, proxy, "starlight.disconnect.login_denied");
                 return;
             }
             LoginHelper.completeLogin(ctx, proxy, gpEvent.getGameProfile(), gpEvent.isOnlineMode());
@@ -236,10 +238,26 @@ public class ServerboundEncryptionResponsePacket implements IMinecraftPacket {
             return new GameProfile(name, uuid, properties);
         }
 
-        private static void disconnect(ChannelHandlerContext ctx, String reason) {
-            ctx.channel().writeAndFlush(
-                    new ClientboundDisconnectLoginPacket(Component.text(reason).color(NamedTextColor.RED))
-            ).addListener(_ -> ctx.channel().close());
+        /**
+         * 拒绝一次加密阶段的登录。
+         *
+         * <p>此刻客户端仍在登录阶段，拿不到它的 {@code ClientInformation}，因此按 AGENTS.md 的约定
+         * 使用代理默认语言，而不是玩家语言。
+         *
+         * @param ctx       上游连接的上下文
+         * @param proxy     代理实例，用于取默认语言与翻译
+         * @param key       翻译键
+         * @param resolvers MiniMessage 占位符
+         */
+        private static void disconnect(ChannelHandlerContext ctx, StarlightProxy proxy, String key,
+                                       TagResolver... resolvers) {
+            Component reason = MiniMessageUtils.MINI_MESSAGE.deserialize(
+                    proxy.getTranslateManager().translate(
+                            proxy.getTranslateManager().getActiveLocale(), key),
+                    resolvers);
+
+            ctx.channel().writeAndFlush(new ClientboundDisconnectLoginPacket(reason))
+                    .addListener(_ -> ctx.channel().close());
         }
     }
 }

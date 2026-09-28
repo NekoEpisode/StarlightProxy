@@ -70,7 +70,8 @@ public class ServerboundStatusRequestPacket implements IMinecraftPacket {
             proxy.getEventManager().fire(event)
                     .whenComplete((e, throwable) -> {
                         if (throwable != null) {
-                            log.warn("ProxyPingEvent failed, using original response", throwable);
+                            log.warn(proxy.getTranslateManager().translate(
+                                    "starlight.logging.warn.ping.event_dispatch_failed"), throwable);
                             ctx.channel().writeAndFlush(originalResponse);
                             return;
                         }

@@ -85,7 +85,9 @@ public final class LoginQueryManager {
             return unsupported();
         }
         if (channelRegistry != null && !channelRegistry.isRegistered(channelKey)) {
-            log.warn("插件在未声明的通道 [{}] 上发起登录查询，已忽略", channelKey.asString());
+            log.warn(context.getProxy().getTranslateManager().translate(
+                            "starlight.logging.warn.login_query.channel_not_registered"),
+                    channelKey.asString());
             return unsupported();
         }
 
@@ -174,8 +176,9 @@ public final class LoginQueryManager {
         return CompletableFuture.completedFuture(null);
     }
 
-    private static CompletableFuture<byte[]> failed(String reason) {
-        log.warn("登录查询参数无效: {}", reason);
+    private CompletableFuture<byte[]> failed(String reason) {
+        log.warn(context.getProxy().getTranslateManager().translate(
+                "starlight.logging.warn.login_query.invalid_argument"), reason);
         CompletableFuture<byte[]> result = new CompletableFuture<>();
         result.complete(null);
         return result;

@@ -73,7 +73,8 @@ public class ModernServerSwitcher {
                             ctx.getClientInformation().ifPresentOrElse(
                                     info -> newClient.getChannel().writeAndFlush(
                                             new ServerboundClientInformationConfigurationPacket(info)),
-                                    () -> log.warn("No ClientInformation available for {} during server switch to {}",
+                                    () -> log.warn(proxy.getTranslateManager().translate(
+                                                    "starlight.logging.warn.switch.no_client_information"),
                                             player.getGameProfile().username(), target.getName())
                             );
 
@@ -82,7 +83,9 @@ public class ModernServerSwitcher {
                             player.setCurrentServer(target);
                             log.debug("Switched {} to {}", player.getGameProfile().username(), target.getName());
                         }).exceptionally(e -> {
-                            log.warn("Reconfiguration timed out for {}", player.getGameProfile().username());
+                            log.warn(proxy.getTranslateManager().translate(
+                                            "starlight.logging.warn.switch.reconfiguration_timeout"),
+                                    player.getGameProfile().username());
                             ctx.setPendingReconfiguration(null);
                             newClient.disconnect();
                             player.kick(MiniMessageUtils.MINI_MESSAGE.deserialize(
@@ -102,7 +105,7 @@ public class ModernServerSwitcher {
                                 )
                         );
                         newClient.disconnect();
-                        yield CompletableFuture.<Void>completedFuture(null);
+                        yield CompletableFuture.completedFuture(null);
                     }
                     case LoginResult.Error(Throwable cause) -> {
                         log.error(proxy.getTranslateManager().translate("starlight.logging.error.server_switch_failed"),
@@ -117,7 +120,7 @@ public class ModernServerSwitcher {
                                 )
                         );
                         newClient.disconnect();
-                        yield CompletableFuture.<Void>completedFuture(null);
+                        yield CompletableFuture.completedFuture(null);
                     }
                 })
                 .exceptionally(e -> {

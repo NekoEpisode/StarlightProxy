@@ -46,7 +46,9 @@ public final class CompressionHandlers {
             try {
                 handlers = factory.create(ctx.channel(), threshold);
             } catch (Throwable t) {
-                log.warn("压缩编解码器工厂失败，改用 Starlight 自身实现: {}", ctx.channel().remoteAddress(), t);
+                log.warn(proxy.getTranslateManager().translate(
+                                "starlight.logging.warn.compression_factory_failed"),
+                        ctx.channel().remoteAddress(), t);
             }
         }
 
