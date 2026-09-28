@@ -95,12 +95,15 @@
     "starlight.logging.error.plugin.on_disable_failed": "插件 [{}] onDisable 发生异常",
     "starlight.logging.error.plugin.on_reload_failed": "插件 [{}] onReload 发生异常",
 
-    "starlight.logging.error.event.handler_threw": "事件处理器 [{}::{}] 在处理 {} 时抛出异常",
-    "starlight.logging.warn.event.handler_param_count_invalid": "监听器 [{}] 方法 [{}] 被 @EventHandler 标注但参数数量不为 1，已跳过",
+    "starlight.logging.error.event.handler_threw": "事件处理器 [{}] 在处理 {} 时抛出异常",
+    "starlight.logging.warn.event.handler_param_count_invalid": "监听器 [{}] 方法 [{}] 被 @EventHandler 标注但参数不是 (Event) 或 (Event, Continuation)，已跳过",
     "starlight.logging.warn.event.handler_param_type_invalid": "监听器 [{}] 方法 [{}] 的参数类型 [{}] 不是 IStarlightEvent 的子类型，已跳过",
+    "starlight.logging.warn.event.handler_return_type_invalid": "监听器 [{}] 方法 [{}] 的返回类型 [{}] 既不是 void 也不是 EventTask，已跳过",
+    "starlight.logging.warn.event.handler_returned_null": "监听器 [{}] 方法 [{}] 声明返回 EventTask 却给出了 null，按已同步完成处理",
     "starlight.logging.warn.event.no_valid_handlers": "监听器 [{}] 在来源 [{}] 下没有任何有效的 @EventHandler 方法",
     "starlight.logging.warn.event.unregister_nonexistent": "尝试注销不存在的监听器 [{}] (来源: {})",
     "starlight.logging.error.event.listener_id_duplicate": "监听器 ID [{}] 已在来源 [{}] 下注册，请先注销再重新注册",
+    "starlight.logging.error.event.dispatch_task_failed": "事件 {} 的处理器 [{}] 返回的任务抛出异常",
 
     "starlight.logging.error.plugin.cannot_open_jar": "无法打开JAR文件: {}",
     "starlight.logging.error.plugin.plugin_yml_missing": "JAR中未找到 plugin.yml: {}",

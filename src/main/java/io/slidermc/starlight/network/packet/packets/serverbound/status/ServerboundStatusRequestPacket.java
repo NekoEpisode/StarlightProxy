@@ -67,7 +67,7 @@ public class ServerboundStatusRequestPacket implements IMinecraftPacket {
                     samplePlayers, origDescription, origFavicon, false
             );
 
-            proxy.getEventManager().fireAsync(event, proxy.getExecutors().getEventExecutor())
+            proxy.getEventManager().fire(event)
                     .whenComplete((e, throwable) -> {
                         if (throwable != null) {
                             log.warn("ProxyPingEvent failed, using original response", throwable);

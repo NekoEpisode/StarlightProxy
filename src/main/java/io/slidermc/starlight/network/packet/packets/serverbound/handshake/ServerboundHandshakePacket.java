@@ -99,41 +99,82 @@ public class ServerboundHandshakePacket implements IMinecraftPacket {
             PlayerHandshakeEvent handshakeEvent = new PlayerHandshakeEvent(
                     context, packet.serverAddress, packet.serverPort, nextState,
                     context.getEffectiveDownstreamAddress());
-            proxy.getEventManager().fire(handshakeEvent);
-            if (handshakeEvent.isDownstreamAddressOverridden()) {
-                context.setDownstreamAddress(handshakeEvent.getDownstreamAddress());
-            }
-            if (context.getEffectiveDownstreamAddress() != null) {
-                log.debug("下游握手地址: {}", context.getEffectiveDownstreamAddress());
-            }
 
             ServerHost host = ServerHost.parseFrom(packet.getServerAddress());
             context.getHandshakeInformation().setServerHost(host);
             log.debug("解析到的ServerHost: {}", host);
-            context.getHandshakeInformation().setServerPort(packet.getServerPort());
+            context.getHandshakeInformation().setServerPort(packet.serverPort);
+
+            if (!applyConnectionState(ctx, proxy, context, nextState, packet.nextState)) {
+                return;
+            }
+
+            proxy.getEventManager().fire(handshakeEvent).thenRun(() ->
+                    ctx.channel().eventLoop().execute(() ->
+                            applyDownstreamAddress(ctx, context, handshakeEvent)));
+        }
+
+        /**
+         * 依据客户端请求的下一状态设置连接状态。
+         *
+         * <p>该转换不依赖事件结果，必须同步执行，否则后续数据包会以错误的状态被解析。
+         *
+         * @param ctx       通道上下文
+         * @param proxy     代理实例
+         * @param context   连接上下文
+         * @param nextState 枚举形式的下一状态
+         * @param rawState  客户端请求的原始状态值，用于日志
+         * @return 状态合法时返回 {@code true}；未知状态会关闭连接并返回 {@code false}
+         */
+        private static boolean applyConnectionState(ChannelHandlerContext ctx,
+                                                    StarlightProxy proxy,
+                                                    ConnectionContext context,
+                                                    NextState nextState,
+                                                    int rawState) {
             switch (nextState) {
                 case STATUS -> {
-                    // Status
                     log.debug("Next State: STATUS");
                     context.setInboundState(ProtocolState.STATUS);
                     context.setOutboundState(ProtocolState.STATUS);
                 }
                 case LOGIN -> {
-                    // Login
                     log.debug("Next State: LOGIN");
                     context.setInboundState(ProtocolState.LOGIN);
                     context.setOutboundState(ProtocolState.LOGIN);
                 }
                 case TRANSFER -> {
-                    // Transfer
                     log.debug("Next State: Transfer");
                     context.setInboundState(ProtocolState.LOGIN);
                     context.setOutboundState(ProtocolState.LOGIN);
                 }
                 default -> {
-                    log.warn(proxy.getTranslateManager().translate("starlight.logging.warn.unknown_next_state"), packet.nextState);
+                    log.warn(proxy.getTranslateManager().translate("starlight.logging.warn.unknown_next_state"), rawState);
                     ctx.channel().close();
+                    return false;
                 }
+            }
+            return true;
+        }
+
+        /**
+         * 应用插件覆盖的下游地址。
+         *
+         * @param ctx            通道上下文
+         * @param context        连接上下文
+         * @param handshakeEvent 已定稿的握手事件
+         */
+        private static void applyDownstreamAddress(ChannelHandlerContext ctx,
+                                                   ConnectionContext context,
+                                                   PlayerHandshakeEvent handshakeEvent) {
+            if (!ctx.channel().isActive()) {
+                return;
+            }
+
+            if (handshakeEvent.isDownstreamAddressOverridden()) {
+                context.setDownstreamAddress(handshakeEvent.getDownstreamAddress());
+            }
+            if (context.getEffectiveDownstreamAddress() != null) {
+                log.debug("下游握手地址: {}", context.getEffectiveDownstreamAddress());
             }
         }
     }

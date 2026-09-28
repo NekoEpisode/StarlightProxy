@@ -45,7 +45,7 @@ public class StarlightServerHandler extends ChannelInboundHandlerAdapter {
                 }
                 log.info(proxy.getTranslateManager().translate("starlight.logging.info.player.exit"), player.getGameProfile().username(), player.getGameProfile().uuid());
                 PlayerExitEvent playerExitEvent = new PlayerExitEvent(player);
-                proxy.getEventManager().fireAsync(playerExitEvent);
+                proxy.getEventManager().fireAndForget(playerExitEvent);
             }
         }
         ctx.channel().close();

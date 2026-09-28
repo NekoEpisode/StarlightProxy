@@ -84,25 +84,17 @@ public class ServerboundLoginStartPacket implements IMinecraftPacket {
             }
 
             PreLoginEvent preLoginEvent = new PreLoginEvent(context, packet.getUsername());
-            proxy.getEventManager().fire(preLoginEvent);
 
-            Runnable loginAction = () -> {
-                if (!ctx.channel().isActive()) return;
-                if (preLoginEvent.isDenied()) {
-                    denyLogin(ctx, preLoginEvent.getDenyReason());
-                    return;
-                }
-                doLogin(ctx, proxy, packet, context,
-                        preLoginEvent.isForceOnlineMode(), preLoginEvent.isForceOfflineMode());
-            };
-
-            if (!preLoginEvent.hasIntents()) {
-                loginAction.run();
-            } else {
-                preLoginEvent.tryComplete();
-                preLoginEvent.getCompletionFuture().thenRun(() ->
-                        ctx.channel().eventLoop().execute(loginAction));
-            }
+            proxy.getEventManager().fire(preLoginEvent).thenRun(() ->
+                    ctx.channel().eventLoop().execute(() -> {
+                        if (!ctx.channel().isActive()) return;
+                        if (preLoginEvent.isDenied()) {
+                            denyLogin(ctx, preLoginEvent.getDenyReason());
+                            return;
+                        }
+                        doLogin(ctx, proxy, packet, context,
+                                preLoginEvent.isForceOnlineMode(), preLoginEvent.isForceOfflineMode());
+                    }));
         }
 
         private static void denyLogin(ChannelHandlerContext ctx, Component reason) {
@@ -145,13 +137,31 @@ public class ServerboundLoginStartPacket implements IMinecraftPacket {
                         List.of()
                 );
                 GameProfileRequestEvent gpEvent = new GameProfileRequestEvent(context, profile, false);
-                proxy.getEventManager().fire(gpEvent);
-                if (gpEvent.isCancelled()) {
-                    disconnect(ctx);
-                    return;
-                }
-                LoginHelper.completeLogin(ctx, proxy, gpEvent.getGameProfile(), gpEvent.isOnlineMode());
+                // 处理器可能暂停派发（例如异步查询皮肤），因此必须等事件定稿再读取档案，
+                // 否则插件的档案改写与取消会被静默忽略
+                proxy.getEventManager().fire(gpEvent).thenRun(() ->
+                        ctx.channel().eventLoop().execute(() -> completeOfflineLogin(ctx, proxy, gpEvent)));
             }
+        }
+
+        /**
+         * 在档案事件定稿后完成离线登录。
+         *
+         * @param ctx     通道上下文
+         * @param proxy   代理实例
+         * @param gpEvent 已定稿的档案请求事件
+         */
+        private static void completeOfflineLogin(ChannelHandlerContext ctx,
+                                                 StarlightProxy proxy,
+                                                 GameProfileRequestEvent gpEvent) {
+            if (!ctx.channel().isActive()) {
+                return;
+            }
+            if (gpEvent.isCancelled()) {
+                disconnect(ctx);
+                return;
+            }
+            LoginHelper.completeLogin(ctx, proxy, gpEvent.getGameProfile(), gpEvent.isOnlineMode());
         }
 
         private static void disconnect(ChannelHandlerContext ctx) {

@@ -98,7 +98,7 @@ public final class ChannelRegisterHandler {
             return;
         }
 
-        proxy.getEventManager().fireAsync(new PlayerChannelRegisteredEvent(player, Set.copyOf(added)));
+        proxy.getEventManager().fireAndForget(new PlayerChannelRegisteredEvent(player, Set.copyOf(added)));
     }
 }
 

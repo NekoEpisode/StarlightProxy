@@ -211,7 +211,7 @@ public class ProxiedPlayer implements IStarlightCommandSource {
         boolean result = proxy.getPermissionService().hasPermission(this, permission);
 
         PermissionCheckEvent event = new PermissionCheckEvent(this, permission, result);
-        proxy.getEventManager().fire(event);
+        proxy.getEventManager().fireSync(event);
 
         return event.getResult();
     }
