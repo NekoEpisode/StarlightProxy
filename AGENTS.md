@@ -25,7 +25,8 @@
 新翻译文件应放置在resources/lang目录下, 格式为JSON, 具体可以查看已有翻译文件进行参考, 文件名格式为"xx_xx.json", 文件名应该遵循Minecraft语言文件locale格式(如fr_fr.json, zh_cn.json), Starlight在启动时将会自动遍历并加载语言文件  
 发送给玩家的消息应该使用ConnectionContext.getTranslation来进行针对玩家客户端语言的翻译, 可以使用MiniMessage进行翻译文件中的内容解析, 不要使用MiniMessage.minimessage()创建新实例, 请使用MiniMessageUtils.MINI_MESSAGE  
 翻译键必须在所有语言文件中相同  
-关于翻译键的具体格式, 可以查看现有的翻译文件进行参考
+关于翻译键的具体格式, 可以查看现有的翻译文件进行参考  
+如果目标代码位置无法拿到客户端的locale(比如还在Login阶段，则写英文，此例外不适用于日志(因为日志几乎随时都能拿到翻译))
 2. 不要写过多无意义的注释(比如分界线之类的), 那样会让代码看起来乱糟糟, 请只写真正有意义的注释, 以帮助理解代码的逻辑和目的
 请写详细的JavaDoc注释
 3. 请编写JUnit 5单元测试来测试功能的正确性, 测试类应该放在src/test/java目录下
@@ -41,6 +42,6 @@ RegistryPacketUtils在启动时加载resources/data/packets下的所有映射文
 9. 不要保留任何API兼容性，即使这可能会破坏下游插件，API兼容性不是这里应该考虑的
 
 ## 文档数据
-最后更新: 2026/9/27  
+最后更新: 2026/9/28  
 作者: NekoEpisode(NekoSora)  
 此文档专门为AI Agent设计, 以帮助AI Agent更好地理解项目要求和背景, 以便更好地协助开发工作
