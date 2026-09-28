@@ -31,6 +31,28 @@ public class ClientboundPluginRequestPacket implements IMinecraftPacket {
     private Key key;
     private byte[] data;
 
+    public ClientboundPluginRequestPacket() {}
+    
+    public ClientboundPluginRequestPacket(int messageId, Key key, ByteBuf payload) {
+        this.messageId = messageId;
+        this.key = key;
+        try {
+            byte[] bytes = new byte[payload.readableBytes()];
+            payload.readBytes(bytes);
+            this.data = bytes;
+        } finally {
+            payload.release();
+        }
+    }
+
+    public int getMessageId() {
+        return messageId;
+    }
+
+    public void setMessageId(int messageId) {
+        this.messageId = messageId;
+    }
+
     @Override
     public void encode(ByteBuf byteBuf, ProtocolVersion protocolVersion) {
         MinecraftCodecUtils.writeVarInt(byteBuf, messageId);

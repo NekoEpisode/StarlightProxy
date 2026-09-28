@@ -10,6 +10,7 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.slidermc.starlight.api.channel.ChannelRegistry;
+import io.slidermc.starlight.api.channel.CompressionCodecFactory;
 import io.slidermc.starlight.api.command.CommandManager;
 import io.slidermc.starlight.api.command.StarlightCommand;
 import io.slidermc.starlight.api.command.source.IStarlightCommandSource;
@@ -61,6 +62,7 @@ public class StarlightProxy {
     private final EventManager eventManager;
     private final PluginManager pluginManager;
     private final ChannelRegistry channelRegistry;
+    private volatile CompressionCodecFactory compressionCodecFactory;
     private volatile PermissionService permissionService;
 
     private EventLoopGroup bossGroup;
@@ -270,6 +272,27 @@ public class StarlightProxy {
      */
     public ChannelRegistry getChannelRegistry() {
         return channelRegistry;
+    }
+
+    /**
+     * 设置上游连接的压缩编解码器工厂。
+     *
+     * <p>插件借此让连接改用协商出来的算法（例如与客户端 mod 约定的 zstd）替代 Starlight 自身的
+     * zlib 实现。传 {@code null} 即恢复默认行为。
+     *
+     * @param factory 工厂；{@code null} 表示使用 Starlight 自身实现
+     */
+    public void setCompressionCodecFactory(CompressionCodecFactory factory) {
+        this.compressionCodecFactory = factory;
+    }
+
+    /**
+     * 返回当前的压缩编解码器工厂。
+     *
+     * @return 工厂；未设置时为 {@code null}，调用方应退回 Starlight 自身实现
+     */
+    public CompressionCodecFactory getCompressionCodecFactory() {
+        return compressionCodecFactory;
     }
 
     /**

@@ -78,12 +78,28 @@ public class ConnectionContext {
 
     private final StarlightProxy proxy;
 
+    /** 登录阶段的插件消息查询；每连接一个，生命周期与连接一致。 */
+    private final LoginQueryManager loginQueries;
+
     public ConnectionContext(StarlightProxy proxy, Channel channel) {
         this.inboundState = ProtocolState.HANDSHAKE;
         this.outboundState = ProtocolState.HANDSHAKE;
         this.handshakeInformation = new HandshakeInformation();
         this.proxy = proxy;
         this.channel = channel;
+        this.loginQueries = new LoginQueryManager(channel, this,
+                channelKey -> proxy.getChannelRegistry().isRegistered(channelKey));
+    }
+
+    /**
+     * 登录阶段的插件消息查询。
+     *
+     * <p>仅在 LOGIN 阶段有效；推进登录流程之前应等待 {@link LoginQueryManager#allSettled()}。
+     *
+     * @return 本连接的登录查询管理器
+     */
+    public LoginQueryManager getLoginQueries() {
+        return loginQueries;
     }
 
     public ProtocolState getInboundState() {

@@ -5,9 +5,6 @@ import io.slidermc.starlight.StarlightProxy;
 import io.slidermc.starlight.api.event.events.internal.PlayerLoginEvent;
 import io.slidermc.starlight.api.player.ProxiedPlayer;
 import io.slidermc.starlight.api.profile.GameProfile;
-import io.slidermc.starlight.config.InternalConfig;
-import io.slidermc.starlight.network.codec.CompressionDecoder;
-import io.slidermc.starlight.network.codec.CompressionEncoder;
 import io.slidermc.starlight.network.packet.packets.clientbound.login.ClientboundLoginSuccessPacket;
 import io.slidermc.starlight.network.packet.packets.clientbound.login.ClientboundSetCompressionPacket;
 import io.slidermc.starlight.network.protocolenum.ProtocolState;
@@ -55,12 +52,7 @@ public final class LoginHelper {
                 int threshold = proxy.getConfig().getCompressThreshold();
                 if (threshold >= 0) {
                     ctx.channel().writeAndFlush(new ClientboundSetCompressionPacket(threshold)).addListener(_ -> {
-                        if (ctx.pipeline().get(InternalConfig.HANDLER_DECOMPRESS) == null) {
-                            ctx.pipeline().addBefore(InternalConfig.HANDLER_DECODER, InternalConfig.HANDLER_DECOMPRESS, new CompressionDecoder());
-                        }
-                        if (ctx.pipeline().get(InternalConfig.HANDLER_COMPRESS) == null) {
-                            ctx.pipeline().addBefore(InternalConfig.HANDLER_ENCODER, InternalConfig.HANDLER_COMPRESS, new CompressionEncoder(threshold));
-                        }
+                        CompressionHandlers.install(ctx, proxy, threshold);
                         log.debug("上游已启用压缩，阈值: {}", threshold);
                         sendLoginSuccess(ctx, player);
                     });

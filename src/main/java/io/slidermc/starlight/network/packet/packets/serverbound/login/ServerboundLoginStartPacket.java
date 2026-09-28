@@ -85,16 +85,20 @@ public class ServerboundLoginStartPacket implements IMinecraftPacket {
 
             PreLoginEvent preLoginEvent = new PreLoginEvent(context, packet.getUsername());
 
-            proxy.getEventManager().fire(preLoginEvent).thenRun(() ->
-                    ctx.channel().eventLoop().execute(() -> {
-                        if (!ctx.channel().isActive()) return;
-                        if (preLoginEvent.isDenied()) {
-                            denyLogin(ctx, preLoginEvent.getDenyReason());
-                            return;
-                        }
-                        doLogin(ctx, proxy, packet, context,
-                                preLoginEvent.isForceOnlineMode(), preLoginEvent.isForceOfflineMode());
-                    }));
+            proxy.getEventManager().fire(preLoginEvent)
+                    // 登录插件查询是"一问一答"的：处理器在 PreLoginEvent 里发起查询，
+                    // 必须等全部应答结束再推进登录，否则应答会与加密请求等后续包交错
+                    .thenCompose(_ -> context.getLoginQueries().allSettled())
+                    .thenRun(() ->
+                            ctx.channel().eventLoop().execute(() -> {
+                                if (!ctx.channel().isActive()) return;
+                                if (preLoginEvent.isDenied()) {
+                                    denyLogin(ctx, preLoginEvent.getDenyReason());
+                                    return;
+                                }
+                                doLogin(ctx, proxy, packet, context,
+                                        preLoginEvent.isForceOnlineMode(), preLoginEvent.isForceOfflineMode());
+                            }));
         }
 
         private static void denyLogin(ChannelHandlerContext ctx, Component reason) {

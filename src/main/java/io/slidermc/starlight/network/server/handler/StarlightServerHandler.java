@@ -36,6 +36,10 @@ public class StarlightServerHandler extends ChannelInboundHandlerAdapter {
         log.debug("连接断开: {}", ctx.channel().remoteAddress());
         ConnectionContext context = ctx.channel().attr(AttributeKeys.CONNECTION_CONTEXT).get();
         if (context != null) {
+            // 登录阶段的插件查询没有超时，必须以 null 完成全部待决查询，
+            // 否则等待应答的登录流程会永久挂起（此时玩家尚未建立，下面的分支不会执行）
+            context.getLoginQueries().cleanup();
+
             ProxiedPlayer player = context.getPlayer();
             if (player != null) {
                 proxy.getPlayerManager().removePlayer(player.getGameProfile().uuid());
